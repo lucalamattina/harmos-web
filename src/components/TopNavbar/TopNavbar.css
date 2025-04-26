@@ -1,0 +1,25 @@
+.navbar-shadow {
+  box-shadow: 1px 6px 5px 0px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 1px 6px 5px 0px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 1px 6px 5px 0px rgba(0, 0, 0, 0.3);
+}
+.Logo-Harmos {
+  height: 100px;
+  width: 100px;
+  padding-left: 10px;
+}
+#headerTitle{
+  font-size: 60px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #333;
+  text-shadow: 1px 1px 1px #ccc;
+  letter-spacing: 4px;
+  word-spacing: 8px;
+}
+.icon-nav-bar{
+  font-size: 32px;
+}
+.icon-nav-bar:hover{
+  font-size: 38px;
+}

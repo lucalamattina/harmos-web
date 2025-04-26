@@ -1,0 +1,11 @@
+.announcement{
+  width: 90%;
+  margin: 0 auto;
+  text-align: left;
+  padding-top: 75px;
+}
+.announcement-title{
+  font-size: 40px;
+  padding-left: 60px;
+  padding-bottom: 5px;
+}

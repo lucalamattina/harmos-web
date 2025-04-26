@@ -1,0 +1,134 @@
+.center-child,
+.center-item {
+   position: absolute;
+   top: 0;
+   left: 0;
+   border-radius: 40px;
+   height: 749.97px;
+}
+.center-child {
+   background-color: #fff;
+   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+   width: 1474px;
+}
+.center-item {
+   width: 523.56px;
+   object-fit: cover;
+}
+.login-child {
+   position: absolute;
+   top: 450px;
+   left: 119.11px;
+   border-radius: 50px;
+   background-color: #059093;
+   width: 326.64px;
+   height: 55.42px;
+}
+.iniciar-sesion {
+   text-align: center;
+   font-size: 36px;
+   color: #fff;
+   font-family: Inter, serif;
+}
+.password-child {
+   position: absolute;
+   top: 49.24px;
+   left: -1px;
+   border-top: 2px solid #059093;
+   box-sizing: border-box;
+   width: 526.41px;
+   height: 2px;
+}
+.contrasea,
+.icon-lock {
+   position: absolute;
+   top: 0;
+   left: 27.12px;
+   width: 36.89px;
+   height: 41.27px;
+}
+.contrasea {
+   top: 2px;
+   left: 90px;
+   font-weight: 500;
+   display: inline-block;
+   width: 310.66px;
+   height: 32.61px;
+}
+.password {
+   position: absolute;
+   top: 333.71px;
+   left: 43.64px;
+   width: 524.41px;
+   height: 50.24px;
+   color: #909090;
+}
+.user-child {
+   position: absolute;
+   top: 53.26px;
+   left: -1.5px;
+   border-top: 3px solid #059093;
+   box-sizing: border-box;
+   width: 570.21px;
+   height: 3px;
+}
+.icon-user,
+.nombre-usuario {
+   position: absolute;
+   top: 0;
+   left: 17.69px;
+   width: 36.56px;
+   height: 41.27px;
+}
+.form-control.nombre-usuario {
+   top: 6px;
+   left: 100px;
+   font-weight: 500;
+   display: inline-block;
+   height: 35px;
+}
+.user {
+   position: absolute;
+   top: 220.51px;
+   left: 0;
+   width: 567.21px;
+   height: 54.76px;
+   color: #acacac;
+}
+.image-1-icon {
+   position: absolute;
+   top: 0;
+   left: 54.25px;
+   width: 457.53px;
+   height: 126.17px;
+   object-fit: cover;
+}
+.olvidaste-tu-contrasea {
+   position: absolute;
+   top: 402px;
+   left: 46px;
+   font-size: 24px;
+   font-weight: 500;
+   color: #059093;
+   display: inline-block;
+   width: 474.04px;
+   height: 17.69px;
+}
+.center,
+.login {
+   position: absolute;
+   top: 113.2px;
+   left: 749.97px;
+   width: 568.05px;
+   height: 488.19px;
+}
+.center {
+   top: 96px;
+   left: 203px;
+   width: 1474px;
+   height: 749.97px;
+   text-align: center;
+   font-size: 36px;
+   color: #fff;
+   font-family: Inter, serif;
+}
