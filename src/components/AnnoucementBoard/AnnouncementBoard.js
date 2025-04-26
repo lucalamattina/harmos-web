@@ -1,44 +1,47 @@
 import "./AnnouncementBoard.css";
 import Announcement from "../../containers/Announcement/Announcement";
-import React, {useState} from 'react'
-import {Button, Form, Modal} from "react-bootstrap";
+import React, { useState, useEffect } from 'react';
+import { Button, Form, Modal } from "react-bootstrap";
+import api from '../../config/api';
 
 const AnnouncementBoard = () => {
+    const [announcements, setAnnouncements] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const fixedAnnouncements = [
-        {
-            id: 2,
-            title: 'Nuevo calendario',
-            content: 'Les informamos que quedo disponible el calendario semanal para que puedan ver los turnos de la semana.',
-            date: '2023-06-02',
-            author: 'Juana Gonzalez',
-        },
-        {
-            id: 1,
-            title: 'Bienvenidos',
-            content: 'Les presentamos la nueva plataforma de Harmos, en la cual van a poder ver anuncios, calendario semanal, informacion de los pacientes e informes.',
-            date: '2023-06-01',
-            author: 'Juan Carlos Fernandez',
-        }
-    ];
+    useEffect(() => {
+        const fetchAnnouncements = async () => {
+            try {
+                const response = await api.get('/api/announcements');
+                setAnnouncements(response.data);
+                setLoading(false);
+            } catch (err) {
+                setError('Error fetching announcements');
+                setLoading(false);
+            }
+        };
 
-    const [announcements, setAnnouncements] = useState(fixedAnnouncements);
+        fetchAnnouncements();
+    }, []);
 
     const [showNew, setShowNew] = useState(false);
     const handleCloseNew = () => {
         if (newAnnouncement.title !== "" && newAnnouncement.content !== "") {
-            setAnnouncements((prev) => [...prev, newAnnouncement])
+            setAnnouncements((prev) => [...prev, newAnnouncement]);
         }
         setShowNew(false);
-    }
+    };
     const handleShowNew = () => setShowNew(true);
 
     const [newAnnouncement, setNewAnnouncement] = useState({
         title: "",
         content: "",
-        date: "2023-06-07",
+        date: new Date().toISOString().split('T')[0],
         author: "Juan Carlos Fernandez"
     });
+
+    if (loading) return <div>Loading announcements...</div>;
+    if (error) return <div>{error}</div>;
 
     return (
         <>
