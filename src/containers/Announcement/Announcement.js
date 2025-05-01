@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Container, Row, Col } from 'react-bootstrap';
 import api from '../../config/api';
 
-const Announcements = () => {
+const Announcement = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
