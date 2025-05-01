@@ -26,25 +26,25 @@ const Announcements = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <Container className="mt-4">
-      <h2>Announcements</h2>
-      <Row>
-        {announcements.map((announcement) => (
-          <Col key={announcement.id} md={6} className="mb-4">
-            <Card>
-              <Card.Body>
-                <Card.Title>{announcement.title}</Card.Title>
-                <Card.Text>{announcement.content}</Card.Text>
-                <Card.Footer className="text-muted">
-                  {new Date(announcement.date).toLocaleDateString()}
-                </Card.Footer>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </Container>
+      <Container className="mt-4">
+        <h2>Announcements</h2>
+        <Row>
+          {announcements.map((announcement) => (
+              <Col key={announcement.id} md={6} className="mb-4">
+                <Card>
+                  <Card.Body>
+                    <Card.Title>{announcement.title}</Card.Title>
+                    <Card.Text>{announcement.content}</Card.Text>
+                    <Card.Footer className="text-muted">
+                      {new Date(announcement.date).toLocaleDateString()}
+                    </Card.Footer>
+                  </Card.Body>
+                </Card>
+              </Col>
+          ))}
+        </Row>
+      </Container>
   );
 };
 
-export default Announcements; 
+export default Announcements;

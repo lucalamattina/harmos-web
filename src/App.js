@@ -1,5 +1,5 @@
 import './App.css';
-import AnnouncementBoard from './components/AnnoucementBoard/AnnouncementBoard';
+import AnnouncementBoard from './components/AnnouncementBoard/AnnouncementBoard';
 import {Route, Routes} from "react-router-dom";
 import TopNavbar from "./components/TopNavbar/TopNavbar";
 import SideNavbar from "./components/SideNavbar/SideNavbar";
