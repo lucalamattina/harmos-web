@@ -11,7 +11,7 @@ const Announcements = () => {
     const fetchAnnouncements = async () => {
       try {
         const response = await api.get('/api/announcements');
-        setAnnouncements(response.data);
+        setAnnouncements(response.data.content);
         setLoading(false);
       } catch (err) {
         setError('Error fetching announcements');

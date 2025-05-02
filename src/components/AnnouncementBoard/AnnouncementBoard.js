@@ -22,15 +22,15 @@ const AnnouncementBoard = () => {
     const fetchAnnouncements = async () => {
         try {
             const response = await api.get('/api/announcements');
-            console.log('API Response:', response.data); // Para debugging
-            setAnnouncements(response.data.content || []);
-            setLoading(false);
-        } catch (err) {
-            console.error('Error detallado:', err);
-            setError('Error al cargar los anuncios');
-            setLoading(false);
-        }
-    };
+        // Asegurarse de usar response.data.content que es el array de anuncios
+        setAnnouncements(response.data.content);
+        setLoading(false);
+    } catch (err) {
+        console.error('Error detallado:', err);
+        setError('Error al cargar los anuncios');
+        setLoading(false);
+    }
+};
 
     const handleCloseNew = () => {
         setShowNew(false);
