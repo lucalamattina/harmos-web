@@ -1,8 +1,21 @@
 import "./AnnouncementBoard.css";
-import Announcement from "../../containers/Announcement/Announcement";
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Modal, Container } from "react-bootstrap";
+import { Button, Form, Modal, Container, Card } from "react-bootstrap";
 import api from '../../config/api';
+
+// Componente interno para un anuncio individual
+const Announcement = ({ title, content, date, author }) => (
+    <Card className="mb-3">
+        <Card.Body>
+            <Card.Title>{title}</Card.Title>
+            <Card.Text>{content}</Card.Text>
+            <Card.Footer className="text-muted">
+                Fecha: {new Date(date).toLocaleDateString()}
+                {author && ` - Autor: ${author}`}
+            </Card.Footer>
+        </Card.Body>
+    </Card>
+);
 
 const AnnouncementBoard = () => {
     const [announcements, setAnnouncements] = useState([]);
@@ -22,7 +35,6 @@ const AnnouncementBoard = () => {
     const fetchAnnouncements = async () => {
         try {
             const response = await api.get('/api/announcements');
-            console.log('API Response:', response.data); // Para debugging
             setAnnouncements(response.data.content || []);
             setLoading(false);
         } catch (err) {
@@ -32,15 +44,13 @@ const AnnouncementBoard = () => {
         }
     };
 
-    const handleCloseNew = () => {
-        setShowNew(false);
-    };
+    const handleCloseNew = () => setShowNew(false);
 
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
             try {
                 await api.post('/api/announcements', newAnnouncement);
-                await fetchAnnouncements(); // Recargar los anuncios
+                await fetchAnnouncements();
                 setShowNew(false);
                 setNewAnnouncement({ title: "", content: "", date: new Date().toISOString() });
             } catch (err) {
@@ -49,8 +59,6 @@ const AnnouncementBoard = () => {
             }
         }
     };
-
-    const handleShowNew = () => setShowNew(true);
 
     if (loading) return <div>Cargando anuncios...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -62,7 +70,7 @@ const AnnouncementBoard = () => {
             </div>
 
             {Array.isArray(announcements) && announcements.length > 0 ? (
-                announcements.map((announcement) => (
+                announcements.map(announcement => (
                     <Announcement
                         key={announcement.id}
                         title={announcement.title}
@@ -76,7 +84,7 @@ const AnnouncementBoard = () => {
             )}
 
             <div className="d-grid gap-2 mt-4">
-                <Button variant="primary" size="lg" onClick={handleShowNew}>
+                <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
                     Nuevo Anuncio
                 </Button>
             </div>
