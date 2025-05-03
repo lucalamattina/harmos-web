@@ -1,77 +1,122 @@
-# Getting Started with Create React App
+# Harmos Front-End
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este proyecto es el frontend de Harmos, desarrollado en React. Incluye autenticación, rutas privadas y consumo de una API configurable por entorno.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Requisitos
 
-### `npm start`
+- [Node.js](https://nodejs.org/) (v16 o superior recomendado)
+- [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/) (v1.x)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Instalación
 
-### `npm test`
+1. **Clonar el repositorio**
+   ```bash
+   git clone <url-del-repo>
+   cd harmos-web
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Instalar dependencias**
+   ```bash
+   yarn install
+   ```
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Configuración de variables de entorno
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+El proyecto utiliza variables de entorno para definir la URL de la API y otros parámetros.  
+**Siempre usá el prefijo `REACT_APP_` para que estén disponibles en el frontend.**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Ejemplo de archivos `.env`:
 
-### `npm run eject`
+#### `.env.development` (para desarrollo local)
+```
+REACT_APP_API_URL=http://localhost:8080
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+#### `.env.production` (para producción)
+```
+REACT_APP_API_URL=https://harmos-api-a77d01707678.herokuapp.com
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+> **Nota:**  
+> Si cambiás alguna variable, reiniciá el servidor de desarrollo (`Ctrl+C` y luego `yarn start`).
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Comandos útiles
 
-## Learn More
+### Desarrollo (hot reload, debug, etc.)
+```bash
+yarn start
+```
+- Levanta el servidor de desarrollo en [http://localhost:3000](http://localhost:3000)
+- Usa `.env.development` y/o `.env.local` para las variables de entorno.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Build de producción
+```bash
+yarn build
+```
+- Genera la carpeta `build` optimizada para producción.
+- Usa `.env.production` para las variables de entorno.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Servir la build de producción localmente
+```bash
+yarn global add serve
+yarn build
+serve -s build
+```
+- Sirve la app en modo estático (ideal para testear la build final).
 
-### Code Splitting
+### Tests
+```bash
+yarn test
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+## Estructura de carpetas principal
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- `src/api/` — Configuración de Axios y funciones para consumir la API.
+- `src/context/` — Contexto de autenticación y lógica de login/logout.
+- `src/components/` — Componentes reutilizables y rutas privadas.
+- `src/containers/` — Vistas principales y formularios.
+- `public/` — Archivos estáticos y HTML base.
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Autenticación y rutas privadas
 
-### Advanced Configuration
+- El login se realiza enviando email y password a `/api/authenticate` (ver función `loginUser` en `src/api/api.js`).
+- Todas las rutas, excepto `/login`, son privadas y requieren estar autenticado.
+- El token se guarda en `localStorage` bajo la clave `authToken`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## Notas y buenas prácticas
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- **Nunca subas `.env.local`** al repositorio (ya está en `.gitignore`).
+- **No pongas secretos reales** en las variables de entorno del frontend.
+- Si cambiás la URL de la API, recordá reiniciar el servidor de desarrollo.
+- Si ves errores de CORS, asegurate de que el backend permita requests desde `localhost:3000`.
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## ¿Problemas comunes?
 
-### Bootstrap install
+- **El login no redirige:**  
+  Verificá que la URL de la API tenga el protocolo (`http://` o `https://`).
+- **Siempre usa la API productiva:**  
+  Asegurate de estar usando el comando correcto (`yarn start` para desarrollo, `yarn build` para producción) y de tener el `.env` adecuado.
+- **404 al hacer `yarn start`:**  
+  Verificá que el script de `start` en `package.json` sea `"react-scripts start"`.
 
-- #### install yarn:
-  - `npm install yarn`
-- #### add bootstrap
-  - `yarn add bootstrap react-bootstrap`
+---
+
+## Contacto
+
+Para dudas o problemas, consultá con el equipo de desarrollo o revisá este README antes de preguntar.
