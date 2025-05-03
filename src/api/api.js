@@ -17,4 +17,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Login function
+export const loginUser = async (email, password) => {
+  const response = await api.post('/api/authenticate', { email, password });
+  return response.data;
+};
+
 export default api; 
