@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     const login = (token) => {
         localStorage.setItem('authToken', token);
         setIsAuthenticated(true);
-        navigate('/'); // Redirigir a la página principal después del login
+        // Redirección se maneja en el componente de login
     };
 
     const logout = () => {

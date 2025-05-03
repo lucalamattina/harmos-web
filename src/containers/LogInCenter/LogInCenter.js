@@ -6,53 +6,33 @@ import {Link} from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import {AuthContext} from "../../context/AuthContext";
+import { loginUser } from "../../api/api";
 
 
 const Center = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/home";
-    const { auth, setAuth } = useContext(AuthContext);
-    //state the name of the employee gotten from the form
-    const [name, setName] = useState("");
-    //state to store password of the employee gotten from the form
+    const { auth, setAuth, login } = useContext(AuthContext);
+    //state to store email of the user
+    const [email, setEmail] = useState("");
+    //state to store password of the user
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-        fetch(`http://localhost:3000/signin`, {
-            method: "POST",
-            headers: {"content-Type": "application/json"},
-            body: JSON.stringify({
-                name: name,
-                password: password,
-            }),
-        })
-            .then((res) => res.json())
-            .then((res) => {
-                if (res.name) {
-                    console.log(res);
-                    const role = res.role;
-                    const token = res.token;
-
-                    //storing employee information in our Auth state
-                    setAuth({ role, token, name });
-                    console.log(auth);
-                    setName("");
-                    setPassword("");
-                    //navigate our employee to the home page
-                    navigate(from, { replace: true });
-                } else {
-                    console.log("incorrect submission");
-                }
-            });
-        } catch (err) {
-            if (!err?.response) {
-                console.log("no server response");
+        e.preventDefault();
+        setError("");
+        try {
+            const data = await loginUser(email, password);
+            if (data && data.token) {
+                login(data.token); // Guarda el token y setea autenticado
+                navigate('/', { replace: true }); // Redirige a la home
             } else {
-                console.log("registeration failed");
+                setError("Credenciales incorrectas");
             }
+        } catch (err) {
+            setError("Error de autenticación");
         }
     };
     return (
@@ -63,7 +43,7 @@ const Center = () => {
                 <form onSubmit={handleSubmit}>
                     <div className="login">
                         <button className="login-child" type="submit">
-                            <h1 className="iniciar-sesion">Iniciar Sesion</h1>
+                            Iniciar Sesión
                         </button>
                         <div className="password">
                             <div className="password-child" />
@@ -81,12 +61,13 @@ const Center = () => {
                             <img className="icon-user bi bi-person-fill" alt="user"/>
                             <input
                                 className="form-control nombre-usuario border-0 w-75"
-                                type="text"
-                                placeholder="Nombre Usuario"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
+                        {error && <div style={{color: 'red', marginTop: 10}}>{error}</div>}
                         <img className="image-1-icon" src={letrasLogo} alt="letrasLogo" />
                         <Link to="/" >
                             <div className="olvidaste-tu-contrasea">Olvidaste tu contraseña?</div>
