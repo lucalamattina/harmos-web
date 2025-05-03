@@ -1,7 +1,7 @@
 import "./AnnouncementBoard.css";
 import React, { useState, useEffect } from 'react';
 import { Button, Form, Modal, Container, Card } from "react-bootstrap";
-import api from '../../config/api';
+import api from '../../api/api';
 
 // Componente interno para un anuncio individual
 const Announcement = ({ title, content, date, author }) => (

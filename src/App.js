@@ -6,29 +6,29 @@ import SideNavbar from "./components/SideNavbar/SideNavbar";
 import React from "react";
 import Scheduler from "./components/Scheduler/Scheduler";
 import LogIn from "./components/LogIn/LogIn";
-import { AuthProvider } from "./context/authProvider"; // Update the path
-
+import {AuthProvider} from "./context/AuthContext";
+import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
 
 const App = () => {
     return (
-        <>
-            {/*<AuthProvider>*/}
-            {/*    <LogIn/>*/}
-            {/*</AuthProvider>*/}
-
-        <TopNavbar/>
-        <div className="row">
-            <div className="col-2">
-                <SideNavbar/>
+        <AuthProvider>
+            <TopNavbar/>
+            <div className="row">
+                <div className="col-2">
+                    <SideNavbar/>
+                </div>
+                <div className="col-10">
+                    <Routes>
+                        <Route path="/login" element={<LogIn/>}/>
+                        <Route element={<PrivateRoute />}>
+                            <Route path="/" element={<AnnouncementBoard/>}/>
+                            <Route path="/schedule" element={<Scheduler/>}/>
+                            <Route path="*" element={<div>Página no encontrada</div>}/>
+                        </Route>
+                    </Routes>
+                </div>
             </div>
-            <div className="col-10">
-                <Routes>
-                    <Route path="/" element={<AnnouncementBoard/>}/>
-                    <Route path="/schedule" element={<Scheduler/>}/>
-                </Routes>
-            </div>
-        </div>
-        </>
+        </AuthProvider>
     );
 };
 

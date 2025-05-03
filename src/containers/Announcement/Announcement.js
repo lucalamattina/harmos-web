@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Container, Row, Col } from 'react-bootstrap';
-import api from '../../config/api';
+import api from '../../api/api';
 
 const Announcement = () => {
     const [announcements, setAnnouncements] = useState([]);

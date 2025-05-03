@@ -5,7 +5,7 @@ import letrasLogo from "../../resources/images/Harmos Logo Letras.jpg"
 import {Link} from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
-import {AuthContext} from "../../context/authProvider";
+import {AuthContext} from "../../context/AuthContext";
 
 
 const Center = () => {
