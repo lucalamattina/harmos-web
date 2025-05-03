@@ -1,0 +1,37 @@
+# Dependencias de Node.js
+node_modules
+
+# Archivo de bloqueo de Yarn (si usas Yarn)
+yarn.lock
+
+# Archivo de bloqueo de npm (si por alguna razón lo usas)
+package-lock.json
+
+# Directorio de construcción (build) de React
+build
+
+# Archivos de configuración específicos del entorno local
+.env.local
+.env.development.local
+.env.test.local
+
+# Archivo de caché de Parcel (si lo utilizas)
+.parcel-cache
+
+# Carpetas generadas por IDEs
+.idea/
+.vscode/
+
+# Archivos temporales del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de registro o depuración (si los tienes)
+debug.log
+npm-debug.log*
+yarn-error.log*
+
+# Cualquier otro archivo o directorio específico de tu proyecto que no quieras rastrear
+# Por ejemplo, archivos con datos sensibles, archivos temporales, etc.
+# mi_archivo_temporal.txt
+# directorio_de_datos_locales/
