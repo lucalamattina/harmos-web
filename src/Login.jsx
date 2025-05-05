@@ -9,6 +9,8 @@ export const Login = () => {
         console.log(email);
     }
 
+    //TODO: Arreglar boton y costados. tambien checkear mayusculas para mails
+
     return (
         <>
         <form onSubmit={handleSubmit}>
