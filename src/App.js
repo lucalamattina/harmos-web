@@ -8,6 +8,7 @@ import Scheduler from "./components/Scheduler/Scheduler";
 import LogIn from "./components/LogIn/LogIn";
 import {AuthProvider} from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
+import Patients from "./components/Patients/Patients";
 
 const App = () => {
     return (
@@ -20,9 +21,10 @@ const App = () => {
                 <div className="col-10">
                     <Routes>
                         <Route path="/login" element={<LogIn/>}/>
-                        <Route element={<PrivateRoute />}>
+                        <Route element={<PrivateRoute/>}>
                             <Route path="/" element={<AnnouncementBoard/>}/>
                             <Route path="/schedule" element={<Scheduler/>}/>
+                            <Route path="/patients" element={<Patients/>}/>
                             <Route path="*" element={<div>Página no encontrada</div>}/>
                         </Route>
                     </Routes>

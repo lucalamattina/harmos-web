@@ -1,5 +1,6 @@
+import React from 'react';
+import {Link} from 'react-router-dom';
 import "./SideNavbar.css";
-import {Link} from "react-router-dom";
 
 const SideNavbar = () => {
     return (
@@ -26,7 +27,7 @@ const SideNavbar = () => {
                 <div className="row flex-nowrap">
                     <div className="side-bar-nav-item">
                         <div className="container-fluid ">
-                            <Link to="/" className="nav-link pt-2">
+                            <Link to="/patients" className="nav-link pt-2">
                                 <span className="ms-1 d-none side-bar-word d-sm-inline">Pacientes</span>
                             </Link>
                         </div>
@@ -50,6 +51,6 @@ const SideNavbar = () => {
             </div>
         </>
     );
-};
+}
 
 export default SideNavbar;
