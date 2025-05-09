@@ -53,6 +53,7 @@ const Center = () => {
         <div className="login-container">
             <div className="login-box">
                 <div className="login-header">
+                    <img className="harmos-logo" src={logo} alt="Harmos Logo Icon" />
                     <img className="login-logo" src={letrasLogo} alt="Harmos Logo" />
                 </div>
                 
