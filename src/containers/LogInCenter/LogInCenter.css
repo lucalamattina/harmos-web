@@ -1,134 +1,196 @@
-.center-child,
-.center-item {
-   position: absolute;
-   top: 0;
-   left: 0;
-   border-radius: 40px;
-   height: 749.97px;
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
-.center-child {
-   background-color: #fff;
-   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-   width: 1474px;
+
+body {
+    background: #059093 !important;
+    min-height: 100vh;
 }
-.center-item {
-   width: 523.56px;
-   object-fit: cover;
+
+/* Only hide legacy layout elements that overlap the login box */
+.center-child, .center-item, .login-child, .center, .login, .image-1-icon, .user, .password, .user-child, .password-child, .contrasea, .icon-lock, .icon-user, .nombre-usuario, .form-control.nombre-usuario, .olvidaste-tu-contrasea, .iniciar-sesion {
+    display: none !important;
 }
-.login-child {
-   position: absolute;
-   top: 450px;
-   left: 119.11px;
-   border-radius: 50px;
-   background-color: #059093;
-   width: 326.64px;
-   height: 55.42px;
+
+.login-container {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    padding: 20px;
 }
-.iniciar-sesion {
-   text-align: center;
-   font-size: 36px;
-   color: #fff;
-   font-family: Inter, serif;
+
+.login-box {
+    position: relative;
+    z-index: 20;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
 }
-.password-child {
-   position: absolute;
-   top: 49.24px;
-   left: -1px;
-   border-top: 2px solid #059093;
-   box-sizing: border-box;
-   width: 526.41px;
-   height: 2px;
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
 }
-.contrasea,
-.icon-lock {
-   position: absolute;
-   top: 0;
-   left: 27.12px;
-   width: 36.89px;
-   height: 41.27px;
+
+.login-logo {
+    max-width: 200px;
+    height: auto;
 }
-.contrasea {
-   top: 2px;
-   left: 90px;
-   font-weight: 500;
-   display: inline-block;
-   width: 310.66px;
-   height: 32.61px;
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
-.password {
-   position: absolute;
-   top: 333.71px;
-   left: 43.64px;
-   width: 524.41px;
-   height: 50.24px;
-   color: #909090;
+
+.form-group {
+    width: 100%;
 }
-.user-child {
-   position: absolute;
-   top: 53.26px;
-   left: -1.5px;
-   border-top: 3px solid #059093;
-   box-sizing: border-box;
-   width: 570.21px;
-   height: 3px;
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
 }
-.icon-user,
-.nombre-usuario {
-   position: absolute;
-   top: 0;
-   left: 17.69px;
-   width: 36.56px;
-   height: 41.27px;
+
+.input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #059093;
+    font-size: 1.2rem;
+    pointer-events: none;
 }
-.form-control.nombre-usuario {
-   top: 6px;
-   left: 100px;
-   font-weight: 500;
-   display: inline-block;
-   height: 35px;
+
+.form-input {
+    width: 100%;
+    padding: 12px 12px 12px 44px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff !important;
+    color: #333;
 }
-.user {
-   position: absolute;
-   top: 220.51px;
-   left: 0;
-   width: 567.21px;
-   height: 54.76px;
-   color: #acacac;
+
+.form-input:focus {
+    border-color: #059093;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(5, 144, 147, 0.1);
 }
-.image-1-icon {
-   position: absolute;
-   top: 0;
-   left: 54.25px;
-   width: 457.53px;
-   height: 126.17px;
-   object-fit: cover;
+
+/* Remove browser autofill background and icons */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    box-shadow: 0 0 0 1000px #fff inset !important;
+    -webkit-text-fill-color: #333 !important;
+    caret-color: #059093 !important;
 }
-.olvidaste-tu-contrasea {
-   position: absolute;
-   top: 402px;
-   left: 46px;
-   font-size: 24px;
-   font-weight: 500;
-   color: #059093;
-   display: inline-block;
-   width: 474.04px;
-   height: 17.69px;
+
+.form-options {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 0.9rem;
+    padding-left: 2px;
 }
-.center,
-.login {
-   position: absolute;
-   top: 113.2px;
-   left: 749.97px;
-   width: 568.05px;
-   height: 488.19px;
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    cursor: pointer;
 }
-.center {
-   top: 96px;
-   left: 203px;
-   width: 1474px;
-   height: 749.97px;
-   text-align: center;
-   font-size: 36px;
-   color: #fff;
-   font-family: Inter, serif;
+
+.remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #059093;
+}
+
+.forgot-password {
+    color: #059093;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    margin-left: 0;
+}
+
+.forgot-password:hover {
+    color: #047a7c;
+    text-decoration: underline;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: -0.5rem;
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #059093;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.login-button:hover:not(:disabled) {
+    background-color: #047a7c;
+}
+
+.login-button:disabled {
+    background-color: #059093;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 480px) {
+    .login-box {
+        padding: 1.5rem;
+    }
+
+    .form-options {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
 }
