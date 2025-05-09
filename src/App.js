@@ -9,27 +9,72 @@ import LogIn from "./components/LogIn/LogIn";
 import {AuthProvider} from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
 import Patients from "./components/Patients/Patients";
+import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 
 const App = () => {
     return (
         <AuthProvider>
-            <TopNavbar/>
-            <div className="row">
-                <div className="col-2">
-                    <SideNavbar/>
-                </div>
-                <div className="col-10">
-                    <Routes>
-                        <Route path="/login" element={<LogIn/>}/>
-                        <Route element={<PrivateRoute/>}>
-                            <Route path="/" element={<AnnouncementBoard/>}/>
-                            <Route path="/schedule" element={<Scheduler/>}/>
-                            <Route path="/patients" element={<Patients/>}/>
-                            <Route path="*" element={<div>Página no encontrada</div>}/>
-                        </Route>
-                    </Routes>
-                </div>
-            </div>
+            <Routes>
+                {/* Public routes without navigation */}
+                <Route path="/login" element={<LogIn/>}/>
+                <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                
+                {/* Protected routes with navigation */}
+                <Route element={<PrivateRoute/>}>
+                    <Route path="/" element={
+                        <>
+                            <TopNavbar/>
+                            <div className="row">
+                                <div className="col-2">
+                                    <SideNavbar/>
+                                </div>
+                                <div className="col-10">
+                                    <AnnouncementBoard/>
+                                </div>
+                            </div>
+                        </>
+                    }/>
+                    <Route path="/schedule" element={
+                        <>
+                            <TopNavbar/>
+                            <div className="row">
+                                <div className="col-2">
+                                    <SideNavbar/>
+                                </div>
+                                <div className="col-10">
+                                    <Scheduler/>
+                                </div>
+                            </div>
+                        </>
+                    }/>
+                    <Route path="/patients" element={
+                        <>
+                            <TopNavbar/>
+                            <div className="row">
+                                <div className="col-2">
+                                    <SideNavbar/>
+                                </div>
+                                <div className="col-10">
+                                    <Patients/>
+                                </div>
+                            </div>
+                        </>
+                    }/>
+                    <Route path="*" element={
+                        <>
+                            <TopNavbar/>
+                            <div className="row">
+                                <div className="col-2">
+                                    <SideNavbar/>
+                                </div>
+                                <div className="col-10">
+                                    <div>Página no encontrada</div>
+                                </div>
+                            </div>
+                        </>
+                    }/>
+                </Route>
+            </Routes>
         </AuthProvider>
     );
 };

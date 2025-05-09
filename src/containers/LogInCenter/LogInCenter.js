@@ -2,12 +2,10 @@ import './LogInCenter.css'
 import React, { Component } from 'react';
 import logo from "../../resources/images/Harmos-Logo-no-letras.png"
 import letrasLogo from "../../resources/images/Harmos Logo Letras.jpg"
-import {Link} from "react-router-dom";
-import { useNavigate, useLocation } from "react-router-dom";
+import {Link, useNavigate, useLocation} from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import {AuthContext} from "../../context/AuthContext";
 import { loginUser } from "../../api/api";
-
 
 const Center = () => {
     const navigate = useNavigate();
@@ -69,7 +67,7 @@ const Center = () => {
                         </div>
                         {error && <div style={{color: 'red', marginTop: 10}}>{error}</div>}
                         <img className="image-1-icon" src={letrasLogo} alt="letrasLogo" />
-                        <Link to="/" >
+                        <Link to="/forgot-password" className="text-decoration-none">
                             <div className="olvidaste-tu-contrasea">Olvidaste tu contraseña?</div>
                         </Link>
                     </div>

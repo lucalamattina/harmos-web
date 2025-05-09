@@ -23,4 +23,14 @@ export const loginUser = async (email, password) => {
   return response.data;
 };
 
+// Password reset request function
+export const requestPasswordReset = async (email) => {
+  const response = await api.post('/api/messages', {
+    to: email,
+    subject: "Recuperación de Contraseña - Harmos",
+    body: `Hola,\n\nHas solicitado restablecer tu contraseña en Harmos. Por favor, contacta a un administrador para que te ayude con este proceso.\n\nSaludos,\nEquipo Harmos`
+  });
+  return response.data;
+};
+
 export default api; 
