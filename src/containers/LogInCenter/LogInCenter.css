@@ -5,7 +5,6 @@ html, body, #root {
 }
 
 body {
-    background: #059093 !important;
     min-height: 100vh;
 }
 
@@ -22,7 +21,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: transparent;
+    background: #059093;
     padding: 20px;
 }
 
@@ -207,4 +206,33 @@ input:-webkit-autofill:active {
         gap: 1rem;
         align-items: flex-start;
     }
+}
+
+.password-group {
+    position: relative;
+}
+
+.toggle-password-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: #059093;
+    font-size: 1.2rem;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    z-index: 2;
+}
+
+.toggle-password-btn:active {
+    color: #047a7c;
+}
+
+.password-group .form-input {
+    padding-right: 38px;
 }

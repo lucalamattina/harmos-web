@@ -6,7 +6,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../api/api";
-import { FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaSpinner, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Center = () => {
     const navigate = useNavigate();
@@ -20,6 +20,7 @@ const Center = () => {
     });
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -49,6 +50,8 @@ const Center = () => {
         }
     };
 
+    const toggleShowPassword = () => setShowPassword((prev) => !prev);
+
     return (
         <div className="login-container">
             <div className="login-box">
@@ -74,10 +77,10 @@ const Center = () => {
                     </div>
 
                     <div className="form-group">
-                        <div className="input-group">
+                        <div className="input-group password-group">
                             <FaLock className="input-icon" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 placeholder="Contraseña"
                                 value={formData.password}
@@ -85,6 +88,15 @@ const Center = () => {
                                 required
                                 className="form-input"
                             />
+                            <button
+                                type="button"
+                                className="toggle-password-btn"
+                                onClick={toggleShowPassword}
+                                tabIndex={-1}
+                                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
                         </div>
                     </div>
 
