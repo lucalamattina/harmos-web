@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Botones primarios con color de identidad Harmos */
+.btn-primary {
+  background-color: #009A9E !important;
+  border-color: #009A9E !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #047a7c !important;
+  border-color: #047a7c !important;
+}
+.btn-outline-primary {
+  color: #009A9E !important;
+  border-color: #009A9E !important;
+  background-color: transparent !important;
+}
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+  background-color: #009A9E !important;
+  color: #fff !important;
+  border-color: #009A9E !important;
+}

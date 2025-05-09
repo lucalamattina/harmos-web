@@ -25,12 +25,26 @@ const AnnouncementBoard = () => {
     const [newAnnouncement, setNewAnnouncement] = useState({
         title: "",
         content: "",
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        specialties: undefined
     });
+    // Estado para paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 5;
+    const [specialtiesList, setSpecialtiesList] = useState([]);
 
     useEffect(() => {
         fetchAnnouncements();
     }, []);
+
+    // Cargar especialidades desde la API al abrir el modal
+    useEffect(() => {
+        if (showNew) {
+            api.get('/api/specialties')
+                .then(res => setSpecialtiesList(res.data))
+                .catch(() => setSpecialtiesList([]));
+        }
+    }, [showNew]);
 
     const fetchAnnouncements = async () => {
         try {
@@ -49,15 +63,46 @@ const AnnouncementBoard = () => {
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
             try {
-                await api.post('/api/announcements', newAnnouncement);
+                const createdByUserId = 2;
+                const now = new Date();
+                const pad = n => n.toString().padStart(2, '0');
+                const formattedDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+                // Mapear los IDs seleccionados a nombres
+                let specialtiesNames = [];
+                if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
+                    specialtiesNames = specialtiesList
+                        .filter(spec => newAnnouncement.specialties.includes(spec.id))
+                        .map(spec => spec.name);
+                }
+
+                const payload = {
+                    title: newAnnouncement.title,
+                    content: newAnnouncement.content,
+                    date: formattedDate,
+                    createdByUserId,
+                    specialties: specialtiesNames
+                };
+
+                await api.post('/api/announcements', payload);
                 await fetchAnnouncements();
                 setShowNew(false);
-                setNewAnnouncement({ title: "", content: "", date: new Date().toISOString() });
+                setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined });
             } catch (err) {
                 console.error('Error al guardar:', err);
                 setError('Error al guardar el anuncio');
             }
         }
+    };
+
+    // Paginación
+    const totalPages = Math.ceil(announcements.length / pageSize);
+    const paginatedAnnouncements = announcements.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+    const goToPage = (page) => {
+        if (page >= 1 && page <= totalPages) setCurrentPage(page);
     };
 
     if (loading) return <div>Cargando anuncios...</div>;
@@ -69,8 +114,8 @@ const AnnouncementBoard = () => {
                 <h1 className="announcement-title">Anuncios</h1>
             </div>
 
-            {Array.isArray(announcements) && announcements.length > 0 ? (
-                announcements.map(announcement => (
+            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.length > 0 ? (
+                paginatedAnnouncements.map(announcement => (
                     <Announcement
                         key={announcement.id}
                         title={announcement.title}
@@ -81,6 +126,27 @@ const AnnouncementBoard = () => {
                 ))
             ) : (
                 <p>No hay anuncios disponibles</p>
+            )}
+
+            {/* Controles de paginación */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center align-items-center my-4 gap-2">
+                    <button className="btn btn-outline-secondary" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                        Anterior
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                            key={i + 1}
+                            className={`btn ${currentPage === i + 1 ? 'btn-primary' : 'btn-outline-primary'}`}
+                            onClick={() => goToPage(i + 1)}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                    <button className="btn btn-outline-secondary" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                        Siguiente
+                    </button>
+                </div>
             )}
 
             <div className="d-grid gap-2 mt-4">
@@ -119,6 +185,25 @@ const AnnouncementBoard = () => {
                                     content: e.target.value
                                 }))}
                             />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Especialidades (opcional)</Form.Label>
+                            <Form.Select
+                                multiple
+                                value={newAnnouncement.specialties || []}
+                                onChange={e => {
+                                    const options = Array.from(e.target.selectedOptions, opt => Number(opt.value));
+                                    setNewAnnouncement(prev => ({
+                                        ...prev,
+                                        specialties: options
+                                    }));
+                                }}
+                            >
+                                {specialtiesList.map(spec => (
+                                    <option key={spec.id} value={spec.id}>{spec.name}</option>
+                                ))}
+                            </Form.Select>
+                            <Form.Text muted>Deja vacío para aplicar a todas las especialidades.</Form.Text>
                         </Form.Group>
                     </Form>
                 </Modal.Body>

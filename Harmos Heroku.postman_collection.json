@@ -1,0 +1,757 @@
+{
+	"info": {
+		"_postman_id": "9e30ffff-905d-491f-afca-8083792c8209",
+		"name": "Harmos Heroku",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14903722"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"alejandro.Rolandelli@gmail.com\",\n    \"password\": \"hola1234\",\n    \"firstName\": \"Ale\",\n    \"lastName\": \"Dorado\",\n    \"phone\": \"12345678\",\n    \"specialties\": [\"TO\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Authenticate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\" : \"alejandro.Rolandelli@gmail.com\",\n    \"password\" : \"hola1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/authenticate",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search User By Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search User By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users/3",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "add specialty to user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users/3/specialties/34",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"3",
+								"specialties",
+								"34"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete user",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users/1",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search User Announcements with page and offset",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users/1/announcements?page=0&offset=5",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"1",
+								"announcements"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "offset",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/users/1/schedules",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"users",
+								"1",
+								"schedules"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"item": [
+				{
+					"name": "Create Announcement",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"sapeee\",\n    \"content\": \"Lorem ipsum dolor sit amet consectetur adipiscing elit proin suspendisse, leo dui quisque tempor sociosqu lectus arcu sollicitudin nibh, ligula fames cursus vitae molestie sapien dignissim vestibulum. Cum id orci cras aenean gravida lacinia semper netus, duis maecenas sodales molestie sollicitudin vehicula sed class, nisl per facilisi n.\",\n    \"date\": \"2018-07-14T19:45:55.9483536\",\n    \"createdByUserId\": 2,\n    \"specialties\":[]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/announcements",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"announcements"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Announcements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/announcements",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"announcements"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Announcements with page and offset",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/announcements?page=0&size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"announcements"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Schedule",
+			"item": [
+				{
+					"name": "Get All Schedules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/schedules",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"schedules"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Schedule",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"location\": \"Sala 1\",\n    \"dayOfWeek\": \"TUESDAY\",\n    \"hourFrom\": 9,\n    \"minuteFrom\": 30,\n    \"hourTo\": 10,\n    \"minuteTo\": 30,\n    \"doctorUserId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/schedules",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"schedules"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Patients",
+			"item": [
+				{
+					"name": "Create Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pedro Chingenguencha2\",\n    \"phone\": \"12345678\",\n    \"status\": \"unknown\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/patients",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"patients"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Patient By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/patients/36",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"patients",
+								"36"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Patient By Id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/patients/1",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"patients",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Patient by Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/patients?name=Pedro Chingenguencha2",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"patients"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "Pedro Chingenguencha2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Patients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/patients",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"patients"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add doctor to Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Specialties",
+			"item": [
+				{
+					"name": "Create Specialty",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"TO\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/specialties",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"specialties"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get specialtie by name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/specialties/search?name=TO",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"specialties",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "TO"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get specialtie by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/specialties/34",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"specialties",
+								"34"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get specialties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/specialties",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"specialties"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete specialty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `\r",
+									"<style type=\"text/css\">\r",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}\r",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}\r",
+									"    .tftable tr {background-color:#ffffff;}\r",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}\r",
+									"    .tftable tr:hover {background-color:#e0ffff;}\r",
+									"</style>\r",
+									"\r",
+									"<table class=\"tftable\" border=\"1\">\r",
+									"    <tr>\r",
+									"        <th>Timestamp</th>\r",
+									"        <th>Status</th>\r",
+									"        <th>Error</th>\r",
+									"        <th>Path</th>\r",
+									"    </tr>\r",
+									"    <tr>\r",
+									"        <td>{{response.timestamp}}</td>\r",
+									"        <td>{{response.status}}</td>\r",
+									"        <td>{{response.error}}</td>\r",
+									"        <td>{{response.path}}</td>\r",
+									"    </tr>\r",
+									"</table>\r",
+									"`;\r",
+									"\r",
+									"function constructVisualizerPayload() {\r",
+									"    return {response: pm.response.json()};\r",
+									"}\r",
+									"\r",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/specialties/34",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"specialties",
+								"34"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mail",
+			"item": [
+				{
+					"name": "Send Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to\": \"alejandro.rolandelli@gmail.com\",\n    \"subject\": \"Test Email\",\n    \"body\": \"This is a test email from Harmos API\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/messages",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"messages"
+							]
+						},
+						"description": "Send an email to a specified recipient"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Message Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://harmos-api-a77d01707678.herokuapp.com/api/messages/:id",
+							"protocol": "https",
+							"host": [
+								"harmos-api-a77d01707678",
+								"herokuapp",
+								"com"
+							],
+							"path": [
+								"api",
+								"messages",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "message-id-here",
+									"description": "The ID of the message to check"
+								}
+							]
+						},
+						"description": "Get the status of a previously sent message"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://harmos-api-a77d01707678.herokuapp.com",
+			"type": "default"
+		}
+	]
+}
