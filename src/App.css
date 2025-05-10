@@ -1,3 +1,9 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .App {
   text-align: center;
   min-height: 100vh;
@@ -13,7 +19,7 @@
 }
 
 .main-content {
-  flex: 1;
+  flex: 1 0 auto;
   background-image: url('./resources/images/Fondo.jpg');
   background-size: cover;
   background-position: center;
@@ -22,6 +28,8 @@
   padding: 20px;
   position: relative;
   min-height: var(--content-min-height);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Asegurar que el contenido sea legible sobre el fondo */
@@ -44,6 +52,7 @@
 
 /* Footer styles */
 .app-footer {
+  flex-shrink: 0;
   background-color: #009A9E;
   color: white;
   padding: 15px 0;

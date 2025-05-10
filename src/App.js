@@ -15,53 +15,55 @@ import Footer from "./components/Footer/Footer";
 const App = () => {
     return (
         <AuthProvider>
-            <Routes>
-                {/* Public routes without navigation */}
-                <Route path="/login" element={<LogIn/>}/>
-                <Route path="/forgot-password" element={<ForgotPassword/>}/>
-                
-                {/* Protected routes with navigation */}
-                <Route path="/" element={
-                    <>
-                        <TopNavbar/>
-                        <SideNavbar/>
-                        <div className="main-content">
-                            <AnnouncementBoard/>
-                        </div>
-                        <Footer/>
-                    </>
-                }/>
-                <Route path="/schedule" element={
-                    <>
-                        <TopNavbar/>
-                        <SideNavbar/>
-                        <div className="main-content">
-                            <Scheduler/>
-                        </div>
-                        <Footer/>
-                    </>
-                }/>
-                <Route path="/patients" element={
-                    <>
-                        <TopNavbar/>
-                        <SideNavbar/>
-                        <div className="main-content">
-                            <Patients/>
-                        </div>
-                        <Footer/>
-                    </>
-                }/>
-                <Route path="*" element={
-                    <>
-                        <TopNavbar/>
-                        <SideNavbar/>
-                        <div className="main-content">
-                            <div>Página no encontrada</div>
-                        </div>
-                        <Footer/>
-                    </>
-                }/>
-            </Routes>
+            <div className="app-container">
+                <Routes>
+                    {/* Public routes without navigation */}
+                    <Route path="/login" element={<LogIn/>}/>
+                    <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                    
+                    {/* Protected routes with navigation */}
+                    <Route path="/" element={
+                        <>
+                            <TopNavbar/>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <AnnouncementBoard/>
+                            </div>
+                            <Footer/>
+                        </>
+                    }/>
+                    <Route path="/schedule" element={
+                        <>
+                            <TopNavbar/>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <Scheduler/>
+                            </div>
+                            <Footer/>
+                        </>
+                    }/>
+                    <Route path="/patients" element={
+                        <>
+                            <TopNavbar/>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <Patients/>
+                            </div>
+                            <Footer/>
+                        </>
+                    }/>
+                    <Route path="*" element={
+                        <>
+                            <TopNavbar/>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <div>Página no encontrada</div>
+                            </div>
+                            <Footer/>
+                        </>
+                    }/>
+                </Routes>
+            </div>
         </AuthProvider>
     );
 };
