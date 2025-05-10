@@ -32,9 +32,32 @@ const AnnouncementBoard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 5;
     const [specialtiesList, setSpecialtiesList] = useState([]);
+    const [visibleAnnouncements, setVisibleAnnouncements] = useState(3); // Default number
 
     useEffect(() => {
         fetchAnnouncements();
+    }, []);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const height = window.innerHeight;
+            if (height < 600) {
+                setVisibleAnnouncements(2);
+            } else if (height > 900) {
+                setVisibleAnnouncements(5);
+            } else {
+                setVisibleAnnouncements(3);
+            }
+        };
+
+        // Initial call
+        handleResize();
+
+        // Add event listener
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     // Cargar especialidades desde la API al abrir el modal
@@ -110,19 +133,15 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
-            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.length > 0 ? (
-                paginatedAnnouncements.map(announcement => (
-                    <Announcement
-                        key={announcement.id}
-                        title={announcement.title}
-                        content={announcement.content}
-                        date={announcement.date}
-                        author={announcement.createdByUserId}
-                    />
-                ))
-            ) : (
-                <p>No hay anuncios disponibles</p>
-            )}
+            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.slice(0, visibleAnnouncements).map(announcement => (
+                <Announcement
+                    key={announcement.id}
+                    title={announcement.title}
+                    content={announcement.content}
+                    date={announcement.date}
+                    author={announcement.createdByUserId}
+                />
+            ))}
 
             {/* Controles de paginación */}
             {totalPages > 1 && (

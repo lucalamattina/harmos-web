@@ -10,6 +10,7 @@ import {AuthProvider} from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
 import Patients from "./components/Patients/Patients";
 import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
+import Footer from "./components/Footer/Footer";
 
 const App = () => {
     return (
@@ -20,44 +21,46 @@ const App = () => {
                 <Route path="/forgot-password" element={<ForgotPassword/>}/>
                 
                 {/* Protected routes with navigation */}
-                <Route element={<PrivateRoute/>}>
-                    <Route path="/" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <AnnouncementBoard/>
-                            </div>
-                        </>
-                    }/>
-                    <Route path="/schedule" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <Scheduler/>
-                            </div>
-                        </>
-                    }/>
-                    <Route path="/patients" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <Patients/>
-                            </div>
-                        </>
-                    }/>
-                    <Route path="*" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <div>Página no encontrada</div>
-                            </div>
-                        </>
-                    }/>
-                </Route>
+                <Route path="/" element={
+                    <>
+                        <TopNavbar/>
+                        <SideNavbar/>
+                        <div className="main-content">
+                            <AnnouncementBoard/>
+                        </div>
+                        <Footer/>
+                    </>
+                }/>
+                <Route path="/schedule" element={
+                    <>
+                        <TopNavbar/>
+                        <SideNavbar/>
+                        <div className="main-content">
+                            <Scheduler/>
+                        </div>
+                        <Footer/>
+                    </>
+                }/>
+                <Route path="/patients" element={
+                    <>
+                        <TopNavbar/>
+                        <SideNavbar/>
+                        <div className="main-content">
+                            <Patients/>
+                        </div>
+                        <Footer/>
+                    </>
+                }/>
+                <Route path="*" element={
+                    <>
+                        <TopNavbar/>
+                        <SideNavbar/>
+                        <div className="main-content">
+                            <div>Página no encontrada</div>
+                        </div>
+                        <Footer/>
+                    </>
+                }/>
             </Routes>
         </AuthProvider>
     );

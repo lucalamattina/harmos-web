@@ -5,6 +5,13 @@
   flex-direction: column;
 }
 
+/* Responsive height variables */
+:root {
+  --navbar-height: 50px;
+  --footer-height: 60px;
+  --content-min-height: calc(100vh - var(--navbar-height) - var(--footer-height));
+}
+
 .main-content {
   flex: 1;
   background-image: url('./resources/images/Fondo.jpg');
@@ -14,6 +21,7 @@
   background-attachment: fixed;
   padding: 20px;
   position: relative;
+  min-height: var(--content-min-height);
 }
 
 /* Asegurar que el contenido sea legible sobre el fondo */
@@ -32,6 +40,34 @@
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco semi-transparente */
   z-index: 0;
+}
+
+/* Footer styles */
+.app-footer {
+  background-color: #009A9E;
+  color: white;
+  padding: 15px 0;
+  height: var(--footer-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive breakpoints */
+@media screen and (max-height: 600px) {
+  :root {
+    --navbar-height: 40px;
+    --footer-height: 40px;
+  }
+}
+
+@media screen and (min-height: 900px) {
+  :root {
+    --navbar-height: 60px;
+    --footer-height: 70px;
+  }
 }
 
 .App-logo {
