@@ -24,52 +24,36 @@ const App = () => {
                     <Route path="/" element={
                         <>
                             <TopNavbar/>
-                            <div className="row">
-                                <div className="col-2">
-                                    <SideNavbar/>
-                                </div>
-                                <div className="col-10">
-                                    <AnnouncementBoard/>
-                                </div>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <AnnouncementBoard/>
                             </div>
                         </>
                     }/>
                     <Route path="/schedule" element={
                         <>
                             <TopNavbar/>
-                            <div className="row">
-                                <div className="col-2">
-                                    <SideNavbar/>
-                                </div>
-                                <div className="col-10">
-                                    <Scheduler/>
-                                </div>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <Scheduler/>
                             </div>
                         </>
                     }/>
                     <Route path="/patients" element={
                         <>
                             <TopNavbar/>
-                            <div className="row">
-                                <div className="col-2">
-                                    <SideNavbar/>
-                                </div>
-                                <div className="col-10">
-                                    <Patients/>
-                                </div>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <Patients/>
                             </div>
                         </>
                     }/>
                     <Route path="*" element={
                         <>
                             <TopNavbar/>
-                            <div className="row">
-                                <div className="col-2">
-                                    <SideNavbar/>
-                                </div>
-                                <div className="col-10">
-                                    <div>Página no encontrada</div>
-                                </div>
+                            <SideNavbar/>
+                            <div className="main-content">
+                                <div>Página no encontrada</div>
                             </div>
                         </>
                     }/>

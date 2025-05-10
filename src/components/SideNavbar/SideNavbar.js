@@ -1,56 +1,35 @@
 import React from 'react';
-import {Link} from 'react-router-dom';
-import "./SideNavbar.css";
+import { Link, useLocation } from 'react-router-dom';
+import { FiBell, FiUsers, FiCalendar, FiFileText } from 'react-icons/fi';
+import './SideNavbar.css';
+
+const tabs = [
+  { to: '/', label: 'Anuncios', icon: <FiBell /> },
+  { to: '/patients', label: 'Pacientes', icon: <FiUsers /> },
+  { to: '/schedule', label: 'Horarios', icon: <FiCalendar /> },
+  { to: '/informes', label: 'Informes', icon: <FiFileText /> },
+];
 
 const SideNavbar = () => {
-    return (
-        <>
-            <div className="container-fluid">
-                <div className="row flex-nowrap">
-                    <div className="side-bar-nav-item">
-                        <div className="container-fluid">
-                            <Link to="/" className="nav-link pt-2">
-                                <span className="ms-1 d-none side-bar-word d-sm-inline">Anuncios</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="row flex-nowrap">
-                    <div className="side-bar-nav-item">
-                        <div className="container-fluid">
-                            <Link to="/" className="nav-link pt-2">
-                                <span className="ms-1 d-none side-bar-word d-sm-inline">Informes</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="row flex-nowrap">
-                    <div className="side-bar-nav-item">
-                        <div className="container-fluid ">
-                            <Link to="/patients" className="nav-link pt-2">
-                                <span className="ms-1 d-none side-bar-word d-sm-inline">Pacientes</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="row flex-nowrap">
-                    <div className="side-bar-nav-item">
-                        <div className="container-fluid ">
-                            <Link to="/schedule" className="nav-link pt-2">
-                                <span className="ms-1 d-none side-bar-word d-sm-inline">Horarios</span>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="row flex-nowrap">
-                    <div className="px-sm-2 px-0 green-bg">
-                        <div className="d-flex flex-column min-vh-100">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
+  const location = useLocation();
+
+  return (
+    <nav className="top-navbar">
+      <ul className="top-navbar-list">
+        {tabs.map((tab) => (
+          <li key={tab.to} className="top-navbar-item">
+            <Link
+              to={tab.to}
+              className={`top-navbar-link${location.pathname === tab.to ? ' active' : ''}`}
+            >
+              <span className="top-navbar-icon">{tab.icon}</span>
+              <span className="top-navbar-label">{tab.label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+};
 
 export default SideNavbar;

@@ -1,5 +1,37 @@
 .App {
   text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  background-image: url('./resources/images/Fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  padding: 20px;
+  position: relative;
+}
+
+/* Asegurar que el contenido sea legible sobre el fondo */
+.main-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Overlay semi-transparente para mejorar la legibilidad */
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco semi-transparente */
+  z-index: 0;
 }
 
 .App-logo {

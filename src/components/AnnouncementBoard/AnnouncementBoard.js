@@ -110,10 +110,6 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
-            <div className="border-bottom border-2 border-dark announcement mb-4">
-                <h1 className="announcement-title">Anuncios</h1>
-            </div>
-
             {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.length > 0 ? (
                 paginatedAnnouncements.map(announcement => (
                     <Announcement

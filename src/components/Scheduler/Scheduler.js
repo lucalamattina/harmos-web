@@ -110,9 +110,6 @@ function Scheduler() {
     return (
         <>
         <div className="Scheduler">
-            <div className="border-bottom border-2 border-dark scheduler">
-                <h1 className="scheduler-title">Horarios:</h1>
-            </div>
             <Calendar views={[Views.WORK_WEEK]}
                       defaultView={Views.WORK_WEEK}
                       localizer={localizer} events={allEvents}

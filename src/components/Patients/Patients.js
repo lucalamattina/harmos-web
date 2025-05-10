@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup } from "react-bootstrap";
 import api from '../../api/api';
@@ -74,10 +73,6 @@ const Patients = () => {
 
     return (
         <Container>
-            <div className="border-bottom border-2 border-dark mb-4">
-                <h1>Pacientes</h1>
-            </div>
-
             <Form className="mb-4">
                 <InputGroup>
                     <InputGroup.Text>
