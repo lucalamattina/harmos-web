@@ -1,6 +1,6 @@
 import "./AnnouncementBoard.css";
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Modal, Container, Card } from "react-bootstrap";
+import { Button, Form, Modal, Container, Card, InputGroup } from "react-bootstrap";
 import api from '../../api/api';
 
 // Componente interno para un anuncio individual
@@ -33,6 +33,8 @@ const AnnouncementBoard = () => {
     const pageSize = 5;
     const [specialtiesList, setSpecialtiesList] = useState([]);
     const [visibleAnnouncements, setVisibleAnnouncements] = useState(3); // Default number
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
 
     useEffect(() => {
         fetchAnnouncements();
@@ -128,6 +130,45 @@ const AnnouncementBoard = () => {
         if (page >= 1 && page <= totalPages) setCurrentPage(page);
     };
 
+    const filteredSpecialties = specialtiesList.filter(spec =>
+        spec.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSpecialtyToggle = (specialtyId) => {
+        if (specialtyId === -1) {
+            // Si se selecciona "Todas", limpiar las demás selecciones
+            setNewAnnouncement(prev => ({
+                ...prev,
+                specialties: []
+            }));
+        } else {
+            setNewAnnouncement(prev => {
+                const currentSpecialties = prev.specialties || [];
+                if (currentSpecialties.includes(specialtyId)) {
+                    return {
+                        ...prev,
+                        specialties: currentSpecialties.filter(id => id !== specialtyId)
+                    };
+                } else {
+                    return {
+                        ...prev,
+                        specialties: [...currentSpecialties, specialtyId]
+                    };
+                }
+            });
+        }
+    };
+
+    const getSelectedSpecialtiesText = () => {
+        if (!newAnnouncement.specialties || newAnnouncement.specialties.length === 0) {
+            return "Todas las especialidades";
+        }
+        return newAnnouncement.specialties
+            .map(id => specialtiesList.find(spec => spec.id === id)?.name)
+            .filter(Boolean)
+            .join(", ");
+    };
+
     if (loading) return <div>Cargando anuncios...</div>;
     if (error) return <div>Error: {error}</div>;
 
@@ -202,23 +243,63 @@ const AnnouncementBoard = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Especialidades (opcional)</Form.Label>
-                            <Form.Select
-                                multiple
-                                value={newAnnouncement.specialties || []}
-                                onChange={e => {
-                                    const options = Array.from(e.target.selectedOptions, opt => Number(opt.value));
-                                    setNewAnnouncement(prev => ({
-                                        ...prev,
-                                        specialties: options
-                                    }));
-                                }}
-                            >
-                                {specialtiesList.map(spec => (
-                                    <option key={spec.id} value={spec.id}>{spec.name}</option>
-                                ))}
-                            </Form.Select>
-                            <Form.Text muted>Deja vacío para aplicar a todas las especialidades.</Form.Text>
+                            <Form.Label>Especialidades</Form.Label>
+                            <div className="specialties-select-container">
+                                <div 
+                                    className="specialties-select-trigger"
+                                    onClick={() => setShowSpecialtiesDropdown(!showSpecialtiesDropdown)}
+                                >
+                                    <div className="selected-specialties">
+                                        {getSelectedSpecialtiesText()}
+                                    </div>
+                                    <div className="specialties-arrow">
+                                        {showSpecialtiesDropdown ? '▲' : '▼'}
+                                    </div>
+                                </div>
+                                
+                                {showSpecialtiesDropdown && (
+                                    <div className="specialties-dropdown">
+                                        <InputGroup className="mb-2">
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Buscar especialidad..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        </InputGroup>
+                                        
+                                        <div className="specialties-list">
+                                            <div 
+                                                className={`specialty-item ${(!newAnnouncement.specialties || newAnnouncement.specialties.length === 0) ? 'selected' : ''}`}
+                                                onClick={() => handleSpecialtyToggle(-1)}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!newAnnouncement.specialties || newAnnouncement.specialties.length === 0}
+                                                    onChange={() => {}}
+                                                />
+                                                <span>Todas las especialidades</span>
+                                            </div>
+                                            
+                                            {filteredSpecialties.map(spec => (
+                                                <div 
+                                                    key={spec.id}
+                                                    className={`specialty-item ${newAnnouncement.specialties?.includes(spec.id) ? 'selected' : ''}`}
+                                                    onClick={() => handleSpecialtyToggle(spec.id)}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={newAnnouncement.specialties?.includes(spec.id)}
+                                                        onChange={() => {}}
+                                                    />
+                                                    <span>{spec.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </Form.Group>
                     </Form>
                 </Modal.Body>
