@@ -30,9 +30,8 @@ const AnnouncementBoard = () => {
     });
     // Estado para paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 5;
+    const [pageSize, setPageSize] = useState(3); // Default value
     const [specialtiesList, setSpecialtiesList] = useState([]);
-    const [visibleAnnouncements, setVisibleAnnouncements] = useState(3); // Default number
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
 
@@ -44,11 +43,11 @@ const AnnouncementBoard = () => {
         const handleResize = () => {
             const height = window.innerHeight;
             if (height < 600) {
-                setVisibleAnnouncements(2);
+                setPageSize(2);
             } else if (height > 900) {
-                setVisibleAnnouncements(5);
+                setPageSize(5);
             } else {
-                setVisibleAnnouncements(3);
+                setPageSize(3);
             }
         };
 
@@ -174,7 +173,7 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
-            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.slice(0, visibleAnnouncements).map(announcement => (
+            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.map(announcement => (
                 <Announcement
                     key={announcement.id}
                     title={announcement.title}
