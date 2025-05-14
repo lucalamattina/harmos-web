@@ -34,6 +34,9 @@ const AnnouncementBoard = () => {
     const [specialtiesList, setSpecialtiesList] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
+    const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
+    const [doctorSpecialty, setDoctorSpecialty] = useState('');
+    const [specialties, setSpecialties] = useState([]);
 
     useEffect(() => {
         fetchAnnouncements();

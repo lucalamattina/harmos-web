@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup } from "react-bootstrap";
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col } from "react-bootstrap";
 import api from '../../api/api';
 
 const Patients = () => {
@@ -9,15 +9,71 @@ const Patients = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showNew, setShowNew] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState(null);
+    const [doctors, setDoctors] = useState([]);
+    const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
+    const [doctorSpecialty, setDoctorSpecialty] = useState('');
+    const [specialties, setSpecialties] = useState([]);
     const [newPatient, setNewPatient] = useState({
         name: "",
         phone: "",
-        status: "unknown"
+        status: "unknown",
+        doctors: [],
+        doctorSpecialties: []
     });
+    const [showAddDoctor, setShowAddDoctor] = useState(false);
+    const [selectedDoctors, setSelectedDoctors] = useState([]);
+    const [selectedSpecialties, setSelectedSpecialties] = useState([]);
 
     useEffect(() => {
         fetchPatients();
     }, []);
+
+    // Cargar doctores y especialidades cuando se abre el modal
+    useEffect(() => {
+        if (showNew) {
+            // Cargar especialidades
+            api.get('/api/specialties')
+                .then(res => setSpecialties(res.data))
+                .catch(() => setSpecialties([]));
+
+            // Cargar doctores iniciales
+            fetchDoctors();
+        }
+    }, [showNew]);
+
+    const fetchDoctors = async () => {
+        try {
+            let url = '/api/users';
+            const params = new URLSearchParams();
+            
+            if (doctorSearchTerm) {
+                params.append('name', doctorSearchTerm);
+            }
+            if (doctorSpecialty) {
+                params.append('specialties', doctorSpecialty);
+            }
+
+            const queryString = params.toString();
+            if (queryString) {
+                url += `?${queryString}`;
+            }
+
+            const response = await api.get(url);
+            setDoctors(response.data.content || []);
+        } catch (err) {
+            console.error('Error al cargar doctores:', err);
+            setDoctors([]);
+        }
+    };
+
+    // Actualizar doctores cuando cambia el término de búsqueda o la especialidad
+    useEffect(() => {
+        if (showNew) {
+            fetchDoctors();
+        }
+    }, [doctorSearchTerm, doctorSpecialty]);
 
     useEffect(() => {
         if (searchTerm.trim() === '') {
@@ -44,7 +100,11 @@ const Patients = () => {
         }
     };
 
-    const handleCloseNew = () => setShowNew(false);
+    const handleCloseNew = () => {
+        setShowNew(false);
+        setDoctorSearchTerm('');
+        setDoctorSpecialty('');
+    };
 
     const handleSave = async () => {
         if (newPatient.name && newPatient.phone) {
@@ -55,7 +115,9 @@ const Patients = () => {
                 setNewPatient({
                     name: "",
                     phone: "",
-                    status: "unknown"
+                    status: "unknown",
+                    doctors: [],
+                    doctorSpecialties: []
                 });
             } catch (err) {
                 console.error('Error al guardar:', err);
@@ -67,6 +129,38 @@ const Patients = () => {
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
     };
+
+    const handlePatientClick = (patient) => {
+        setSelectedPatient(patient);
+        setShowDetails(true);
+    };
+
+    const handleAddDoctors = async () => {
+        if (selectedDoctors.length > 0 && selectedPatient) {
+            try {
+                // Hacer las llamadas API para cada doctor seleccionado
+                const promises = selectedDoctors.map(doctorId => 
+                    api.post(`/api/patients/${selectedPatient.id}/users/${doctorId}`)
+                );
+                
+                await Promise.all(promises);
+                await fetchPatients(); // Actualizar la lista de pacientes
+                setShowAddDoctor(false);
+                setSelectedDoctors([]);
+                setSelectedSpecialties([]);
+            } catch (err) {
+                console.error('Error al agregar doctores:', err);
+                setError('Error al agregar doctores al paciente');
+            }
+        }
+    };
+
+    // Actualizar el useEffect para cargar doctores cuando se abre el modal de detalles
+    useEffect(() => {
+        if (showDetails && selectedPatient) {
+            fetchDoctors();
+        }
+    }, [showDetails, selectedPatient]);
 
     if (loading) return <div>Cargando pacientes...</div>;
     if (error) return <div>Error: {error}</div>;
@@ -90,34 +184,23 @@ const Patients = () => {
             <Table striped bordered hover>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nombre</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredPatients.length > 0 ? (
                         filteredPatients.map(patient => (
-                            <tr key={patient.id}>
-                                <td>{patient.id}</td>
+                            <tr 
+                                key={patient.id}
+                                onClick={() => handlePatientClick(patient)}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <td>{patient.name}</td>
-                                <td>{patient.phone}</td>
-                                <td>{patient.status}</td>
-                                <td>
-                                    <Button variant="info" size="sm" className="me-2">
-                                        Editar
-                                    </Button>
-                                    <Button variant="danger" size="sm">
-                                        Eliminar
-                                    </Button>
-                                </td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="5" className="text-center">
+                            <td className="text-center">
                                 No se encontraron pacientes con ese nombre
                             </td>
                         </tr>
@@ -131,35 +214,267 @@ const Patients = () => {
                 </Button>
             </div>
 
-            <Modal show={showNew} onHide={handleCloseNew}>
+            {/* Modal de Detalles del Paciente */}
+            <Modal show={showDetails} onHide={() => setShowDetails(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Detalles del Paciente</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedPatient && (
+                        <div className="patient-details">
+                            <div className="mb-4">
+                                <h4 className="text-primary mb-3">{selectedPatient.name}</h4>
+                                <div className="d-flex align-items-center mb-2">
+                                    <i className="bi bi-telephone me-2"></i>
+                                    <span>{selectedPatient.phone}</span>
+                                </div>
+                                <div className="d-flex align-items-center mb-2">
+                                    <i className="bi bi-info-circle me-2"></i>
+                                    <span>Estado: {selectedPatient.status}</span>
+                                </div>
+                            </div>
+
+                            <div className="doctors-section">
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 className="mb-0">Doctores Asignados</h5>
+                                    <Button 
+                                        variant="outline-primary" 
+                                        size="sm"
+                                        onClick={() => {
+                                            setShowAddDoctor(true);
+                                            fetchDoctors(); // Asegurarnos de cargar los doctores al abrir el modal
+                                        }}
+                                    >
+                                        <i className="bi bi-plus-circle me-1"></i>
+                                        Agregar Doctor
+                                    </Button>
+                                </div>
+                                {selectedPatient.doctors && selectedPatient.doctors.length > 0 ? (
+                                    <div className="doctors-list">
+                                        {selectedPatient.doctors.map((doctor, index) => (
+                                            <div key={index} className="doctor-item p-2 mb-2 border rounded">
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <span>{typeof doctor === 'object' ? doctor.name : doctor}</span>
+                                                    {selectedPatient.doctorSpecialties && selectedPatient.doctorSpecialties[index] && (
+                                                        <span className="badge bg-info">
+                                                            {selectedPatient.doctorSpecialties[index]}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-muted">
+                                        No hay doctores asignados
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDetails(false)}>
+                        Cerrar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal para Agregar Doctores */}
+            <Modal show={showAddDoctor} onHide={() => setShowAddDoctor(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Agregar Doctores</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Row className="mb-2">
+                            <Col md={6}>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar doctor por nombre..."
+                                        value={doctorSearchTerm}
+                                        onChange={e => setDoctorSearchTerm(e.target.value)}
+                                    />
+                                </InputGroup>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Select
+                                    value={doctorSpecialty}
+                                    onChange={e => setDoctorSpecialty(e.target.value)}
+                                >
+                                    <option value="">Todas las especialidades</option>
+                                    {specialties.map(specialty => (
+                                        <option key={specialty.id} value={specialty.name}>
+                                            {specialty.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Col>
+                        </Row>
+                        <div className="doctors-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            <Table striped bordered hover size="sm">
+                                <thead>
+                                    <tr>
+                                        <th>Seleccionar</th>
+                                        <th>Nombre</th>
+                                        <th>Especialidades</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {doctors.map(doctor => (
+                                        <tr key={doctor.id} 
+                                            className={selectedDoctors.includes(doctor.id) ? 'table-primary' : ''}
+                                            onClick={() => {
+                                                if (selectedDoctors.includes(doctor.id)) {
+                                                    setSelectedDoctors(prev => prev.filter(id => id !== doctor.id));
+                                                    setSelectedSpecialties(prev => prev.filter((_, index) => 
+                                                        selectedDoctors[index] !== doctor.id
+                                                    ));
+                                                } else {
+                                                    setSelectedDoctors(prev => [...prev, doctor.id]);
+                                                    setSelectedSpecialties(prev => [...prev, doctor.specialties?.join(', ') || '']);
+                                                }
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <td>
+                                                <Form.Check
+                                                    type="checkbox"
+                                                    checked={selectedDoctors.includes(doctor.id)}
+                                                    onChange={() => {}}
+                                                />
+                                            </td>
+                                            <td>{doctor.name}</td>
+                                            <td>{doctor.specialties?.join(', ')}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowAddDoctor(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="primary" onClick={handleAddDoctors}>
+                        Agregar Doctores Seleccionados
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showNew} onHide={handleCloseNew} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Crear Paciente</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Nombre</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Nombre completo"
-                                value={newPatient.name}
-                                onChange={e => setNewPatient(prev => ({
-                                    ...prev,
-                                    name: e.target.value
-                                }))}
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Teléfono</Form.Label>
-                            <Form.Control
-                                type="tel"
-                                placeholder="Teléfono"
-                                value={newPatient.phone}
-                                onChange={e => setNewPatient(prev => ({
-                                    ...prev,
-                                    phone: e.target.value
-                                }))}
-                            />
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Nombre</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Nombre completo"
+                                        value={newPatient.name}
+                                        onChange={e => setNewPatient(prev => ({
+                                            ...prev,
+                                            name: e.target.value
+                                        }))}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Teléfono</Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        placeholder="Teléfono"
+                                        value={newPatient.phone}
+                                        onChange={e => setNewPatient(prev => ({
+                                            ...prev,
+                                            phone: e.target.value
+                                        }))}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
+                        <Form.Group>
+                            <Form.Label>Seleccionar Doctor</Form.Label>
+                            <Row className="mb-2">
+                                <Col md={6}>
+                                    <InputGroup>
+                                        <InputGroup.Text>
+                                            <i className="bi bi-search"></i>
+                                        </InputGroup.Text>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Buscar doctor por nombre..."
+                                            value={doctorSearchTerm}
+                                            onChange={e => setDoctorSearchTerm(e.target.value)}
+                                        />
+                                    </InputGroup>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Select
+                                        value={doctorSpecialty}
+                                        onChange={e => setDoctorSpecialty(e.target.value)}
+                                    >
+                                        <option value="">Todas las especialidades</option>
+                                        {specialties.map(specialty => (
+                                            <option key={specialty.id} value={specialty.name}>
+                                                {specialty.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Col>
+                            </Row>
+                            <div className="doctors-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                <Table striped bordered hover size="sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Seleccionar</th>
+                                            <th>Nombre</th>
+                                            <th>Especialidades</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {doctors.map(doctor => (
+                                            <tr key={doctor.id} 
+                                                className={newPatient.doctors.includes(doctor.id) ? 'table-primary' : ''}
+                                                onClick={() => {
+                                                    if (newPatient.doctors.includes(doctor.id)) {
+                                                        setNewPatient(prev => ({
+                                                            ...prev,
+                                                            doctors: prev.doctors.filter((id) => id !== doctor.id)
+                                                        }));
+                                                    } else {
+                                                        setNewPatient(prev => ({
+                                                            ...prev,
+                                                            doctors: [...prev.doctors, doctor.id]
+                                                        }));
+                                                    }
+                                                }}
+                                            >
+                                                <td>
+                                                    <Form.Check
+                                                        type="checkbox"
+                                                        checked={newPatient.doctors.includes(doctor.id)}
+                                                        onChange={() => {}}
+                                                    />
+                                                </td>
+                                                <td>{doctor.name}</td>
+                                                <td>{doctor.specialties?.join(', ')}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            </div>
                         </Form.Group>
                     </Form>
                 </Modal.Body>
