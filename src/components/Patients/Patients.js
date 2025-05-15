@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup, Row, Col } from "react-bootstrap";
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner } from "react-bootstrap";
 import api from '../../api/api';
 
 const Patients = () => {
@@ -61,19 +61,13 @@ const Patients = () => {
             }
 
             const response = await api.get(url);
-            setDoctors(response.data.content || []);
+            const allDoctors = response.data.content || response.data || [];
+            setDoctors(allDoctors);
         } catch (err) {
             console.error('Error al cargar doctores:', err);
             setDoctors([]);
         }
     };
-
-    // Actualizar doctores cuando cambia el término de búsqueda o la especialidad
-    useEffect(() => {
-        if (showNew) {
-            fetchDoctors();
-        }
-    }, [doctorSearchTerm, doctorSpecialty]);
 
     useEffect(() => {
         if (searchTerm.trim() === '') {
@@ -130,9 +124,17 @@ const Patients = () => {
         setSearchTerm(e.target.value);
     };
 
-    const handlePatientClick = (patient) => {
-        setSelectedPatient(patient);
-        setShowDetails(true);
+    const handlePatientClick = async (patient) => {
+        try {
+            // Obtener los detalles completos del paciente
+            const response = await api.get(`/api/patients/${patient.id}`);
+            console.log('Patient details:', response.data); // Debug log
+            setSelectedPatient(response.data);
+            setShowDetails(true);
+        } catch (err) {
+            console.error('Error al cargar detalles del paciente:', err);
+            setError('Error al cargar los detalles del paciente');
+        }
     };
 
     const handleAddDoctors = async () => {
@@ -140,11 +142,18 @@ const Patients = () => {
             try {
                 // Hacer las llamadas API para cada doctor seleccionado
                 const promises = selectedDoctors.map(doctorId => 
-                    api.post(`/api/patients/${selectedPatient.id}/users/${doctorId}`)
+                    api.post(`/api/patients/${selectedPatient.id}/doctors/${doctorId}`)
                 );
                 
                 await Promise.all(promises);
-                await fetchPatients(); // Actualizar la lista de pacientes
+                
+                // Actualizar la lista de pacientes
+                await fetchPatients();
+                
+                // Actualizar los detalles del paciente seleccionado
+                const updatedPatientResponse = await api.get(`/api/patients/${selectedPatient.id}`);
+                setSelectedPatient(updatedPatientResponse.data);
+                
                 setShowAddDoctor(false);
                 setSelectedDoctors([]);
                 setSelectedSpecialties([]);
@@ -162,8 +171,23 @@ const Patients = () => {
         }
     }, [showDetails, selectedPatient]);
 
-    if (loading) return <div>Cargando pacientes...</div>;
-    if (error) return <div>Error: {error}</div>;
+    if (loading) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <div className="text-center">
+                <Spinner animation="border" role="status" variant="primary">
+                    <span className="visually-hidden">Cargando...</span>
+                </Spinner>
+            </div>
+        </Container>
+    );
+    if (error) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <div className="text-center text-danger">
+                <i className="bi bi-exclamation-triangle-fill fs-1"></i>
+                <p className="mt-2">{error}</p>
+            </div>
+        </Container>
+    );
 
     return (
         <Container>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col } from 'react-bootstrap';
+import { Card, Container, Row, Col, Spinner } from 'react-bootstrap';
 import api from '../../api/api';
 
 const Announcement = () => {
@@ -22,8 +22,23 @@ const Announcement = () => {
         fetchAnnouncements();
     }, []);
 
-    if (loading) return <div>Loading announcements...</div>;
-    if (error) return <div>{error}</div>;
+    if (loading) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <div className="text-center">
+                <Spinner animation="border" role="status" variant="primary">
+                    <span className="visually-hidden">Cargando...</span>
+                </Spinner>
+            </div>
+        </Container>
+    );
+    if (error) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <div className="text-center text-danger">
+                <i className="bi bi-exclamation-triangle-fill fs-1"></i>
+                <p className="mt-2">{error}</p>
+            </div>
+        </Container>
+    );
 
     return (
         <Container className="mt-4">
