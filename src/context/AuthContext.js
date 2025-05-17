@@ -4,28 +4,40 @@ import { useNavigate } from 'react-router-dom';
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false); // Estado inicial: no autenticado
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const navigate = useNavigate();
 
-    // Aquí podrías tener lógica para verificar si el usuario ya está logeado
-    // al cargar la aplicación (por ejemplo, revisando un token en localStorage).
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
+        // Check for token on mount
+        const token = localStorage.getItem('token');
         if (token) {
             setIsAuthenticated(true);
         }
-    }, []);
+
+        // Listen for logout event
+        const handleLogout = () => {
+            setIsAuthenticated(false);
+            navigate('/login', { replace: true });
+        };
+
+        window.addEventListener('auth-logout', handleLogout);
+
+        return () => {
+            window.removeEventListener('auth-logout', handleLogout);
+        };
+    }, [navigate]);
 
     const login = (token) => {
-        localStorage.setItem('authToken', token);
+        localStorage.setItem('token', token);
         setIsAuthenticated(true);
-        // Redirección se maneja en el componente de login
+        navigate('/', { replace: true });
     };
 
     const logout = () => {
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         setIsAuthenticated(false);
-        navigate('/login'); // Redirigir a la página de login después del logout
+        navigate('/login', { replace: true });
     };
 
     return (
