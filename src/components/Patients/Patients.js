@@ -25,10 +25,16 @@ const Patients = () => {
     const [showAddDoctor, setShowAddDoctor] = useState(false);
     const [selectedDoctors, setSelectedDoctors] = useState([]);
     const [selectedSpecialties, setSelectedSpecialties] = useState([]);
+    
+    // Estados para paginación
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
 
     useEffect(() => {
         fetchPatients();
-    }, []);
+    }, [currentPage, pageSize]);
 
     // Cargar doctores y especialidades cuando se abre el modal
     useEffect(() => {
@@ -82,10 +88,12 @@ const Patients = () => {
 
     const fetchPatients = async () => {
         try {
-            const response = await api.get('/api/patients');
+            const response = await api.get(`/api/patients?page=${currentPage}&size=${pageSize}`);
             const patientsData = response.data.content || [];
             setPatients(patientsData);
             setFilteredPatients(patientsData);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
             setLoading(false);
         } catch (err) {
             console.error('Error detallado:', err);
@@ -231,6 +239,29 @@ const Patients = () => {
                     )}
                 </tbody>
             </Table>
+
+            {/* Controles de paginación */}
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center align-items-center my-4 gap-2">
+                    <Button 
+                        variant="outline-secondary" 
+                        onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                        disabled={currentPage === 0}
+                    >
+                        Anterior
+                    </Button>
+                    <span className="mx-2">
+                        Página {currentPage + 1} de {totalPages}
+                    </span>
+                    <Button 
+                        variant="outline-secondary" 
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                        disabled={currentPage === totalPages - 1}
+                    >
+                        Siguiente
+                    </Button>
+                </div>
+            )}
 
             <div className="d-grid gap-2 mt-4">
                 <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
