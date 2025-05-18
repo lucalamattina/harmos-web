@@ -22,46 +22,48 @@ const App = () => {
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>
                     
                     {/* Protected routes with navigation */}
-                    <Route path="/" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <AnnouncementBoard/>
-                            </div>
-                            <Footer/>
-                        </>
-                    }/>
-                    <Route path="/schedule" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <Scheduler/>
-                            </div>
-                            <Footer/>
-                        </>
-                    }/>
-                    <Route path="/patients" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <Patients/>
-                            </div>
-                            <Footer/>
-                        </>
-                    }/>
-                    <Route path="*" element={
-                        <>
-                            <TopNavbar/>
-                            <SideNavbar/>
-                            <div className="main-content">
-                                <div>Página no encontrada</div>
-                            </div>
-                            <Footer/>
-                        </>
-                    }/>
+                    <Route element={<PrivateRoute />}>
+                        <Route path="/" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <AnnouncementBoard/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/schedule" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <Scheduler/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/patients" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <Patients/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="*" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <div>Página no encontrada</div>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                    </Route>
                 </Routes>
             </div>
         </AuthProvider>
