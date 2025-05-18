@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { Spinner } from "react-bootstrap";
 import ReactDOM from "react-dom";
-import { HashRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
@@ -10,7 +10,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
 ReactDOM.render(
-    <HashRouter>
+    <BrowserRouter>
         <Suspense
             fallback={
                 <Spinner
@@ -28,7 +28,7 @@ ReactDOM.render(
         >
             <App />
         </Suspense>,
-    </HashRouter>,
+    </BrowserRouter>,
     document.getElementById("root")
 );
 
