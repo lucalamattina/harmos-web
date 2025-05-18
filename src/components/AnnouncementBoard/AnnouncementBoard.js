@@ -4,18 +4,50 @@ import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react
 import api from '../../api/api';
 
 // Componente interno para un anuncio individual
-const Announcement = ({ title, content, date, author }) => (
-    <Card className="mb-3">
-        <Card.Body>
-            <Card.Title>{title}</Card.Title>
-            <Card.Text>{content}</Card.Text>
-            <Card.Footer className="text-muted">
-                Fecha: {new Date(date).toLocaleDateString()}
-                {author && ` - Autor: ${author}`}
-            </Card.Footer>
-        </Card.Body>
-    </Card>
-);
+const Announcement = ({ title, content, date, authorId, specialties }) => {
+    const [authorName, setAuthorName] = useState('Cargando...');
+
+    useEffect(() => {
+        const fetchAuthor = async () => {
+            try {
+                const response = await api.get(`/api/users/${authorId}`);
+                setAuthorName(response.data.name);
+            } catch (err) {
+                console.error('Error fetching author:', err);
+                setAuthorName('Autor desconocido');
+            }
+        };
+
+        fetchAuthor();
+    }, [authorId]);
+
+    const formatSpecialties = (specialties) => {
+        if (!specialties || specialties.length === 0) return 'Todas las especialidades';
+        return specialties.map(spec => typeof spec === 'object' ? spec.name : spec).join(', ');
+    };
+
+    return (
+        <Card className="mb-3">
+            <Card.Body>
+                <Card.Title>{title}</Card.Title>
+                <Card.Text>{content}</Card.Text>
+                <Card.Footer className="text-muted">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>{new Date(date).toLocaleDateString()}</small>
+                            <small className="ms-2">Autor: {authorName}</small>
+                        </div>
+                        <div>
+                            <small>
+                                Especialidades: {formatSpecialties(specialties)}
+                            </small>
+                        </div>
+                    </div>
+                </Card.Footer>
+            </Card.Body>
+        </Card>
+    );
+};
 
 const AnnouncementBoard = () => {
     const [announcements, setAnnouncements] = useState([]);
@@ -197,7 +229,8 @@ const AnnouncementBoard = () => {
                     title={announcement.title}
                     content={announcement.content}
                     date={announcement.date}
-                    author={announcement.createdByUserId}
+                    authorId={announcement.createdByUserId}
+                    specialties={announcement.specialties}
                 />
             ))}
 

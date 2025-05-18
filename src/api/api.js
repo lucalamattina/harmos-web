@@ -13,64 +13,23 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Add response interceptor for handling auth errors and token refresh
+// Add response interceptor for handling auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-
-    // If error is 401 and we haven't tried to refresh token yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        // Try to refresh token if refresh token exists
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${api.defaults.baseURL}/api/refresh-token`, {
-            refreshToken
-          });
-          
-          const { token, refreshToken: newRefreshToken } = response.data;
-          
-          // Update tokens in localStorage
-          localStorage.setItem('token', token);
-          localStorage.setItem('refreshToken', newRefreshToken);
-          
-          // Update the failed request's authorization header
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          
-          // Retry the original request
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        console.error('Error refreshing token:', refreshError);
-      }
-      
-      // If we get here, either there was no refresh token or the refresh failed
-      handleLogout();
-      return Promise.reject(error);
-    }
-
-    // Handle other errors
-    if (error.response?.status === 403) {
-      // Handle forbidden access
-      console.error('Access forbidden');
-      handleLogout();
-    }
-
-    // If it's a 401 and we've already tried to refresh, or any other error
+    // Si el error es 401, limpiar el token y redirigir al login
     if (error.response?.status === 401) {
-      handleLogout();
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      window.dispatchEvent(new Event('auth-logout'));
     }
-
     return Promise.reject(error);
   }
 );
@@ -79,23 +38,22 @@ api.interceptors.response.use(
 export const loginUser = async (email, password) => {
   try {
     const response = await api.post('/api/authenticate', { email, password });
-    const { token, refreshToken } = response.data;
+    const { token } = response.data;
     
-    // Store tokens
+    // Store token
     localStorage.setItem('token', token);
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
-    }
     
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    throw error;
   }
 };
 
 // Logout function
 export const logoutUser = () => {
-  handleLogout();
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  window.dispatchEvent(new Event('auth-logout'));
 };
 
 // Password reset request function
@@ -110,14 +68,6 @@ export const requestPasswordReset = async (email) => {
   } catch (error) {
     throw handleApiError(error);
   }
-};
-
-// Helper function to handle logout
-const handleLogout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
-  // Dispatch a custom event that the AuthContext will listen to
-  window.dispatchEvent(new Event('auth-logout'));
 };
 
 // Helper function to handle API errors
