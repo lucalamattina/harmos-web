@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner } from "react-bootstrap";
 import api from '../../api/api';
 
@@ -49,6 +49,13 @@ const Patients = () => {
         }
     }, [showNew]);
 
+    // Actualizar doctores cuando cambie el término de búsqueda o la especialidad
+    useEffect(() => {
+        if (showNew || showDetails) {
+            fetchDoctors();
+        }
+    }, [doctorSearchTerm, doctorSpecialty, showNew, showDetails]);
+
     const fetchDoctors = async () => {
         try {
             let url = '/api/users';
@@ -75,16 +82,34 @@ const Patients = () => {
         }
     };
 
+    // Función debounce para la búsqueda
+    const debounce = (func, wait) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    };
+
+    // Función de búsqueda con debounce
+    const debouncedSearch = useCallback(
+        debounce((term) => {
+            if (term.trim() === '') {
+                setFilteredPatients(patients);
+            } else {
+                const filtered = patients.filter(patient => 
+                    patient.name.toLowerCase().includes(term.toLowerCase())
+                );
+                setFilteredPatients(filtered);
+            }
+        }, 300),
+        [patients]
+    );
+
+    // Actualizar el useEffect para usar el debounce
     useEffect(() => {
-        if (searchTerm.trim() === '') {
-            setFilteredPatients(patients);
-        } else {
-            const filtered = patients.filter(patient => 
-                patient.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredPatients(filtered);
-        }
-    }, [searchTerm, patients]);
+        debouncedSearch(searchTerm);
+    }, [searchTerm, debouncedSearch]);
 
     const fetchPatients = async () => {
         try {
@@ -178,6 +203,15 @@ const Patients = () => {
             fetchDoctors();
         }
     }, [showDetails, selectedPatient]);
+
+    // Actualizar pacientes filtrados cuando cambie el término de búsqueda o la lista de pacientes
+    useEffect(() => {
+        const searchTermLower = searchTerm.toLowerCase().trim();
+        const filtered = patients.filter(patient => 
+            patient.name.toLowerCase().includes(searchTermLower)
+        );
+        setFilteredPatients(filtered);
+    }, [searchTerm, patients]);
 
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
