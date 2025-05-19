@@ -124,8 +124,7 @@ const AnnouncementBoard = () => {
             }).join(''));
 
             const payload = JSON.parse(jsonPayload);
-            console.log('Token payload:', payload); // Log del payload completo
-            return payload.sub; // 'sub' ahora contiene el ID del usuario
+            return payload.sub;
         } catch (error) {
             console.error('Error decoding JWT token:', error);
             return null;
@@ -135,18 +134,13 @@ const AnnouncementBoard = () => {
     const fetchUserSpecialties = async () => {
         try {
             const userId = getTokenUserId();
-            console.log('Fetching specialties for user ID:', userId);
             if (!userId) {
                 throw new Error('No se pudo obtener el ID del usuario');
             }
 
             const response = await api.get(`/api/users/${userId}`);
-            console.log('User data response:', response.data);
             const userSpecialties = response.data.specialties || [];
-            console.log('User specialties before mapping:', userSpecialties);
-            // No necesitamos hacer mapping ya que las especialidades ya son strings
             setUserSpecialties(userSpecialties);
-            console.log('User specialties after setting state:', userSpecialties);
         } catch (err) {
             console.error('Error fetching user specialties:', err);
             setError('Error al cargar las especialidades del usuario');
@@ -156,23 +150,15 @@ const AnnouncementBoard = () => {
 
     const fetchAnnouncements = async () => {
         try {
-            console.log('userSpecialties state value:', userSpecialties);
-            console.log('userSpecialties type:', typeof userSpecialties);
-            console.log('userSpecialties is array:', Array.isArray(userSpecialties));
-            console.log('userSpecialties length:', userSpecialties?.length);
-
             let url = `/api/announcements?page=${currentPage - 1}&size=${pageSize}`;
             
-            // Agregamos todas las especialidades
             if (Array.isArray(userSpecialties) && userSpecialties.length > 0) {
                 userSpecialties.forEach((specialty, index) => {
                     url += `&specialties=${specialty}`;
                 });
             }
 
-            console.log('Request URL:', url);
             const response = await api.get(url);
-            console.log('Announcements response:', response.data);
             setAnnouncements(response.data.content || []);
             setTotalPages(response.data.totalPages || 1);
             setLoading(false);
@@ -193,7 +179,6 @@ const AnnouncementBoard = () => {
                 const pad = n => n.toString().padStart(2, '0');
                 const formattedDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-                // Mapear los IDs seleccionados a nombres
                 let specialtiesNames = [];
                 if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
                     specialtiesNames = specialtiesList

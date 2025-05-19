@@ -38,7 +38,7 @@ const Patients = () => {
 
     // Cargar doctores y especialidades cuando se abre el modal
     useEffect(() => {
-        if (showNew) {
+        if (showNew || showDetails) {
             // Cargar especialidades
             api.get('/api/specialties')
                 .then(res => setSpecialties(res.data))
@@ -47,7 +47,7 @@ const Patients = () => {
             // Cargar doctores iniciales
             fetchDoctors();
         }
-    }, [showNew]);
+    }, [showNew, showDetails]);
 
     // Actualizar doctores cuando cambie el término de búsqueda o la especialidad
     useEffect(() => {
@@ -157,15 +157,13 @@ const Patients = () => {
         setSearchTerm(e.target.value);
     };
 
-    const handlePatientClick = async (patient) => {
+    const fetchPatientDetails = async (patientId) => {
         try {
-            // Obtener los detalles completos del paciente
-            const response = await api.get(`/api/patients/${patient.id}`);
-            console.log('Patient details:', response.data); // Debug log
+            const response = await api.get(`/api/patients/${patientId}`);
             setSelectedPatient(response.data);
             setShowDetails(true);
         } catch (err) {
-            console.error('Error al cargar detalles del paciente:', err);
+            console.error('Error fetching patient details:', err);
             setError('Error al cargar los detalles del paciente');
         }
     };
@@ -258,7 +256,7 @@ const Patients = () => {
                         filteredPatients.map(patient => (
                             <tr 
                                 key={patient.id}
-                                onClick={() => handlePatientClick(patient)}
+                                onClick={() => fetchPatientDetails(patient.id)}
                                 style={{ cursor: 'pointer' }}
                             >
                                 <td>{patient.name}</td>
