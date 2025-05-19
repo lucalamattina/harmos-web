@@ -1,5 +1,5 @@
 import "./AnnouncementBoard.css";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react-bootstrap";
 import api from '../../api/api';
 
@@ -16,7 +16,6 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
                 const response = await api.get(`/api/users/${authorId}`);
                 setAuthorName(response.data.name);
             } catch (err) {
-                console.error('Error fetching author:', err);
                 setAuthorName('Autor desconocido');
             }
         };
@@ -111,20 +110,68 @@ const AnnouncementBoard = () => {
     const [specialtiesList, setSpecialtiesList] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
-    const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
-    const [doctorSpecialty, setDoctorSpecialty] = useState('');
-    const [specialties, setSpecialties] = useState([]);
     const [userSpecialties, setUserSpecialties] = useState([]);
+
+    const getTokenUserId = useCallback(() => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return null;
+
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload).sub;
+        } catch (error) {
+            return null;
+        }
+    }, []);
+
+    const fetchUserSpecialties = useCallback(async () => {
+        try {
+            const userId = getTokenUserId();
+            if (!userId) {
+                setUserSpecialties([]);
+                return;
+            }
+
+            const response = await api.get(`/api/users/${userId}`);
+            setUserSpecialties(response.data.specialties || []);
+        } catch (err) {
+            setUserSpecialties([]);
+        }
+    }, [getTokenUserId]);
+
+    const fetchAnnouncements = useCallback(async () => {
+        try {
+            let url = `/api/announcements?page=${currentPage - 1}&size=${pageSize}`;
+            
+            if (Array.isArray(userSpecialties) && userSpecialties.length > 0) {
+                const specialtiesParam = userSpecialties.join(',');
+                url += `&specialties=${encodeURIComponent(specialtiesParam)}`;
+            }
+
+            const response = await api.get(url);
+            setAnnouncements(response.data.content || []);
+            setTotalPages(response.data.totalPages || 1);
+            setLoading(false);
+        } catch (err) {
+            setError('Error al cargar los anuncios');
+            setLoading(false);
+        }
+    }, [currentPage, pageSize, userSpecialties]);
 
     useEffect(() => {
         fetchUserSpecialties();
-    }, []);
+    }, [fetchUserSpecialties]);
 
     useEffect(() => {
         if (userSpecialties.length > 0) {
             fetchAnnouncements();
         }
-    }, [userSpecialties, currentPage, pageSize]);
+    }, [userSpecialties, fetchAnnouncements]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -157,62 +204,6 @@ const AnnouncementBoard = () => {
         }
     }, [showNew]);
 
-    const getTokenUserId = () => {
-        const token = localStorage.getItem('token');
-        if (!token) return null;
-        
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const payload = JSON.parse(jsonPayload);
-            return payload.sub;
-        } catch (error) {
-            console.error('Error decoding JWT token:', error);
-            return null;
-        }
-    };
-
-    const fetchUserSpecialties = async () => {
-        try {
-            const userId = getTokenUserId();
-            if (!userId) {
-                throw new Error('No se pudo obtener el ID del usuario');
-            }
-
-            const response = await api.get(`/api/users/${userId}`);
-            const userSpecialties = response.data.specialties || [];
-            setUserSpecialties(userSpecialties);
-        } catch (err) {
-            console.error('Error fetching user specialties:', err);
-            setError('Error al cargar las especialidades del usuario');
-            setLoading(false);
-        }
-    };
-
-    const fetchAnnouncements = async () => {
-        try {
-            let url = `/api/announcements?page=${currentPage - 1}&size=${pageSize}`;
-            
-            if (Array.isArray(userSpecialties) && userSpecialties.length > 0) {
-                const specialtiesParam = userSpecialties.join(',');
-                url += `&specialties=${encodeURIComponent(specialtiesParam)}`;
-            }
-
-            const response = await api.get(url);
-            setAnnouncements(response.data.content || []);
-            setTotalPages(response.data.totalPages || 1);
-            setLoading(false);
-        } catch (err) {
-            console.error('Error detallado:', err);
-            setError('Error al cargar los anuncios');
-            setLoading(false);
-        }
-    };
-
     const handleCloseNew = () => setShowNew(false);
 
     const handleSave = async () => {
@@ -242,32 +233,11 @@ const AnnouncementBoard = () => {
                     specialties: specialtiesNames
                 };
 
-                // Log del payload antes de enviarlo
-                console.log('Payload a enviar:', {
-                    ...payload,
-                    titleLength: payload.title.length,
-                    contentLength: payload.content.length,
-                    specialtiesCount: payload.specialties.length
-                });
-
-                const response = await api.post('/api/announcements', payload);
-                console.log('Respuesta exitosa:', response.data);
-                
+                await api.post('/api/announcements', payload);
                 await fetchAnnouncements();
                 setShowNew(false);
                 setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined });
             } catch (err) {
-                console.error('Error completo:', err);
-                console.error('Respuesta del servidor:', err.response?.data);
-                console.error('Estado del error:', err.response?.status);
-                console.error('Headers:', err.response?.headers);
-                console.error('Payload que causó el error:', {
-                    title: newAnnouncement.title,
-                    content: newAnnouncement.content,
-                    titleLength: newAnnouncement.title.length,
-                    contentLength: newAnnouncement.content.length
-                });
-                
                 let errorMessage = 'Error al guardar el anuncio';
                 if (err.response?.data?.message) {
                     errorMessage += `: ${err.response.data.message}`;

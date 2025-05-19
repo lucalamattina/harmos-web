@@ -39,7 +39,6 @@ const Patients = () => {
             setTotalPages(response.data.totalPages);
             setLoading(false);
         } catch (err) {
-            console.error('Error detallado:', err);
             setError('Error al cargar los pacientes');
             setLoading(false);
         }
@@ -66,7 +65,6 @@ const Patients = () => {
             const allDoctors = response.data.content || response.data || [];
             setDoctors(allDoctors);
         } catch (err) {
-            console.error('Error al cargar doctores:', err);
             setDoctors([]);
         }
     }, [doctorSearchTerm, doctorSpecialty]);
@@ -138,7 +136,6 @@ const Patients = () => {
                     doctorSpecialties: []
                 });
             } catch (err) {
-                console.error('Error al guardar:', err);
                 setError('Error al guardar el paciente');
             }
         }
@@ -154,7 +151,6 @@ const Patients = () => {
             setSelectedPatient(response.data);
             setShowDetails(true);
         } catch (err) {
-            console.error('Error fetching patient details:', err);
             setError('Error al cargar los detalles del paciente');
         }
     };
@@ -162,24 +158,19 @@ const Patients = () => {
     const handleAddDoctors = async () => {
         if (selectedDoctors.length > 0 && selectedPatient) {
             try {
-                // Hacer las llamadas API para cada doctor seleccionado
                 const promises = selectedDoctors.map(doctorId => 
                     api.post(`/api/patients/${selectedPatient.id}/doctors/${doctorId}`)
                 );
                 
                 await Promise.all(promises);
-                
-                // Actualizar la lista de pacientes
                 await fetchPatients();
                 
-                // Actualizar los detalles del paciente seleccionado
                 const updatedPatientResponse = await api.get(`/api/patients/${selectedPatient.id}`);
                 setSelectedPatient(updatedPatientResponse.data);
                 
                 setShowAddDoctor(false);
                 setSelectedDoctors([]);
             } catch (err) {
-                console.error('Error al agregar doctores:', err);
                 setError('Error al agregar doctores al paciente');
             }
         }

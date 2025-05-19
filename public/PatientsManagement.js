@@ -25,7 +25,6 @@ const Patients = () => {
             setPatients(response.data.content || []);
             setLoading(false);
         } catch (err) {
-            console.error('Error detallado:', err);
             setError('Error al cargar los pacientes');
             setLoading(false);
         }
@@ -47,7 +46,6 @@ const Patients = () => {
                     phoneNumber: ""
                 });
             } catch (err) {
-                console.error('Error al guardar:', err);
                 setError('Error al guardar el paciente');
             }
         }

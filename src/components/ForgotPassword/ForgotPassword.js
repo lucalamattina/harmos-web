@@ -20,8 +20,8 @@ const ForgotPassword = () => {
             setMessage('Se ha enviado un correo electrónico con instrucciones para restablecer tu contraseña. Por favor, revisa tu bandeja de entrada.');
             setEmail('');
         } catch (err) {
-            console.error('Error sending email:', err);
-            setError('Error al enviar el correo electrónico. Por favor, intenta nuevamente o contacta a un administrador.');
+            setError('Error al enviar el correo. Por favor, verifica tu dirección de correo electrónico.');
+            setMessage(null);
         } finally {
             setIsLoading(false);
         }
