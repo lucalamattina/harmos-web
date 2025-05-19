@@ -24,39 +24,28 @@ const Patients = () => {
     });
     const [showAddDoctor, setShowAddDoctor] = useState(false);
     const [selectedDoctors, setSelectedDoctors] = useState([]);
-    const [selectedSpecialties, setSelectedSpecialties] = useState([]);
     
     // Estados para paginación
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
-    const [totalElements, setTotalElements] = useState(0);
 
-    useEffect(() => {
-        fetchPatients();
+    const fetchPatients = useCallback(async () => {
+        try {
+            const response = await api.get(`/api/patients?page=${currentPage}&size=${pageSize}`);
+            const patientsData = response.data.content || [];
+            setPatients(patientsData);
+            setFilteredPatients(patientsData);
+            setTotalPages(response.data.totalPages);
+            setLoading(false);
+        } catch (err) {
+            console.error('Error detallado:', err);
+            setError('Error al cargar los pacientes');
+            setLoading(false);
+        }
     }, [currentPage, pageSize]);
 
-    // Cargar doctores y especialidades cuando se abre el modal
-    useEffect(() => {
-        if (showNew || showDetails) {
-            // Cargar especialidades
-            api.get('/api/specialties')
-                .then(res => setSpecialties(res.data))
-                .catch(() => setSpecialties([]));
-
-            // Cargar doctores iniciales
-            fetchDoctors();
-        }
-    }, [showNew, showDetails]);
-
-    // Actualizar doctores cuando cambie el término de búsqueda o la especialidad
-    useEffect(() => {
-        if (showNew || showDetails) {
-            fetchDoctors();
-        }
-    }, [doctorSearchTerm, doctorSpecialty, showNew, showDetails]);
-
-    const fetchDoctors = async () => {
+    const fetchDoctors = useCallback(async () => {
         try {
             let url = '/api/users';
             const params = new URLSearchParams();
@@ -80,20 +69,35 @@ const Patients = () => {
             console.error('Error al cargar doctores:', err);
             setDoctors([]);
         }
-    };
+    }, [doctorSearchTerm, doctorSpecialty]);
 
-    // Función debounce para la búsqueda
-    const debounce = (func, wait) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), wait);
-        };
-    };
+    useEffect(() => {
+        fetchPatients();
+    }, [fetchPatients]);
+
+    // Cargar doctores y especialidades cuando se abre el modal
+    useEffect(() => {
+        if (showNew || showDetails) {
+            // Cargar especialidades
+            api.get('/api/specialties')
+                .then(res => setSpecialties(res.data))
+                .catch(() => setSpecialties([]));
+
+            // Cargar doctores iniciales
+            fetchDoctors();
+        }
+    }, [showNew, showDetails, fetchDoctors]);
+
+    // Actualizar doctores cuando cambie el término de búsqueda o la especialidad
+    useEffect(() => {
+        if (showNew || showDetails) {
+            fetchDoctors();
+        }
+    }, [fetchDoctors, showNew, showDetails]);
 
     // Función de búsqueda con debounce
     const debouncedSearch = useCallback(
-        debounce((term) => {
+        (term) => {
             if (term.trim() === '') {
                 setFilteredPatients(patients);
             } else {
@@ -102,30 +106,17 @@ const Patients = () => {
                 );
                 setFilteredPatients(filtered);
             }
-        }, 300),
+        },
         [patients]
     );
 
     // Actualizar el useEffect para usar el debounce
     useEffect(() => {
-        debouncedSearch(searchTerm);
+        const timeoutId = setTimeout(() => {
+            debouncedSearch(searchTerm);
+        }, 300);
+        return () => clearTimeout(timeoutId);
     }, [searchTerm, debouncedSearch]);
-
-    const fetchPatients = async () => {
-        try {
-            const response = await api.get(`/api/patients?page=${currentPage}&size=${pageSize}`);
-            const patientsData = response.data.content || [];
-            setPatients(patientsData);
-            setFilteredPatients(patientsData);
-            setTotalPages(response.data.totalPages);
-            setTotalElements(response.data.totalElements);
-            setLoading(false);
-        } catch (err) {
-            console.error('Error detallado:', err);
-            setError('Error al cargar los pacientes');
-            setLoading(false);
-        }
-    };
 
     const handleCloseNew = () => {
         setShowNew(false);
@@ -187,29 +178,12 @@ const Patients = () => {
                 
                 setShowAddDoctor(false);
                 setSelectedDoctors([]);
-                setSelectedSpecialties([]);
             } catch (err) {
                 console.error('Error al agregar doctores:', err);
                 setError('Error al agregar doctores al paciente');
             }
         }
     };
-
-    // Actualizar el useEffect para cargar doctores cuando se abre el modal de detalles
-    useEffect(() => {
-        if (showDetails && selectedPatient) {
-            fetchDoctors();
-        }
-    }, [showDetails, selectedPatient]);
-
-    // Actualizar pacientes filtrados cuando cambie el término de búsqueda o la lista de pacientes
-    useEffect(() => {
-        const searchTermLower = searchTerm.toLowerCase().trim();
-        const filtered = patients.filter(patient => 
-            patient.name.toLowerCase().includes(searchTermLower)
-        );
-        setFilteredPatients(filtered);
-    }, [searchTerm, patients]);
 
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
@@ -249,22 +223,56 @@ const Patients = () => {
                 <thead>
                     <tr>
                         <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredPatients.length > 0 ? (
                         filteredPatients.map(patient => (
-                            <tr 
-                                key={patient.id}
-                                onClick={() => fetchPatientDetails(patient.id)}
-                                style={{ cursor: 'pointer' }}
-                            >
+                            <tr key={patient.id}>
                                 <td>{patient.name}</td>
+                                <td>
+                                    <div className="d-flex align-items-center">
+                                        <i className="bi bi-telephone me-2"></i>
+                                        {patient.phone}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span className={`badge bg-${patient.status === 'active' ? 'success' : patient.status === 'inactive' ? 'danger' : 'secondary'}`}>
+                                        {patient.status === 'active' ? 'Activo' : 
+                                         patient.status === 'inactive' ? 'Inactivo' : 'Desconocido'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="d-flex gap-2">
+                                        <Button 
+                                            variant="outline-primary" 
+                                            size="sm"
+                                            onClick={() => fetchPatientDetails(patient.id)}
+                                        >
+                                            <i className="bi bi-eye me-1"></i>
+                                            Ver
+                                        </Button>
+                                        <Button 
+                                            variant="outline-danger" 
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // TODO: Implementar eliminación
+                                            }}
+                                        >
+                                            <i className="bi bi-trash me-1"></i>
+                                            Eliminar
+                                        </Button>
+                                    </div>
+                                </td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td className="text-center">
+                            <td colSpan="4" className="text-center">
                                 No se encontraron pacientes con ese nombre
                             </td>
                         </tr>
@@ -282,9 +290,52 @@ const Patients = () => {
                     >
                         Anterior
                     </Button>
-                    <span className="mx-2">
-                        Página {currentPage + 1} de {totalPages}
-                    </span>
+                    
+                    {/* Primera página */}
+                    <Button
+                        variant={currentPage === 0 ? 'primary' : 'outline-primary'}
+                        onClick={() => setCurrentPage(0)}
+                    >
+                        1
+                    </Button>
+
+                    {/* Puntos suspensivos iniciales si es necesario */}
+                    {currentPage > 2 && (
+                        <span className="mx-2">...</span>
+                    )}
+
+                    {/* Páginas alrededor de la actual */}
+                    {Array.from({ length: totalPages }, (_, i) => {
+                        if (i === 0 || i === totalPages - 1) return null; // Excluir primera y última página
+                        if (Math.abs(currentPage - i) <= 1) { // Mostrar solo páginas adyacentes
+                            return (
+                                <Button
+                                    key={i}
+                                    variant={currentPage === i ? 'primary' : 'outline-primary'}
+                                    onClick={() => setCurrentPage(i)}
+                                >
+                                    {i + 1}
+                                </Button>
+                            );
+                        }
+                        return null;
+                    })}
+
+                    {/* Puntos suspensivos finales si es necesario */}
+                    {currentPage < totalPages - 3 && (
+                        <span className="mx-2">...</span>
+                    )}
+
+                    {/* Última página */}
+                    {totalPages > 1 && (
+                        <Button
+                            variant={currentPage === totalPages - 1 ? 'primary' : 'outline-primary'}
+                            onClick={() => setCurrentPage(totalPages - 1)}
+                        >
+                            {totalPages}
+                        </Button>
+                    )}
+
                     <Button 
                         variant="outline-secondary" 
                         onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
@@ -418,12 +469,8 @@ const Patients = () => {
                                             onClick={() => {
                                                 if (selectedDoctors.includes(doctor.id)) {
                                                     setSelectedDoctors(prev => prev.filter(id => id !== doctor.id));
-                                                    setSelectedSpecialties(prev => prev.filter((_, index) => 
-                                                        selectedDoctors[index] !== doctor.id
-                                                    ));
                                                 } else {
                                                     setSelectedDoctors(prev => [...prev, doctor.id]);
-                                                    setSelectedSpecialties(prev => [...prev, doctor.specialties?.join(', ') || '']);
                                                 }
                                             }}
                                             style={{ cursor: 'pointer' }}
