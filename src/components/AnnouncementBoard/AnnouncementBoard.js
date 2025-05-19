@@ -6,6 +6,8 @@ import api from '../../api/api';
 // Componente interno para un anuncio individual
 const Announcement = ({ title, content, date, authorId, specialties }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
+    const MAX_TITLE_LENGTH = 50;
+    const MAX_CONTENT_LENGTH = 150;
 
     useEffect(() => {
         const fetchAuthor = async () => {
@@ -21,6 +23,11 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
         fetchAuthor();
     }, [authorId]);
 
+    const truncateText = (text, maxLength) => {
+        if (!text || text.length <= maxLength) return text;
+        return text.slice(0, maxLength) + '...';
+    };
+
     const formatSpecialties = (specialties) => {
         if (!specialties || specialties.length === 0) return 'Todas las especialidades';
         return specialties.map(spec => typeof spec === 'object' ? spec.name : spec).join(', ');
@@ -29,8 +36,8 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
     return (
         <Card className="mb-3">
             <Card.Body>
-                <Card.Title>{title}</Card.Title>
-                <Card.Text>{content}</Card.Text>
+                <Card.Title>{truncateText(title, MAX_TITLE_LENGTH)}</Card.Title>
+                <Card.Text>{truncateText(content, MAX_CONTENT_LENGTH)}</Card.Text>
                 <Card.Footer className="text-muted">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
@@ -153,9 +160,8 @@ const AnnouncementBoard = () => {
             let url = `/api/announcements?page=${currentPage - 1}&size=${pageSize}`;
             
             if (Array.isArray(userSpecialties) && userSpecialties.length > 0) {
-                userSpecialties.forEach((specialty, index) => {
-                    url += `&specialties=${specialty}`;
-                });
+                const specialtiesParam = userSpecialties.join(',');
+                url += `&specialties=${encodeURIComponent(specialtiesParam)}`;
             }
 
             const response = await api.get(url);
@@ -174,7 +180,11 @@ const AnnouncementBoard = () => {
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
             try {
-                const createdByUserId = 2;
+                const createdByUserId = getTokenUserId();
+                if (!createdByUserId) {
+                    throw new Error('No se pudo obtener el ID del usuario');
+                }
+
                 const now = new Date();
                 const pad = n => n.toString().padStart(2, '0');
                 const formattedDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
@@ -194,13 +204,41 @@ const AnnouncementBoard = () => {
                     specialties: specialtiesNames
                 };
 
-                await api.post('/api/announcements', payload);
+                // Log del payload antes de enviarlo
+                console.log('Payload a enviar:', {
+                    ...payload,
+                    titleLength: payload.title.length,
+                    contentLength: payload.content.length,
+                    specialtiesCount: payload.specialties.length
+                });
+
+                const response = await api.post('/api/announcements', payload);
+                console.log('Respuesta exitosa:', response.data);
+                
                 await fetchAnnouncements();
                 setShowNew(false);
                 setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined });
             } catch (err) {
-                console.error('Error al guardar:', err);
-                setError('Error al guardar el anuncio');
+                console.error('Error completo:', err);
+                console.error('Respuesta del servidor:', err.response?.data);
+                console.error('Estado del error:', err.response?.status);
+                console.error('Headers:', err.response?.headers);
+                console.error('Payload que causó el error:', {
+                    title: newAnnouncement.title,
+                    content: newAnnouncement.content,
+                    titleLength: newAnnouncement.title.length,
+                    contentLength: newAnnouncement.content.length
+                });
+                
+                let errorMessage = 'Error al guardar el anuncio';
+                if (err.response?.data?.message) {
+                    errorMessage += `: ${err.response.data.message}`;
+                } else if (err.response?.data?.error) {
+                    errorMessage += `: ${err.response.data.error}`;
+                } else if (err.message) {
+                    errorMessage += `: ${err.message}`;
+                }
+                setError(errorMessage);
             }
         }
     };
@@ -375,30 +413,13 @@ const AnnouncementBoard = () => {
                                         </InputGroup>
                                         
                                         <div className="specialties-list">
-                                            <div 
-                                                className={`specialty-item ${(!newAnnouncement.specialties || newAnnouncement.specialties.length === 0) ? 'selected' : ''}`}
-                                                onClick={() => handleSpecialtyToggle(-1)}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!newAnnouncement.specialties || newAnnouncement.specialties.length === 0}
-                                                    onChange={() => {}}
-                                                />
-                                                <span>Todas las especialidades</span>
-                                            </div>
-                                            
                                             {filteredSpecialties.map(spec => (
                                                 <div 
                                                     key={spec.id}
-                                                    className={`specialty-item ${newAnnouncement.specialties?.includes(spec.id) ? 'selected' : ''}`}
+                                                    className={`specialty-item ${(!newAnnouncement.specialties || newAnnouncement.specialties.length === 0) ? 'selected' : ''}`}
                                                     onClick={() => handleSpecialtyToggle(spec.id)}
                                                 >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={newAnnouncement.specialties?.includes(spec.id)}
-                                                        onChange={() => {}}
-                                                    />
-                                                    <span>{spec.name}</span>
+                                                    {spec.name}
                                                 </div>
                                             ))}
                                         </div>
