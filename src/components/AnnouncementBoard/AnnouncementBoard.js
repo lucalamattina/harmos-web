@@ -6,6 +6,7 @@ import api from '../../api/api';
 // Componente interno para un anuncio individual
 const Announcement = ({ title, content, date, authorId, specialties }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
+    const [showFull, setShowFull] = useState(false);
     const MAX_TITLE_LENGTH = 50;
     const MAX_CONTENT_LENGTH = 150;
 
@@ -34,25 +35,62 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
     };
 
     return (
-        <Card className="mb-3">
-            <Card.Body>
-                <Card.Title>{truncateText(title, MAX_TITLE_LENGTH)}</Card.Title>
-                <Card.Text>{truncateText(content, MAX_CONTENT_LENGTH)}</Card.Text>
-                <Card.Footer className="text-muted">
-                    <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small>{new Date(date).toLocaleDateString()}</small>
-                            <small className="ms-2">Autor: {authorName}</small>
+        <>
+            <Card className="mb-3 announcement-card" onClick={() => setShowFull(true)}>
+                <Card.Body>
+                    <Card.Title>{truncateText(title, MAX_TITLE_LENGTH)}</Card.Title>
+                    <Card.Text>{truncateText(content, MAX_CONTENT_LENGTH)}</Card.Text>
+                    <Card.Footer className="text-muted">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small>{new Date(date).toLocaleDateString()}</small>
+                                <small className="ms-2">Autor: {authorName}</small>
+                            </div>
+                            <div>
+                                <small>
+                                    Especialidades: {formatSpecialties(specialties)}
+                                </small>
+                            </div>
                         </div>
-                        <div>
-                            <small>
-                                Especialidades: {formatSpecialties(specialties)}
-                            </small>
-                        </div>
+                    </Card.Footer>
+                </Card.Body>
+            </Card>
+
+            <Modal 
+                show={showFull} 
+                onHide={() => setShowFull(false)} 
+                size="lg"
+                dialogClassName="modal-dialog-responsive"
+                centered
+            >
+                <Modal.Header>
+                    <Modal.Title>{title}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="mb-3">
+                        <p className="text-muted">
+                            <small>Publicado el {new Date(date).toLocaleDateString()}</small>
+                            <small className="ms-2">Por: {authorName}</small>
+                        </p>
+                        <p className="text-muted">
+                            <small>Especialidades: {formatSpecialties(specialties)}</small>
+                        </p>
                     </div>
-                </Card.Footer>
-            </Card.Body>
-        </Card>
+                    <div className="announcement-content">
+                        {content}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer className="border-0 d-flex justify-content-center">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => setShowFull(false)}
+                        className="px-5"
+                    >
+                        Cerrar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </>
     );
 };
 
@@ -366,11 +404,15 @@ const AnnouncementBoard = () => {
                                 type="text"
                                 placeholder="Título"
                                 value={newAnnouncement.title}
+                                maxLength={255}
                                 onChange={e => setNewAnnouncement(prev => ({
                                     ...prev,
                                     title: e.target.value
                                 }))}
                             />
+                            <Form.Text className="text-muted">
+                                {newAnnouncement.title.length}/255 caracteres
+                            </Form.Text>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Contenido</Form.Label>
