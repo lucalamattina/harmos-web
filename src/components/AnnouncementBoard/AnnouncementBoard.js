@@ -60,19 +60,26 @@ const AnnouncementBoard = () => {
         date: new Date().toISOString(),
         specialties: undefined
     });
-    // Estado para paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(3); // Default value
+    const [pageSize, setPageSize] = useState(3);
+    const [totalPages, setTotalPages] = useState(1);
     const [specialtiesList, setSpecialtiesList] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
     const [specialties, setSpecialties] = useState([]);
+    const [userSpecialties, setUserSpecialties] = useState([]);
 
     useEffect(() => {
-        fetchAnnouncements();
+        fetchUserSpecialties();
     }, []);
+
+    useEffect(() => {
+        if (userSpecialties.length > 0) {
+            fetchAnnouncements();
+        }
+    }, [userSpecialties, currentPage, pageSize]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -105,10 +112,69 @@ const AnnouncementBoard = () => {
         }
     }, [showNew]);
 
+    const getTokenUserId = () => {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
+        
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const payload = JSON.parse(jsonPayload);
+            console.log('Token payload:', payload); // Log del payload completo
+            return payload.sub; // 'sub' ahora contiene el ID del usuario
+        } catch (error) {
+            console.error('Error decoding JWT token:', error);
+            return null;
+        }
+    };
+
+    const fetchUserSpecialties = async () => {
+        try {
+            const userId = getTokenUserId();
+            console.log('Fetching specialties for user ID:', userId);
+            if (!userId) {
+                throw new Error('No se pudo obtener el ID del usuario');
+            }
+
+            const response = await api.get(`/api/users/${userId}`);
+            console.log('User data response:', response.data);
+            const userSpecialties = response.data.specialties || [];
+            console.log('User specialties before mapping:', userSpecialties);
+            // No necesitamos hacer mapping ya que las especialidades ya son strings
+            setUserSpecialties(userSpecialties);
+            console.log('User specialties after setting state:', userSpecialties);
+        } catch (err) {
+            console.error('Error fetching user specialties:', err);
+            setError('Error al cargar las especialidades del usuario');
+            setLoading(false);
+        }
+    };
+
     const fetchAnnouncements = async () => {
         try {
-            const response = await api.get('/api/announcements');
+            console.log('userSpecialties state value:', userSpecialties);
+            console.log('userSpecialties type:', typeof userSpecialties);
+            console.log('userSpecialties is array:', Array.isArray(userSpecialties));
+            console.log('userSpecialties length:', userSpecialties?.length);
+
+            let url = `/api/announcements?page=${currentPage - 1}&size=${pageSize}`;
+            
+            // Agregamos todas las especialidades
+            if (Array.isArray(userSpecialties) && userSpecialties.length > 0) {
+                userSpecialties.forEach((specialty, index) => {
+                    url += `&specialties=${specialty}`;
+                });
+            }
+
+            console.log('Request URL:', url);
+            const response = await api.get(url);
+            console.log('Announcements response:', response.data);
             setAnnouncements(response.data.content || []);
+            setTotalPages(response.data.totalPages || 1);
             setLoading(false);
         } catch (err) {
             console.error('Error detallado:', err);
@@ -154,14 +220,10 @@ const AnnouncementBoard = () => {
         }
     };
 
-    // Paginación
-    const totalPages = Math.ceil(announcements.length / pageSize);
-    const paginatedAnnouncements = announcements.slice(
-        (currentPage - 1) * pageSize,
-        currentPage * pageSize
-    );
     const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) setCurrentPage(page);
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const filteredSpecialties = specialtiesList.filter(spec =>
@@ -223,7 +285,7 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
-            {Array.isArray(paginatedAnnouncements) && paginatedAnnouncements.map(announcement => (
+            {announcements.map(announcement => (
                 <Announcement
                     key={announcement.id}
                     title={announcement.title}
@@ -237,7 +299,11 @@ const AnnouncementBoard = () => {
             {/* Controles de paginación */}
             {totalPages > 1 && (
                 <div className="d-flex justify-content-center align-items-center my-4 gap-2">
-                    <button className="btn btn-outline-secondary" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                    <button 
+                        className="btn btn-outline-secondary" 
+                        onClick={() => goToPage(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                    >
                         Anterior
                     </button>
                     {Array.from({ length: totalPages }, (_, i) => (
@@ -249,7 +315,11 @@ const AnnouncementBoard = () => {
                             {i + 1}
                         </button>
                     ))}
-                    <button className="btn btn-outline-secondary" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    <button 
+                        className="btn btn-outline-secondary" 
+                        onClick={() => goToPage(currentPage + 1)} 
+                        disabled={currentPage === totalPages}
+                    >
                         Siguiente
                     </button>
                 </div>
