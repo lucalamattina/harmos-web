@@ -41,10 +41,18 @@ const Center = () => {
                 login(data.token);
                 navigate('/', { replace: true });
             } else {
-                setError("Credenciales incorrectas");
+                setError("Usuario o contraseña incorrecta");
             }
         } catch (err) {
-            setError("Error de autenticación. Por favor, intente nuevamente.");
+            let message = "Error de autenticación. Por favor, intente nuevamente.";
+            if (err.response && err.response.status === 401) {
+                message = "Usuario o contraseña incorrecta";
+            } else if (err.response && err.response.data && err.response.data.message) {
+                message = err.response.data.message;
+            } else if (err.message) {
+                message = err.message;
+            }
+            setError(message);
         } finally {
             setIsLoading(false);
         }

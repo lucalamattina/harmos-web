@@ -24,12 +24,15 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Si el error es 401, limpiar el token y redirigir al login
-    if (error.response?.status === 401) {
+    // Solo redirige si hay un token guardado (usuario autenticado)
+    const token = localStorage.getItem('token');
+    if (error.response?.status === 401 && token) {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       window.dispatchEvent(new Event('auth-logout'));
+      window.location.href = '/login';
     }
+    // Si no hay token, solo rechaza el error para que el login lo maneje
     return Promise.reject(error);
   }
 );
