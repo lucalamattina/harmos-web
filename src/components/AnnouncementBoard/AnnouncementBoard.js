@@ -62,20 +62,31 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
                 dialogClassName="modal-dialog-responsive"
                 centered
             >
-                <Modal.Header>
+                <Modal.Header className="border-bottom-0 sticky-top bg-white" style={{ zIndex: 1031 }}>
                     <Modal.Title>{title}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <div className="mb-3">
-                        <p className="text-muted">
-                            <small>Publicado el {new Date(date).toLocaleDateString()}</small>
-                            <small className="ms-2">Por: {authorName}</small>
-                        </p>
-                        <p className="text-muted">
-                            <small>Especialidades: {formatSpecialties(specialties)}</small>
-                        </p>
+                <div className="announcement-metadata sticky-top bg-light mb-0 p-3" style={{ top: '56px', zIndex: 1030, borderRadius: 0 }}>
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small className="text-muted">
+                                <i className="bi bi-calendar me-1"></i>
+                                {new Date(date).toLocaleDateString()}
+                            </small>
+                            <small className="text-muted ms-3">
+                                <i className="bi bi-person me-1"></i>
+                                {authorName}
+                            </small>
+                        </div>
+                        <div>
+                            <small className="text-muted">
+                                <i className="bi bi-tags me-1"></i>
+                                {formatSpecialties(specialties)}
+                            </small>
+                        </div>
                     </div>
-                    <div className="announcement-content">
+                </div>
+                <Modal.Body>
+                    <div className="announcement-content" style={{ paddingTop: '8px' }}>
                         {content}
                     </div>
                 </Modal.Body>
