@@ -335,15 +335,13 @@
     margin-top: 1.2rem !important;
   }
   .d-flex.justify-content-center.align-items-center.my-4.gap-2 {
-    flex-direction: row !important;
-    gap: 0.3rem !important;
-    margin: 0.5rem 0 1rem 0 !important;
+    flex-direction: column;
+    gap: 0.5rem !important;
   }
   .btn, .btn-lg, .btn-primary, .btn-outline-primary, .btn-outline-secondary {
-    min-width: 38px;
-    font-size: 0.98rem;
-    padding: 0.5rem 0.7rem;
-    margin-bottom: 0;
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0.5rem;
   }
   .specialties-select-container, .specialties-dropdown {
     width: 100% !important;
@@ -356,27 +354,4 @@
   .modal-title {
     font-size: 1.05rem !important;
   }
-  .announcement-meta-preview {
-    font-size: 0.85rem;
-    opacity: 0.7;
-  }
-  .announcement-date-preview {
-    font-size: 0.82rem;
-    opacity: 0.7;
-  }
-  .announcement-author-preview, .announcement-specialties-preview {
-    display: none !important;
-  }
-}
-
-.announcement-meta-preview {
-  font-size: 0.93rem;
-  opacity: 0.85;
-}
-.announcement-date-preview {
-  font-size: 0.93rem;
-}
-.announcement-author-preview, .announcement-specialties-preview {
-  font-size: 0.91rem;
-  opacity: 0.7;
 }
