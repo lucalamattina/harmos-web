@@ -150,11 +150,9 @@
     flex: 1;
   }
   .sidebar-hamburger {
-    display: block;
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    z-index: 1300;
+    position: static;
+    margin-right: 0.5rem;
+    box-shadow: none;
     background: #009A9E;
     color: #fff;
     border: none;
@@ -162,7 +160,7 @@
     padding: 0.4rem 0.6rem;
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 1204;
   }
   .sidebar-drawer {
     background: linear-gradient(135deg, #009A9E 0%, #00c6b1 100%) !important;

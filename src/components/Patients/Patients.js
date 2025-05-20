@@ -216,7 +216,7 @@ const Patients = () => {
                         <tr>
                             <th>Nombre</th>
                             <th>Teléfono</th>
-                            <th className="d-none-mobile">Estado</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -225,8 +225,18 @@ const Patients = () => {
                             filteredPatients.map(patient => (
                                 <tr key={patient.id}>
                                     <td>{patient.name}</td>
-                                    <td>{patient.phone}</td>
-                                    <td className="d-none-mobile">{patient.status}</td>
+                                    <td>
+                                        <div className="d-flex align-items-center">
+                                            <i className="bi bi-telephone me-2"></i>
+                                            {patient.phone}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={`badge bg-${patient.status === 'active' ? 'success' : patient.status === 'inactive' ? 'danger' : 'secondary'}`}>
+                                            {patient.status === 'active' ? 'Activo' : 
+                                             patient.status === 'inactive' ? 'Inactivo' : 'Desconocido'}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div className="d-flex gap-2">
                                             <Button 
@@ -254,7 +264,7 @@ const Patients = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={4} className="text-center">
+                                <td colSpan="4" className="text-center">
                                     No se encontraron pacientes con ese nombre
                                 </td>
                             </tr>

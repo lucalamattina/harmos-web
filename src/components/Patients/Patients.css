@@ -41,20 +41,4 @@
   .table-responsive-mobile table {
     min-width: 520px;
   }
-}
-
-.d-none-mobile {
-  display: table-cell;
-}
-@media (max-width: 600px) {
-  .d-none-mobile {
-    display: none !important;
-  }
-  .table th, .table td {
-    min-width: 80px;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 } 
