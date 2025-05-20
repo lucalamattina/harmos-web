@@ -116,3 +116,121 @@
   font-size: 1.3rem;
   letter-spacing: 1px;
 }
+
+/* Responsive sidebar styles */
+.sidebar-hamburger {
+  display: none;
+}
+.sidebar-close {
+  display: none;
+}
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar-hamburger {
+    display: block;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1201;
+    background: #009A9E;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.25);
+    z-index: 1200;
+  }
+  .sidebar-drawer {
+    position: fixed;
+    top: 0;
+    left: -260px;
+    width: 220px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+    z-index: 1202;
+    transition: left 0.25s cubic-bezier(.4,0,.2,1);
+    flex-direction: column;
+    padding-top: 0;
+    border-radius: 0 12px 12px 0;
+    display: flex;
+  }
+  .sidebar-drawer.open {
+    left: 0;
+  }
+  .sidebar-close {
+    display: block;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #009A9E;
+    font-size: 1.7rem;
+    z-index: 1203;
+    cursor: pointer;
+  }
+  .top-navbar-list {
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    margin-top: 2.5rem;
+  }
+  .top-navbar-item {
+    width: 100%;
+  }
+  .top-navbar-link {
+    border-radius: 0;
+    font-size: 1.1rem;
+    padding: 1.1rem 0.5rem;
+    justify-content: flex-start;
+    gap: 1.2rem;
+  }
+  .top-navbar-label {
+    font-size: 1.1rem;
+  }
+  .top-navbar {
+    width: 220px;
+    min-width: 0;
+    max-width: 90vw;
+    height: 100vh;
+    padding: 0;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+    border-radius: 0 12px 12px 0;
+    background: #fff;
+    position: fixed;
+    left: -260px;
+    top: 0;
+    z-index: 1202;
+    transition: left 0.25s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-drawer.open.top-navbar {
+    left: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Hide sidebar by default on mobile */
+  .top-navbar {
+    display: none;
+  }
+  .sidebar-drawer.open.top-navbar {
+    display: flex;
+  }
+}

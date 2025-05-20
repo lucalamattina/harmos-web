@@ -1,13 +1,14 @@
 @media (max-width: 600px) {
   .table {
-    font-size: 0.95rem;
+    font-size: 0.89rem;
     width: 100%;
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+    border-spacing: 0 2px;
   }
   .table th, .table td {
-    padding: 0.5rem 0.3rem;
+    padding: 0.4rem 0.2rem;
   }
   .d-grid.mt-4, .d-grid.gap-2.mt-4 {
     margin-top: 1.2rem !important;

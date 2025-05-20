@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FiBell, FiUsers, FiCalendar, FiFileText } from 'react-icons/fi';
+import { FiBell, FiUsers, FiCalendar, FiFileText, FiMenu, FiX } from 'react-icons/fi';
 import './SideNavbar.css';
 
 const tabs = [
@@ -12,23 +12,36 @@ const tabs = [
 
 const SideNavbar = () => {
   const location = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <nav className="top-navbar">
-      <ul className="top-navbar-list">
-        {tabs.map((tab) => (
-          <li key={tab.to} className="top-navbar-item">
-            <Link
-              to={tab.to}
-              className={`top-navbar-link${location.pathname === tab.to ? ' active' : ''}`}
-            >
-              <span className="top-navbar-icon">{tab.icon}</span>
-              <span className="top-navbar-label">{tab.label}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <>
+      {/* Hamburger button for mobile */}
+      <button className="sidebar-hamburger" onClick={() => setDrawerOpen(true)}>
+        <FiMenu size={28} />
+      </button>
+      {/* Overlay for drawer */}
+      {drawerOpen && <div className="sidebar-overlay" onClick={() => setDrawerOpen(false)}></div>}
+      <nav className={`top-navbar sidebar-drawer${drawerOpen ? ' open' : ''}`}>
+        <button className="sidebar-close" onClick={() => setDrawerOpen(false)}>
+          <FiX size={28} />
+        </button>
+        <ul className="top-navbar-list">
+          {tabs.map((tab) => (
+            <li key={tab.to} className="top-navbar-item">
+              <Link
+                to={tab.to}
+                className={`top-navbar-link${location.pathname === tab.to ? ' active' : ''}`}
+                onClick={() => setDrawerOpen(false)}
+              >
+                <span className="top-navbar-icon">{tab.icon}</span>
+                <span className="top-navbar-label">{tab.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
   );
 };
 
