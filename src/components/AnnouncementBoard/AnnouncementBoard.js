@@ -349,7 +349,7 @@ const AnnouncementBoard = () => {
                         onClick={() => goToPage(currentPage - 1)} 
                         disabled={currentPage === 1}
                     >
-                        Anterior
+                        {window.innerWidth <= 600 ? '←' : 'Anterior'}
                     </button>
                     {Array.from({ length: totalPages }, (_, i) => (
                         <button
@@ -365,7 +365,7 @@ const AnnouncementBoard = () => {
                         onClick={() => goToPage(currentPage + 1)} 
                         disabled={currentPage === totalPages}
                     >
-                        Siguiente
+                        {window.innerWidth <= 600 ? '→' : 'Siguiente'}
                     </button>
                 </div>
             )}
