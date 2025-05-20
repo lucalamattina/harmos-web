@@ -13,3 +13,37 @@
     padding-left: 60px;
     padding-bottom: 5px;
 }
+
+@media (max-width: 600px) {
+  .Scheduler {
+    padding: 0.5rem 0.1rem !important;
+  }
+  .rbc-calendar {
+    font-size: 0.95rem;
+    width: 100vw;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .rbc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+  .modal-dialog {
+    max-width: 98vw !important;
+    margin: 0.5rem auto !important;
+  }
+  .modal-content {
+    border-radius: 0.7rem !important;
+  }
+  .form-control {
+    font-size: 1rem;
+    padding: 0.6rem 0.5rem;
+  }
+  .btn, .btn-lg, .btn-primary, .btn-outline-primary, .btn-outline-secondary {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}

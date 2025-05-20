@@ -42,7 +42,9 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
                     <Card.Footer className="text-muted">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <small>{new Date(date).toLocaleDateString()}</small>
+                                <small>
+                                    {new Date(date).toLocaleDateString()} {new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                </small>
                                 <small className="ms-2">Autor: {authorName}</small>
                             </div>
                             <div>
@@ -70,7 +72,7 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
                         <div>
                             <small className="text-muted">
                                 <i className="bi bi-calendar me-1"></i>
-                                {new Date(date).toLocaleDateString()}
+                                {new Date(date).toLocaleDateString()} {new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </small>
                             <small className="text-muted ms-3">
                                 <i className="bi bi-person me-1"></i>

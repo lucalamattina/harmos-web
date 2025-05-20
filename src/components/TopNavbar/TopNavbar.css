@@ -87,6 +87,39 @@
     font-size: 1.25rem;
   }
 }
+@media (max-width: 600px) {
+  .navbar-shadow {
+    padding: 0.3rem 0.5rem !important;
+    min-height: 48px !important;
+  }
+  .Logo-Harmos {
+    max-width: 38px !important;
+    height: auto;
+  }
+  #headerTitle {
+    font-size: 1.1rem !important;
+    margin: 0;
+    text-align: center;
+  }
+  .d-flex.align-items-center.gap-3 {
+    gap: 0.5rem !important;
+    min-width: 0 !important;
+  }
+  .nav-icon {
+    font-size: 1.3rem !important;
+    padding: 0.2rem;
+  }
+  .profile-dropdown, .notification-dropdown {
+    min-width: 180px !important;
+    font-size: 0.98rem;
+  }
+  .navbar-brand {
+    padding: 0 !important;
+  }
+  .navbar {
+    min-height: 48px !important;
+  }
+}
 /* Oculta el caret de Bootstrap en los toggles de íconos del navbar */
 .nav-icon-button.dropdown-toggle::after {
   display: none !important;

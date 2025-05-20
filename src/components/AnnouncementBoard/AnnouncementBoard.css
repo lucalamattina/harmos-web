@@ -299,3 +299,56 @@
     transform: translateY(0);
     box-shadow: none;
 }
+
+/* Responsive styles for AnnouncementBoard */
+@media (max-width: 600px) {
+  .announcement-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0.5rem;
+    font-size: 0.98rem;
+  }
+  .announcement-card .card-title {
+    font-size: 1.1rem;
+  }
+  .announcement-card .card-text {
+    font-size: 0.98rem;
+  }
+  .announcement-metadata {
+    font-size: 0.95rem;
+    padding: 0.5rem 0.7rem !important;
+    border-radius: 0.5rem !important;
+  }
+  .modal-dialog-responsive {
+    max-width: 98vw !important;
+    margin: 0.5rem auto !important;
+  }
+  .modal-content {
+    border-radius: 0.7rem !important;
+  }
+  .announcement-content {
+    font-size: 1rem;
+    padding: 0.5rem 0.2rem 1rem 0.2rem !important;
+    word-break: break-word;
+  }
+  .d-grid.mt-4, .d-grid.gap-2.mt-4 {
+    margin-top: 1.2rem !important;
+  }
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+  .btn, .btn-lg, .btn-primary, .btn-outline-primary, .btn-outline-secondary {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.7rem 0.5rem;
+  }
+  .specialties-select-container, .specialties-dropdown {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .specialties-select-trigger {
+    font-size: 1rem;
+    padding: 0.5rem 0.7rem;
+  }
+}
