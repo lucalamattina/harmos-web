@@ -40,15 +40,15 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
                 <Card.Body>
                     <Card.Title>{truncateText(title, MAX_TITLE_LENGTH)}</Card.Title>
                     <Card.Text>{truncateText(content, MAX_CONTENT_LENGTH)}</Card.Text>
-                    <Card.Footer className="text-muted">
+                    <Card.Footer className="text-muted announcement-meta-preview">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <small>
+                                <small className="announcement-date-preview">
                                     {new Date(date).toLocaleDateString()} {new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </small>
-                                <small className="ms-2">Autor: {authorName}</small>
+                                <span className="announcement-author-preview d-none d-sm-inline ms-2">Autor: {authorName}</span>
                             </div>
-                            <div>
+                            <div className="announcement-specialties-preview d-none d-sm-inline">
                                 <small>
                                     Especialidades: {formatSpecialties(specialties)}
                                 </small>

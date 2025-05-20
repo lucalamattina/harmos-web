@@ -210,66 +210,68 @@ const Patients = () => {
                 </InputGroup>
             </Form>
 
-            <Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredPatients.length > 0 ? (
-                        filteredPatients.map(patient => (
-                            <tr key={patient.id}>
-                                <td>{patient.name}</td>
-                                <td>
-                                    <div className="d-flex align-items-center">
-                                        <i className="bi bi-telephone me-2"></i>
-                                        {patient.phone}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className={`badge bg-${patient.status === 'active' ? 'success' : patient.status === 'inactive' ? 'danger' : 'secondary'}`}>
-                                        {patient.status === 'active' ? 'Activo' : 
-                                         patient.status === 'inactive' ? 'Inactivo' : 'Desconocido'}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div className="d-flex gap-2">
-                                        <Button 
-                                            variant="outline-primary" 
-                                            size="sm"
-                                            onClick={() => fetchPatientDetails(patient.id)}
-                                        >
-                                            <i className="bi bi-eye me-1"></i>
-                                            Ver
-                                        </Button>
-                                        <Button 
-                                            variant="outline-danger" 
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                // TODO: Implementar eliminación
-                                            }}
-                                        >
-                                            <i className="bi bi-trash me-1"></i>
-                                            Eliminar
-                                        </Button>
-                                    </div>
+            <div className="table-responsive-mobile">
+                <Table striped bordered hover>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredPatients.length > 0 ? (
+                            filteredPatients.map(patient => (
+                                <tr key={patient.id}>
+                                    <td>{patient.name}</td>
+                                    <td>
+                                        <div className="d-flex align-items-center">
+                                            <i className="bi bi-telephone me-2"></i>
+                                            {patient.phone}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={`badge bg-${patient.status === 'active' ? 'success' : patient.status === 'inactive' ? 'danger' : 'secondary'}`}>
+                                            {patient.status === 'active' ? 'Activo' : 
+                                             patient.status === 'inactive' ? 'Inactivo' : 'Desconocido'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="d-flex gap-2">
+                                            <Button 
+                                                variant="outline-primary" 
+                                                size="sm"
+                                                onClick={() => fetchPatientDetails(patient.id)}
+                                            >
+                                                <i className="bi bi-eye me-1"></i>
+                                                Ver
+                                            </Button>
+                                            <Button 
+                                                variant="outline-danger" 
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // TODO: Implementar eliminación
+                                                }}
+                                            >
+                                                <i className="bi bi-trash me-1"></i>
+                                                Eliminar
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" className="text-center">
+                                    No se encontraron pacientes con ese nombre
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="text-center">
-                                No se encontraron pacientes con ese nombre
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </Table>
+                        )}
+                    </tbody>
+                </Table>
+            </div>
 
             {/* Controles de paginación */}
             {totalPages > 1 && (

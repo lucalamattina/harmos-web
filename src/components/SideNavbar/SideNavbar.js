@@ -10,19 +10,23 @@ const tabs = [
   { to: '/informes', label: 'Informes', icon: <FiFileText /> },
 ];
 
+const NAVBAR_HEIGHT = 56; // px, adjust if your navbar is taller
+
 const SideNavbar = () => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <>
-      {/* Hamburger button for mobile */}
-      <button className="sidebar-hamburger" onClick={() => setDrawerOpen(true)}>
-        <FiMenu size={28} />
-      </button>
+      <nav className="top-navbar-responsive">
+        <button className="sidebar-hamburger" onClick={() => setDrawerOpen(true)}>
+          <FiMenu size={28} />
+        </button>
+        <span className="navbar-logo-placeholder" />
+      </nav>
       {/* Overlay for drawer */}
       {drawerOpen && <div className="sidebar-overlay" onClick={() => setDrawerOpen(false)}></div>}
-      <nav className={`top-navbar sidebar-drawer${drawerOpen ? ' open' : ''}`}>
+      <nav className={`top-navbar sidebar-drawer${drawerOpen ? ' open' : ''}`} style={{ top: NAVBAR_HEIGHT }}>
         <button className="sidebar-close" onClick={() => setDrawerOpen(false)}>
           <FiX size={28} />
         </button>
