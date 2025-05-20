@@ -2,7 +2,7 @@ import './LogInCenter.css'
 import React, { useState } from 'react';
 import logo from "../../resources/images/Harmos-Logo-no-letras.png"
 import letrasLogo from "../../resources/images/Harmos Logo Letras.jpg"
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../api/api";
@@ -10,8 +10,6 @@ import { FaEnvelope, FaLock, FaSpinner, FaEye, FaEyeSlash } from 'react-icons/fa
 
 const Center = () => {
     const navigate = useNavigate();
-    const location = useLocation();
-    const from = location.state?.from?.pathname || "/home";
     const { login } = useContext(AuthContext);
     
     const [formData, setFormData] = useState({

@@ -7,7 +7,7 @@ import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
 import React, {useCallback, useMemo, useState} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {Button, Col, Form, Modal, Row} from "react-bootstrap";
+import {Button, Form, Modal} from "react-bootstrap";
 
 const locales = {
     "en-US": require("date-fns/locale/en-US"),
@@ -95,9 +95,8 @@ function Scheduler() {
         []
     )
 
-    const { defaultDate, scrollToTime } = useMemo(
+    const { scrollToTime } = useMemo(
         () => ({
-            defaultDate: new Date(2015, 3, 12),
             scrollToTime: new Date(1970, 1, 1, 6),
         }),
         []

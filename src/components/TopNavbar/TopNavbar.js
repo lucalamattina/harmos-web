@@ -1,17 +1,14 @@
-import { Navbar, Container, NavItem, Dropdown, Badge } from "react-bootstrap";
+import { Navbar, Container, Dropdown, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import "./TopNavbar.css";
 import logo from "../../resources/images/Harmos-Logo-Transparente.png";
 import { useContext, useState } from "react";
-import { AuthContext } from "../../context/AuthContext";
 import { FaBell, FaUserCircle, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { AuthContext } from "../../context/AuthContext";
 
 const TopNavbar = () => {
     const { logout } = useContext(AuthContext);
-    const [notifications, setNotifications] = useState([
-        { id: 1, message: "Nueva cita programada", time: "5 min" },
-        { id: 2, message: "Recordatorio de reunión", time: "1 hora" }
-    ]);
+    const [notifications] = useState([]);
 
     const handleLogout = () => {
         logout();
