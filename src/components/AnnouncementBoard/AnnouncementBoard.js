@@ -7,9 +7,8 @@ import api from '../../api/api';
 const Announcement = ({ title, content, date, authorId, specialties }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
     const [showFull, setShowFull] = useState(false);
-    const isMobile = window.innerWidth <= 600;
-    const MAX_TITLE_LENGTH = isMobile ? 28 : 50;
-    const MAX_CONTENT_LENGTH = isMobile ? 60 : 150;
+    const MAX_TITLE_LENGTH = 50;
+    const MAX_CONTENT_LENGTH = 150;
 
     useEffect(() => {
         const fetchAuthor = async () => {
