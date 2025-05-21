@@ -15,6 +15,10 @@ const Patients = () => {
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
     const [specialties, setSpecialties] = useState([]);
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [selectedSpecialty, setSelectedSpecialty] = useState('');
+    const [doctorFilterTerm, setDoctorFilterTerm] = useState('');
+    const [statuses, setStatuses] = useState([]);
     const [newPatient, setNewPatient] = useState({
         name: "",
         phone: "",
@@ -30,9 +34,54 @@ const Patients = () => {
     const [pageSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
 
+    const fetchStatuses = useCallback(async () => {
+        try {
+            const response = await api.get('/api/patients/statuses');
+            console.log('Statuses from API:', response.data);
+            if (Array.isArray(response.data)) {
+                setStatuses(response.data);
+            } else {
+                console.error('Expected array of statuses but got:', response.data);
+                setStatuses([]);
+            }
+        } catch (err) {
+            console.error('Error fetching statuses:', err);
+            setStatuses([]);
+        }
+    }, []);
+
+    const fetchSpecialties = useCallback(async () => {
+        try {
+            const response = await api.get('/api/specialties');
+            console.log('Specialties from API:', response.data);
+            setSpecialties(response.data || []);
+        } catch (err) {
+            console.error('Error fetching specialties:', err);
+            setSpecialties([]);
+        }
+    }, []);
+
     const fetchPatients = useCallback(async () => {
         try {
-            const response = await api.get(`/api/patients?page=${currentPage}&size=${pageSize}`);
+            const params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('size', pageSize);
+            
+            if (searchTerm) {
+                params.append('name', searchTerm);
+            }
+            if (doctorFilterTerm) {
+                params.append('doctor', doctorFilterTerm);
+            }
+            if (selectedStatus) {
+                params.append('status', selectedStatus);
+            }
+            if (selectedSpecialty) {
+                params.append('specialty', selectedSpecialty);
+            }
+
+            console.log('API URL:', `/api/patients?${params.toString()}`);
+            const response = await api.get(`/api/patients?${params.toString()}`);
             const patientsData = response.data.content || [];
             setPatients(patientsData);
             setFilteredPatients(patientsData);
@@ -42,7 +91,25 @@ const Patients = () => {
             setError('Error al cargar los pacientes');
             setLoading(false);
         }
-    }, [currentPage, pageSize]);
+    }, [currentPage, pageSize, searchTerm, doctorFilterTerm, selectedStatus, selectedSpecialty]);
+
+    useEffect(() => {
+        fetchPatients();
+        fetchStatuses();
+        fetchSpecialties();
+    }, [fetchPatients, fetchStatuses, fetchSpecialties]);
+
+    const handleDoctorFilterChange = (e) => {
+        setDoctorFilterTerm(e.target.value);
+    };
+
+    const handleStatusFilterChange = (e) => {
+        setSelectedStatus(e.target.value);
+    };
+
+    const handleSpecialtyChange = (e) => {
+        setSelectedSpecialty(e.target.value);
+    };
 
     const fetchDoctors = useCallback(async () => {
         try {
@@ -68,10 +135,6 @@ const Patients = () => {
             setDoctors([]);
         }
     }, [doctorSearchTerm, doctorSpecialty]);
-
-    useEffect(() => {
-        fetchPatients();
-    }, [fetchPatients]);
 
     // Cargar doctores y especialidades cuando se abre el modal
     useEffect(() => {
@@ -197,17 +260,64 @@ const Patients = () => {
     return (
         <Container>
             <Form className="mb-4">
-                <InputGroup>
-                    <InputGroup.Text>
-                        <i className="bi bi-search"></i>
-                    </InputGroup.Text>
-                    <Form.Control
-                        type="text"
-                        placeholder="Buscar paciente por nombre..."
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                    />
-                </InputGroup>
+                <Row>
+                    <Col md={3}>
+                        <InputGroup>
+                            <InputGroup.Text>
+                                <i className="bi bi-search"></i>
+                            </InputGroup.Text>
+                            <Form.Control
+                                type="text"
+                                placeholder="Buscar paciente por nombre..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                            />
+                        </InputGroup>
+                    </Col>
+                    <Col md={3}>
+                        <InputGroup>
+                            <InputGroup.Text>
+                                <i className="bi bi-search"></i>
+                            </InputGroup.Text>
+                            <Form.Control
+                                type="text"
+                                placeholder="Buscar por doctor..."
+                                value={doctorFilterTerm}
+                                onChange={handleDoctorFilterChange}
+                            />
+                        </InputGroup>
+                    </Col>
+                    <Col md={3}>
+                        <Form.Select
+                            value={selectedSpecialty}
+                            onChange={handleSpecialtyChange}
+                        >
+                            <option value="">Todas las especialidades</option>
+                            {specialties.map(specialty => (
+                                <option key={specialty.id} value={specialty.name}>
+                                    {specialty.name}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    </Col>
+                    <Col md={3}>
+                        <Form.Select
+                            value={selectedStatus}
+                            onChange={handleStatusFilterChange}
+                        >
+                            <option value="">Todos los estados</option>
+                            {statuses.map(status => (
+                                <option key={status} value={status}>
+                                    {status === 'ACTIVE' ? 'Activo' : 
+                                     status === 'INACTIVE' ? 'Inactivo' : 
+                                     status === 'DISCHARGED' ? 'Dado de alta' :
+                                     status === 'PENDING' ? 'Pendiente' :
+                                     status === 'REFERRED' ? 'Derivado' : status}
+                                </option>
+                            ))}
+                        </Form.Select>
+                    </Col>
+                </Row>
             </Form>
 
             <Table striped bordered hover>
@@ -231,9 +341,18 @@ const Patients = () => {
                                     </div>
                                 </td>
                                 <td>
-                                    <span className={`badge bg-${patient.status === 'active' ? 'success' : patient.status === 'inactive' ? 'danger' : 'secondary'}`}>
-                                        {patient.status === 'active' ? 'Activo' : 
-                                         patient.status === 'inactive' ? 'Inactivo' : 'Desconocido'}
+                                    <span className={`badge bg-${
+                                        patient.status === 'ACTIVE' ? 'success' : 
+                                        patient.status === 'INACTIVE' ? 'danger' : 
+                                        patient.status === 'DISCHARGED' ? 'info' :
+                                        patient.status === 'PENDING' ? 'warning' :
+                                        patient.status === 'REFERRED' ? 'primary' : 'secondary'
+                                    }`}>
+                                        {patient.status === 'ACTIVE' ? 'Activo' : 
+                                         patient.status === 'INACTIVE' ? 'Inactivo' : 
+                                         patient.status === 'DISCHARGED' ? 'Dado de alta' :
+                                         patient.status === 'PENDING' ? 'Pendiente' :
+                                         patient.status === 'REFERRED' ? 'Derivado' : patient.status}
                                     </span>
                                 </td>
                                 <td>
@@ -383,12 +502,16 @@ const Patients = () => {
                                         {selectedPatient.doctors.map((doctor, index) => (
                                             <div key={index} className="doctor-item p-2 mb-2 border rounded">
                                                 <div className="d-flex justify-content-between align-items-center">
-                                                    <span>{typeof doctor === 'object' ? doctor.name : doctor}</span>
-                                                    {selectedPatient.doctorSpecialties && selectedPatient.doctorSpecialties[index] && (
-                                                        <span className="badge bg-info">
-                                                            {selectedPatient.doctorSpecialties[index]}
-                                                        </span>
-                                                    )}
+                                                    <span>{doctor.name}</span>
+                                                    <div>
+                                                        {doctor.specialties && doctor.specialties.length > 0 && (
+                                                            doctor.specialties.map((specialty, specIndex) => (
+                                                                <span key={specIndex} className="badge bg-info me-1">
+                                                                    {specialty}
+                                                                </span>
+                                                            ))
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
