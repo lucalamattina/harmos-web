@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 // Create axios instance with base URL
 const api = axios.create({

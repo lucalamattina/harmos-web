@@ -58,12 +58,12 @@ const ForgotPassword = () => {
                     <Form.Group className="mb-3">
                         <Form.Label>Correo Electrónico</Form.Label>
                         <Form.Control
-                            type="email"
+                            type="text"
+                            autoComplete="email"
                             placeholder="tu@email.com"
                             value={email}
                             onChange={handleEmailChange}
                             isInvalid={!emailValid && email.length > 0}
-                            required
                         />
                         <Form.Control.Feedback type="invalid">
                             Ingresa un correo electrónico válido.

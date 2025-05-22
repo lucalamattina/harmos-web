@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../api/api";
-import { FaEnvelope, FaLock, FaSpinner, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaSpinner, FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 
 const Center = () => {
     const navigate = useNavigate();
@@ -19,6 +19,10 @@ const Center = () => {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [emailTouched, setEmailTouched] = useState(false);
+    const [passwordTouched, setPasswordTouched] = useState(false);
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -26,11 +30,26 @@ const Center = () => {
             ...prev,
             [name]: value
         }));
+        if (name === 'email' && emailTouched) {
+            setEmailError(validateEmail(value));
+        }
+        if (name === 'password' && passwordTouched) {
+            setPasswordError(validatePassword(value));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setEmailTouched(true);
+        setPasswordTouched(true);
+        const emailErr = validateEmail(formData.email);
+        const passErr = validatePassword(formData.password);
+        setEmailError(emailErr);
+        setPasswordError(passErr);
+        if (emailErr || passErr) {
+            return;
+        }
         setIsLoading(true);
 
         try {
@@ -58,6 +77,27 @@ const Center = () => {
 
     const toggleShowPassword = () => setShowPassword((prev) => !prev);
 
+    const validateEmail = (value) => {
+        if (!/^\S+@\S+\.\S+$/.test(value)) {
+            return 'Ingresa un correo electrónico válido.';
+        }
+        return '';
+    };
+    const validatePassword = (value) => {
+        if (!value) {
+            return 'La contraseña es obligatoria.';
+        }
+        return '';
+    };
+    const handleEmailBlur = () => {
+        setEmailTouched(true);
+        setEmailError(validateEmail(formData.email));
+    };
+    const handlePasswordBlur = () => {
+        setPasswordTouched(true);
+        setPasswordError(validatePassword(formData.password));
+    };
+
     return (
         <div className="login-container">
             <div className="login-box">
@@ -71,15 +111,22 @@ const Center = () => {
                         <div className="input-group">
                             <FaEnvelope className="input-icon" />
                             <input
-                                type="email"
+                                type="text"
+                                autoComplete="email"
                                 name="email"
                                 placeholder="Correo electrónico"
                                 value={formData.email}
                                 onChange={handleChange}
-                                required
-                                className="form-input"
+                                onBlur={handleEmailBlur}
+                                style={emailTouched && emailError ? { border: '2px solid #d00', background: '#fff6f6' } : {}}
+                                className={emailTouched && emailError ? 'form-input error-input' : 'form-input'}
                             />
                         </div>
+                        {emailTouched && emailError && (
+                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
+                                <FaExclamationCircle className="me-1" /> {emailError}
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group">
@@ -91,8 +138,9 @@ const Center = () => {
                                 placeholder="Contraseña"
                                 value={formData.password}
                                 onChange={handleChange}
-                                required
-                                className="form-input"
+                                onBlur={handlePasswordBlur}
+                                style={passwordTouched && passwordError ? { border: '2px solid #d00', background: '#fff6f6' } : {}}
+                                className={passwordTouched && passwordError ? 'form-input error-input' : 'form-input'}
                             />
                             <button
                                 type="button"
@@ -104,6 +152,16 @@ const Center = () => {
                                 {showPassword ? <FaEyeSlash /> : <FaEye />}
                             </button>
                         </div>
+                        {passwordTouched && passwordError && (
+                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
+                                <FaExclamationCircle className="me-1" /> {passwordError}
+                            </div>
+                        )}
+                        {error && (
+                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
+                                <FaExclamationCircle className="me-1" /> {error}
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-options">
@@ -111,8 +169,6 @@ const Center = () => {
                             ¿Olvidaste tu contraseña?
                         </Link>
                     </div>
-
-                    {error && <div className="error-message">{error}</div>}
 
                     <button 
                         type="submit" 

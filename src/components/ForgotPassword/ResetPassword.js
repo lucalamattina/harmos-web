@@ -4,6 +4,7 @@ import { Form, Button, Alert, Spinner } from 'react-bootstrap';
 import api from '../../api/api';
 import './ForgotPassword.css';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
+import { FaExclamationCircle, FaEye, FaEyeSlash, FaCheckCircle, FaRegCircle, FaTimesCircle } from 'react-icons/fa';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -18,6 +19,31 @@ const ResetPassword = () => {
     const [tokenValid, setTokenValid] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [tokenStatus, setTokenStatus] = useState('checking'); // 'checking', 'valid', 'invalid', 'expired'
+    const [passwordTouched, setPasswordTouched] = useState(false);
+    const [confirmTouched, setConfirmTouched] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
+    const [confirmError, setConfirmError] = useState('');
+    const [submitted, setSubmitted] = useState(false);
+
+    // Requisitos de contraseña
+    const passwordRequirements = [
+        {
+            label: 'Al menos 8 caracteres',
+            test: (v) => v.length >= 8
+        },
+        {
+            label: 'Al menos 1 letra minúscula',
+            test: (v) => /[a-z]/.test(v)
+        },
+        {
+            label: 'Al menos 1 letra mayúscula',
+            test: (v) => /[A-Z]/.test(v)
+        },
+        {
+            label: 'Al menos 1 número',
+            test: (v) => /[0-9]/.test(v)
+        }
+    ];
 
     useEffect(() => {
         if (!token) {
@@ -46,16 +72,56 @@ const ResetPassword = () => {
         validateToken();
     }, [token]);
 
+    // Validación campo a campo
+    const validatePassword = (value) => {
+        if (value.length < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        return '';
+    };
+    const validateConfirm = (value) => {
+        if (value !== newPassword) {
+            return 'Las contraseñas no coinciden.';
+        }
+        return '';
+    };
+
+    const handlePasswordBlur = () => {
+        setPasswordTouched(true);
+        setPasswordError(validatePassword(newPassword));
+    };
+    const handleConfirmBlur = () => {
+        setConfirmTouched(true);
+        setConfirmError(validateConfirm(confirmPassword));
+    };
+    const handlePasswordChange = (e) => {
+        setNewPassword(e.target.value);
+        if (passwordTouched) {
+            setPasswordError(validatePassword(e.target.value));
+        }
+        if (confirmTouched) {
+            setConfirmError(validateConfirm(confirmPassword));
+        }
+    };
+    const handleConfirmChange = (e) => {
+        setConfirmPassword(e.target.value);
+        if (confirmTouched) {
+            setConfirmError(validateConfirm(e.target.value));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
-        if (newPassword.length < 8) {
-            setError('La contraseña debe tener al menos 8 caracteres.');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setError('Las contraseñas no coinciden.');
+        setPasswordTouched(true);
+        setConfirmTouched(true);
+        setSubmitted(true);
+        const passErr = validatePassword(newPassword);
+        const confErr = validateConfirm(confirmPassword);
+        setPasswordError(passErr);
+        setConfirmError(confErr);
+        if (passErr || confErr) {
             return;
         }
         setIsLoading(true);
@@ -120,40 +186,91 @@ const ResetPassword = () => {
                 </div>
                 <h2 className="text-center mb-3">Cambiar Contraseña</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
+                    <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Nueva Contraseña</Form.Label>
                         <Form.Control
                             type={showPassword ? 'text' : 'password'}
                             value={newPassword}
-                            onChange={e => setNewPassword(e.target.value)}
-                            minLength={8}
-                            required
-                            placeholder="Nueva contraseña"
-                            style={{ fontSize: '1.1rem', padding: '12px' }}
+                            onChange={handlePasswordChange}
+                            onBlur={handlePasswordBlur}
+                            style={{ fontSize: '1.1rem', padding: '12px', paddingRight: 40 }}
+                            autoComplete="new-password"
+                            spellCheck={false}
                         />
-                        <Form.Text className="text-muted">
-                            La contraseña debe tener al menos 8 caracteres.
-                        </Form.Text>
+                        <span
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{ position: 'absolute', right: 12, top: 38, cursor: 'pointer', color: '#10A6AC', fontSize: 20, zIndex: 2, opacity: 0.6 }}
+                            tabIndex={0}
+                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            role="button"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
                     </Form.Group>
-                    <Form.Group className="mb-3">
+                    <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Confirmar Contraseña</Form.Label>
                         <Form.Control
                             type={showPassword ? 'text' : 'password'}
                             value={confirmPassword}
-                            onChange={e => setConfirmPassword(e.target.value)}
-                            minLength={8}
-                            required
-                            placeholder="Repite la nueva contraseña"
-                            style={{ fontSize: '1.1rem', padding: '12px' }}
+                            onChange={handleConfirmChange}
+                            onBlur={handleConfirmBlur}
+                            style={{ fontSize: '1.1rem', padding: '12px', paddingRight: 40 }}
+                            autoComplete="new-password"
+                            spellCheck={false}
                         />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Check
-                            type="checkbox"
-                            label="Mostrar contraseñas"
-                            checked={showPassword}
-                            onChange={() => setShowPassword(!showPassword)}
-                        />
+                        <span
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{ position: 'absolute', right: 12, top: 38, cursor: 'pointer', color: '#10A6AC', fontSize: 20, zIndex: 2, opacity: 0.6 }}
+                            tabIndex={0}
+                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            role="button"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                        {submitted && confirmError && (
+                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
+                                <FaExclamationCircle className="me-1" /> {confirmError}
+                            </div>
+                        )}
+                        <ul style={{ listStyle: 'none', paddingLeft: 0, marginBottom: 8, marginTop: 12 }}>
+                            {passwordRequirements.map((req, idx) => {
+                                const met = req.test(newPassword);
+                                if (submitted && !met) {
+                                    return (
+                                        <li
+                                            key={idx}
+                                            style={{
+                                                color: '#e53935',
+                                                fontSize: '0.97rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <FaTimesCircle style={{ color: '#e53935', fontSize: '1.1em' }} />
+                                            {req.label}
+                                        </li>
+                                    );
+                                }
+                                return (
+                                    <li
+                                        key={idx}
+                                        style={{
+                                            color: met ? '#1db954' : '#bdbdbd',
+                                            fontSize: '0.97rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            fontWeight: met ? 600 : 400,
+                                        }}
+                                    >
+                                        {met ? <FaCheckCircle style={{ color: '#1db954', fontSize: '1.1em' }} /> : <FaRegCircle style={{ color: '#bdbdbd', fontSize: '1.1em' }} />}
+                                        {req.label}
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     </Form.Group>
                     <div aria-live="polite" className="mb-3">
                         {error && <Alert variant="danger" className="animate__animated animate__fadeInDown">{error}</Alert>}
