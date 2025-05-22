@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { requestPasswordReset } from '../../api/api';
+import { requestPasswordReset, checkUserExists } from '../../api/api';
 import './ForgotPassword.css';
+import { Link } from 'react-router-dom';
+import logo from '../../resources/images/Harmos-Logo-no-letras.png';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [emailValid, setEmailValid] = useState(true);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
         setMessage('');
+
+        // Verificar si el usuario existe antes de enviar el mail
+        const exists = await checkUserExists(email);
+        if (!exists) {
+            setError('No existe un usuario registrado con ese correo electrónico.');
+            setIsLoading(false);
+            return;
+        }
 
         try {
             await requestPasswordReset(email);
@@ -27,9 +38,19 @@ const ForgotPassword = () => {
         }
     };
 
+    const handleEmailChange = (e) => {
+        const value = e.target.value;
+        setEmail(value);
+        // Validación simple de email
+        setEmailValid(/^\S+@\S+\.\S+$/.test(value));
+    };
+
     return (
         <div className="forgot-password-container">
             <div className="forgot-password-form">
+                <div className="text-center mb-3">
+                    <img src={logo} alt="Harmos Logo" style={{ maxWidth: 90, marginBottom: 10 }} />
+                </div>
                 <h2>Recuperar Contraseña</h2>
                 <p>Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.</p>
                 
@@ -40,23 +61,32 @@ const ForgotPassword = () => {
                             type="email"
                             placeholder="tu@email.com"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={handleEmailChange}
+                            isInvalid={!emailValid && email.length > 0}
                             required
                         />
+                        <Form.Control.Feedback type="invalid">
+                            Ingresa un correo electrónico válido.
+                        </Form.Control.Feedback>
                     </Form.Group>
 
-                    {message && <Alert variant="success">{message}</Alert>}
-                    {error && <Alert variant="danger">{error}</Alert>}
+                    <div aria-live="polite">
+                        {message && <Alert variant="success">{message}</Alert>}
+                        {error && <Alert variant="danger">{error}</Alert>}
+                    </div>
 
                     <Button 
                         variant="primary" 
                         type="submit" 
-                        disabled={isLoading}
+                        disabled={isLoading || !emailValid || !email}
                         className="w-100"
                     >
                         {isLoading ? 'Enviando...' : 'Enviar Instrucciones'}
                     </Button>
                 </Form>
+                <div className="mt-3 text-center">
+                    <Link to="/login">Volver al inicio de sesión</Link>
+                </div>
             </div>
         </div>
     );

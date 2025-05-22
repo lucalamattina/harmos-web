@@ -62,14 +62,10 @@ export const logoutUser = () => {
 // Password reset request function
 export const requestPasswordReset = async (email) => {
   try {
-    const response = await api.post('/api/messages', {
-      to: email,
-      subject: "Recuperación de Contraseña - Harmos",
-      body: `Hola,\n\nHas solicitado restablecer tu contraseña en Harmos. Por favor, contacta a un administrador para que te ayude con este proceso.\n\nSaludos,\nEquipo Harmos`
-    });
+    const response = await api.post(`/api/users/forgot-password?email=${encodeURIComponent(email)}`);
     return response.data;
   } catch (error) {
-    throw handleApiError(error);
+    throw error;
   }
 };
 
@@ -86,6 +82,22 @@ const handleApiError = (error) => {
   } else {
     // Something happened in setting up the request that triggered an Error
     return new Error('Error al configurar la petición');
+  }
+};
+
+export const checkUserExists = async (email) => {
+  try {
+    const response = await api.get(`/api/users?email=${encodeURIComponent(email)}`);
+    // Si la respuesta tiene usuarios, existe
+    if (Array.isArray(response.data.content)) {
+      return response.data.content.length > 0;
+    }
+    if (Array.isArray(response.data)) {
+      return response.data.length > 0;
+    }
+    return false;
+  } catch (error) {
+    return false;
   }
 };
 

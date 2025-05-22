@@ -11,6 +11,7 @@ import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
 import Patients from "./components/Patients/Patients";
 import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 import Footer from "./components/Footer/Footer";
+import ResetPassword from "./components/ForgotPassword/ResetPassword";
 
 const App = () => {
     return (
@@ -20,6 +21,7 @@ const App = () => {
                     {/* Public routes without navigation */}
                     <Route path="/login" element={<LogIn/>}/>
                     <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                    <Route path="/reset-password" element={<ResetPassword/>}/>
                     
                     {/* Protected routes with navigation */}
                     <Route element={<PrivateRoute />}>
