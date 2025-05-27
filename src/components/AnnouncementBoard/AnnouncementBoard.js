@@ -2,9 +2,10 @@ import "./AnnouncementBoard.css";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react-bootstrap";
 import api from '../../api/api';
+import { getTokenUserId } from '../../utils/auth';
 
 // Componente interno para un anuncio individual
-const Announcement = ({ title, content, date, authorId, specialties }) => {
+const Announcement = ({ title, content, date, authorId, specialties, imageUrl }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
     const [showFull, setShowFull] = useState(false);
     const MAX_TITLE_LENGTH = 50;
@@ -36,6 +37,16 @@ const Announcement = ({ title, content, date, authorId, specialties }) => {
     return (
         <>
             <Card className="mb-3 announcement-card" onClick={() => setShowFull(true)}>
+                {imageUrl && (
+                    <div className="announcement-image-container mb-3">
+                        <img 
+                            src={imageUrl} 
+                            alt={title} 
+                            className="announcement-image"
+                            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover' }}
+                        />
+                    </div>
+                )}
                 <Card.Body>
                     <Card.Title>{truncateText(title, MAX_TITLE_LENGTH)}</Card.Title>
                     <Card.Text>{truncateText(content, MAX_CONTENT_LENGTH)}</Card.Text>
@@ -113,7 +124,8 @@ const AnnouncementBoard = () => {
         title: "",
         content: "",
         date: new Date().toISOString(),
-        specialties: undefined
+        specialties: undefined,
+        image: null
     });
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(3);
@@ -122,23 +134,6 @@ const AnnouncementBoard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
     const [userSpecialties, setUserSpecialties] = useState([]);
-
-    const getTokenUserId = useCallback(() => {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) return null;
-
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            return JSON.parse(jsonPayload).sub;
-        } catch (error) {
-            return null;
-        }
-    }, []);
 
     const fetchUserSpecialties = useCallback(async () => {
         try {
@@ -153,7 +148,7 @@ const AnnouncementBoard = () => {
         } catch (err) {
             setUserSpecialties([]);
         }
-    }, [getTokenUserId]);
+    }, []);
 
     const fetchAnnouncements = useCallback(async () => {
         try {
@@ -217,6 +212,16 @@ const AnnouncementBoard = () => {
 
     const handleCloseNew = () => setShowNew(false);
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setNewAnnouncement(prev => ({
+                ...prev,
+                image: file
+            }));
+        }
+    };
+
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
             try {
@@ -236,18 +241,24 @@ const AnnouncementBoard = () => {
                         .map(spec => spec.name);
                 }
 
-                const payload = {
-                    title: newAnnouncement.title,
-                    content: newAnnouncement.content,
-                    date: formattedDate,
-                    createdByUserId,
-                    specialties: specialtiesNames
-                };
+                const formData = new FormData();
+                formData.append('title', newAnnouncement.title);
+                formData.append('content', newAnnouncement.content);
+                formData.append('date', formattedDate);
+                formData.append('createdByUserId', createdByUserId);
+                formData.append('specialties', JSON.stringify(specialtiesNames));
+                if (newAnnouncement.image) {
+                    formData.append('image', newAnnouncement.image);
+                }
 
-                await api.post('/api/announcements', payload);
+                await api.post('/api/announcements', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
                 await fetchAnnouncements();
                 setShowNew(false);
-                setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined });
+                setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined, image: null });
             } catch (err) {
                 let errorMessage = 'Error al guardar el anuncio';
                 if (err.response?.data?.message) {
@@ -335,35 +346,73 @@ const AnnouncementBoard = () => {
                     date={announcement.date}
                     authorId={announcement.createdByUserId}
                     specialties={announcement.specialties}
+                    imageUrl={announcement.imageUrl}
                 />
             ))}
 
             {/* Controles de paginación */}
             {totalPages > 1 && (
                 <div className="d-flex justify-content-center align-items-center my-4 gap-2">
-                    <button 
-                        className="btn btn-outline-secondary" 
+                    <Button 
+                        variant="outline-secondary" 
                         onClick={() => goToPage(currentPage - 1)} 
                         disabled={currentPage === 1}
                     >
                         Anterior
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                            key={i + 1}
-                            className={`btn ${currentPage === i + 1 ? 'btn-primary' : 'btn-outline-primary'}`}
-                            onClick={() => goToPage(i + 1)}
+                    </Button>
+                    
+                    {/* Primera página */}
+                    <Button
+                        variant={currentPage === 1 ? 'primary' : 'outline-primary'}
+                        onClick={() => goToPage(1)}
+                    >
+                        1
+                    </Button>
+
+                    {/* Puntos suspensivos iniciales si es necesario */}
+                    {currentPage > 2 && (
+                        <span className="mx-2">...</span>
+                    )}
+
+                    {/* Páginas alrededor de la actual */}
+                    {Array.from({ length: totalPages }, (_, i) => {
+                        if (i === 0 || i === totalPages - 1) return null; // Excluir primera y última página
+                        if (Math.abs(currentPage - (i + 1)) <= 1) { // Mostrar solo páginas adyacentes
+                            return (
+                                <Button
+                                    key={i + 1}
+                                    variant={currentPage === i + 1 ? 'primary' : 'outline-primary'}
+                                    onClick={() => goToPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </Button>
+                            );
+                        }
+                        return null;
+                    })}
+
+                    {/* Puntos suspensivos finales si es necesario */}
+                    {currentPage < totalPages - 3 && (
+                        <span className="mx-2">...</span>
+                    )}
+
+                    {/* Última página */}
+                    {totalPages > 1 && (
+                        <Button
+                            variant={currentPage === totalPages ? 'primary' : 'outline-primary'}
+                            onClick={() => goToPage(totalPages)}
                         >
-                            {i + 1}
-                        </button>
-                    ))}
-                    <button 
-                        className="btn btn-outline-secondary" 
+                            {totalPages}
+                        </Button>
+                    )}
+
+                    <Button 
+                        variant="outline-secondary" 
                         onClick={() => goToPage(currentPage + 1)} 
                         disabled={currentPage === totalPages}
                     >
                         Siguiente
-                    </button>
+                    </Button>
                 </div>
             )}
 
@@ -449,6 +498,17 @@ const AnnouncementBoard = () => {
                                     </div>
                                 )}
                             </div>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Imagen</Form.Label>
+                            <Form.Control
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                            />
+                            <Form.Text className="text-muted">
+                                Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                            </Form.Text>
                         </Form.Group>
                     </Form>
                 </Modal.Body>

@@ -12,6 +12,7 @@ import Patients from "./components/Patients/Patients";
 import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 import Footer from "./components/Footer/Footer";
 import ResetPassword from "./components/ForgotPassword/ResetPassword";
+import Profile from "./components/Profile/Profile";
 
 const App = () => {
     return (
@@ -51,6 +52,16 @@ const App = () => {
                                 <SideNavbar/>
                                 <div className="main-content">
                                     <Patients/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/profile" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <Profile/>
                                 </div>
                                 <Footer/>
                             </>
