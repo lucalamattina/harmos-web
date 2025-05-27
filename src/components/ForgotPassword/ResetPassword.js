@@ -4,7 +4,7 @@ import { Form, Button, Alert, Spinner } from 'react-bootstrap';
 import api from '../../api/api';
 import './ForgotPassword.css';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
-import { FaExclamationCircle, FaEye, FaEyeSlash, FaCheckCircle, FaRegCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaExclamationCircle, FaCheckCircle, FaRegCircle, FaTimesCircle } from 'react-icons/fa';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -16,12 +16,8 @@ const ResetPassword = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [tokenValid, setTokenValid] = useState(true);
-    const [showPassword, setShowPassword] = useState(false);
     const [tokenStatus, setTokenStatus] = useState('checking'); // 'checking', 'valid', 'invalid', 'expired'
-    const [passwordTouched, setPasswordTouched] = useState(false);
     const [confirmTouched, setConfirmTouched] = useState(false);
-    const [passwordError, setPasswordError] = useState('');
     const [confirmError, setConfirmError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
@@ -48,7 +44,6 @@ const ResetPassword = () => {
     useEffect(() => {
         if (!token) {
             setTokenStatus('invalid');
-            setTokenValid(false);
             return;
         }
         // Validar el token con el endpoint
@@ -59,13 +54,10 @@ const ResetPassword = () => {
             } catch (err) {
                 if (err.response && err.response.status === 404) {
                     setTokenStatus('invalid');
-                    setTokenValid(false);
                 } else if (err.response && err.response.status === 410) {
                     setTokenStatus('expired');
-                    setTokenValid(false);
                 } else {
                     setTokenStatus('invalid');
-                    setTokenValid(false);
                 }
             }
         };
@@ -95,19 +87,12 @@ const ResetPassword = () => {
         return '';
     };
 
-    const handlePasswordBlur = () => {
-        setPasswordTouched(true);
-        setPasswordError(validatePassword(newPassword));
-    };
     const handleConfirmBlur = () => {
         setConfirmTouched(true);
         setConfirmError(validateConfirm(confirmPassword));
     };
     const handlePasswordChange = (e) => {
         setNewPassword(e.target.value);
-        if (passwordTouched) {
-            setPasswordError(validatePassword(e.target.value));
-        }
         if (confirmTouched) {
             setConfirmError(validateConfirm(confirmPassword));
         }
@@ -123,13 +108,10 @@ const ResetPassword = () => {
         e.preventDefault();
         setError('');
         setSuccess('');
-        setPasswordTouched(true);
         setConfirmTouched(true);
         setSubmitted(true);
         const passErr = validatePassword(newPassword);
         const confErr = validateConfirm(confirmPassword);
-        setPasswordError(passErr);
-        setConfirmError(confErr);
         if (passErr || confErr) {
             return;
         }
@@ -143,7 +125,6 @@ const ResetPassword = () => {
         } catch (err) {
             if (err.response && err.response.status === 400) {
                 setError('El enlace ha expirado o es inválido. Solicita un nuevo correo de recuperación.');
-                setTokenValid(false);
             } else {
                 setError('Ocurrió un error al cambiar la contraseña. Intenta nuevamente.');
             }
@@ -198,28 +179,18 @@ const ResetPassword = () => {
                     <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Nueva Contraseña</Form.Label>
                         <Form.Control
-                            type={showPassword ? 'text' : 'password'}
+                            type="password"
                             value={newPassword}
                             onChange={handlePasswordChange}
-                            onBlur={handlePasswordBlur}
                             style={{ fontSize: '1.1rem', padding: '12px', paddingRight: 40 }}
                             autoComplete="new-password"
                             spellCheck={false}
                         />
-                        <span
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{ position: 'absolute', right: 12, top: 38, cursor: 'pointer', color: '#10A6AC', fontSize: 20, zIndex: 2, opacity: 0.6 }}
-                            tabIndex={0}
-                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                            role="button"
-                        >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </span>
                     </Form.Group>
                     <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Confirmar Contraseña</Form.Label>
                         <Form.Control
-                            type={showPassword ? 'text' : 'password'}
+                            type="password"
                             value={confirmPassword}
                             onChange={handleConfirmChange}
                             onBlur={handleConfirmBlur}
@@ -227,15 +198,6 @@ const ResetPassword = () => {
                             autoComplete="new-password"
                             spellCheck={false}
                         />
-                        <span
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{ position: 'absolute', right: 12, top: 38, cursor: 'pointer', color: '#10A6AC', fontSize: 20, zIndex: 2, opacity: 0.6 }}
-                            tabIndex={0}
-                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                            role="button"
-                        >
-                            {showPassword ? <FaEyeSlash /> : <FaEye />}
-                        </span>
                         {submitted && confirmError && (
                             <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
                                 <FaExclamationCircle className="me-1" /> {confirmError}

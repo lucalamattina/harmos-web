@@ -37,15 +37,12 @@ const Patients = () => {
     const fetchStatuses = useCallback(async () => {
         try {
             const response = await api.get('/api/patients/statuses');
-            console.log('Statuses from API:', response.data);
             if (Array.isArray(response.data)) {
                 setStatuses(response.data);
             } else {
-                console.error('Expected array of statuses but got:', response.data);
                 setStatuses([]);
             }
         } catch (err) {
-            console.error('Error fetching statuses:', err);
             setStatuses([]);
         }
     }, []);
@@ -53,10 +50,8 @@ const Patients = () => {
     const fetchSpecialties = useCallback(async () => {
         try {
             const response = await api.get('/api/specialties');
-            console.log('Specialties from API:', response.data);
             setSpecialties(response.data || []);
         } catch (err) {
-            console.error('Error fetching specialties:', err);
             setSpecialties([]);
         }
     }, []);
@@ -80,7 +75,6 @@ const Patients = () => {
                 params.append('specialty', selectedSpecialty);
             }
 
-            console.log('API URL:', `/api/patients?${params.toString()}`);
             const response = await api.get(`/api/patients?${params.toString()}`);
             const patientsData = response.data.content || [];
             setPatients(patientsData);

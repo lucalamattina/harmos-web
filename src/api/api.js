@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+// import { AuthContext } from '../context/AuthContext';
+// import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -67,22 +67,6 @@ export const requestPasswordReset = async (email) => {
     return response.data;
   } catch (error) {
     throw error;
-  }
-};
-
-// Helper function to handle API errors
-const handleApiError = (error) => {
-  if (error.response) {
-    // The request was made and the server responded with a status code
-    // that falls out of the range of 2xx
-    const message = error.response.data?.message || 'Error en la petición';
-    return new Error(message);
-  } else if (error.request) {
-    // The request was made but no response was received
-    return new Error('No se recibió respuesta del servidor');
-  } else {
-    // Something happened in setting up the request that triggered an Error
-    return new Error('Error al configurar la petición');
   }
 };
 

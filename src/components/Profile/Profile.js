@@ -46,7 +46,7 @@ const Profile = () => {
             const response = await api.get('/api/specialties');
             setAvailableSpecialties(response.data);
         } catch (err) {
-            console.error('Error al cargar las especialidades:', err);
+            // Error intentionally ignored
         }
     };
 
