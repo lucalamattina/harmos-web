@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner } from "react-bootstrap";
 import api from '../../api/api';
+import { AuthContext } from '../../context/AuthContext';
 
 const Patients = () => {
+    const { isAdmin } = useContext(AuthContext);
     const [patients, setPatients] = useState([]);
     const [filteredPatients, setFilteredPatients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -359,17 +361,19 @@ const Patients = () => {
                                             <i className="bi bi-eye me-1"></i>
                                             Ver
                                         </Button>
-                                        <Button 
-                                            variant="outline-danger" 
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                // TODO: Implementar eliminación
-                                            }}
-                                        >
-                                            <i className="bi bi-trash me-1"></i>
-                                            Eliminar
-                                        </Button>
+                                        {isAdmin && (
+                                            <Button 
+                                                variant="outline-danger" 
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // TODO: Implementar eliminación
+                                                }}
+                                            >
+                                                <i className="bi bi-trash me-1"></i>
+                                                Eliminar
+                                            </Button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -450,11 +454,13 @@ const Patients = () => {
                 </div>
             )}
 
-            <div className="d-grid gap-2 mt-4">
-                <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
-                    Nuevo Paciente
-                </Button>
-            </div>
+            {isAdmin && (
+                <div className="d-grid gap-2 mt-4">
+                    <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
+                        Nuevo Paciente
+                    </Button>
+                </div>
+            )}
 
             {/* Modal de Detalles del Paciente */}
             <Modal show={showDetails} onHide={() => setShowDetails(false)}>

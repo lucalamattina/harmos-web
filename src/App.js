@@ -13,6 +13,7 @@ import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
 import Footer from "./components/Footer/Footer";
 import ResetPassword from "./components/ForgotPassword/ResetPassword";
 import Profile from "./components/Profile/Profile";
+import AdminPanel from "./components/AdminPanel/AdminPanel";
 
 const App = () => {
     return (
@@ -62,6 +63,16 @@ const App = () => {
                                 <SideNavbar/>
                                 <div className="main-content">
                                     <Profile/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/admin" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <AdminPanel/>
                                 </div>
                                 <Footer/>
                             </>

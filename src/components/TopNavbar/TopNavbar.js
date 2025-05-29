@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import "./TopNavbar.css";
 import logo from "../../resources/images/Harmos-Logo-Transparente.png";
 import { useContext, useState } from "react";
-import { FaBell, FaUserCircle, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaBell, FaUserCircle, FaCog, FaSignOutAlt, FaUserShield } from 'react-icons/fa';
 import { AuthContext } from "../../context/AuthContext";
 
 const TopNavbar = () => {
-    const { logout } = useContext(AuthContext);
+    const { logout, isAdmin } = useContext(AuthContext);
     const [notifications] = useState([]);
 
     const handleLogout = () => {
@@ -28,44 +28,40 @@ const TopNavbar = () => {
                 </div>
 
                 {/* Íconos a la derecha */}
-                <div className="d-flex align-items-center gap-3" style={{ minWidth: 120, justifyContent: 'flex-end' }}>
-                    {/* Notifications Dropdown */}
-                    <Dropdown align="end">
+                <div className="d-flex align-items-center">
+                    {/* Panel de Administración */}
+                    {isAdmin && (
+                        <Link to="/admin" className="nav-icon-button me-3">
+                            <FaUserShield className="nav-icon" />
+                        </Link>
+                    )}
+
+                    {/* Notificaciones */}
+                    <Dropdown align="end" className="me-3">
                         <Dropdown.Toggle as="div" className="nav-icon-button">
-                            <div className="position-relative">
-                                <FaBell className="nav-icon" />
-                                {notifications.length > 0 && (
-                                    <Badge 
-                                        bg="danger" 
-                                        className="position-absolute top-0 start-100 translate-middle rounded-circle"
-                                    >
-                                        {notifications.length}
-                                    </Badge>
-                                )}
-                            </div>
+                            <FaBell className="nav-icon" />
+                            {notifications.length > 0 && (
+                                <Badge bg="danger" className="notification-badge">
+                                    {notifications.length}
+                                </Badge>
+                            )}
                         </Dropdown.Toggle>
 
                         <Dropdown.Menu className="notification-dropdown">
                             <Dropdown.Header>Notificaciones</Dropdown.Header>
-                            {notifications.map(notification => (
-                                <Dropdown.Item key={notification.id} className="notification-item">
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <span>{notification.message}</span>
-                                        <small className="text-muted">{notification.time}</small>
-                                    </div>
-                                </Dropdown.Item>
-                            ))}
-                            {notifications.length === 0 && (
+                            {notifications.length === 0 ? (
                                 <Dropdown.Item disabled>No hay notificaciones</Dropdown.Item>
+                            ) : (
+                                notifications.map((notification, index) => (
+                                    <Dropdown.Item key={index}>
+                                        {notification.message}
+                                    </Dropdown.Item>
+                                ))
                             )}
-                            <Dropdown.Divider />
-                            <Dropdown.Item as={Link} to="/notifications" className="text-center">
-                                Ver todas
-                            </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
 
-                    {/* User Profile Dropdown */}
+                    {/* Perfil de usuario */}
                     <Dropdown align="end">
                         <Dropdown.Toggle as="div" className="nav-icon-button">
                             <FaUserCircle className="nav-icon" />

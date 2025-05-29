@@ -55,8 +55,7 @@ const Center = () => {
         try {
             const data = await loginUser(formData.email, formData.password);
             if (data && data.token) {
-                login(data.token);
-                navigate('/', { replace: true });
+                await login(data.token);
             } else {
                 setError("Usuario o contraseña incorrecta");
             }

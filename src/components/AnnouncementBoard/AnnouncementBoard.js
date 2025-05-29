@@ -1,8 +1,9 @@
 import "./AnnouncementBoard.css";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react-bootstrap";
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
+import { AuthContext } from '../../context/AuthContext';
 
 // Componente interno para un anuncio individual
 const Announcement = ({ title, content, date, authorId, specialties, imageUrl }) => {
@@ -116,6 +117,8 @@ const Announcement = ({ title, content, date, authorId, specialties, imageUrl })
 };
 
 const AnnouncementBoard = () => {
+    const { isAdmin, currentUser } = useContext(AuthContext);
+    console.log('AnnouncementBoard: isAdmin:', isAdmin, 'currentUser:', currentUser);
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -170,13 +173,13 @@ const AnnouncementBoard = () => {
     }, [currentPage, pageSize, userSpecialties]);
 
     useEffect(() => {
+        console.log('useEffect de AuthContext ejecutado');
         fetchUserSpecialties();
     }, [fetchUserSpecialties]);
 
     useEffect(() => {
-        if (userSpecialties.length > 0) {
-            fetchAnnouncements();
-        }
+        // Ejecuta siempre que userSpecialties cambie, aunque esté vacío
+        fetchAnnouncements();
     }, [userSpecialties, fetchAnnouncements]);
 
     useEffect(() => {
@@ -416,11 +419,13 @@ const AnnouncementBoard = () => {
                 </div>
             )}
 
-            <div className="d-grid gap-2 mt-4">
-                <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
-                    Nuevo Anuncio
-                </Button>
-            </div>
+            {isAdmin && (
+                <div className="d-grid gap-2 mt-4">
+                    <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
+                        Nuevo Anuncio
+                    </Button>
+                </div>
+            )}
 
             <Modal show={showNew} onHide={handleCloseNew}>
                 <Modal.Header closeButton>
