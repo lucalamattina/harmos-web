@@ -36,21 +36,17 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const token = localStorage.getItem('token');
-            console.log('AuthContext: token en localStorage:', token);
             if (token) {
                 try {
                     await fetchCurrentUser();
                     setIsAuthenticated(true);
-                    console.log('AuthContext: usuario autenticado');
                 } catch (error) {
-                    console.log('AuthContext: error al obtener usuario', error);
                     localStorage.removeItem('token');
                     setIsAuthenticated(false);
                     setIsAdmin(false);
                     setCurrentUser(null);
                 }
             } else {
-                console.log('AuthContext: no hay token');
                 setIsAuthenticated(false);
                 setIsAdmin(false);
                 setCurrentUser(null);

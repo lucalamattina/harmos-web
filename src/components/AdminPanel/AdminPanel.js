@@ -23,7 +23,7 @@ const AdminPanel = () => {
         password: '',
         phone: '',
         specialties: [],
-        role: 'DOCTOR'
+        roles: ['DOCTOR']
     });
     const [specialtyFormData, setSpecialtyFormData] = useState({
         name: '',
@@ -43,6 +43,7 @@ const AdminPanel = () => {
     useEffect(() => {
         if (isAdmin) {
             fetchUsers(0);
+            fetchSpecialties(); // Cargar especialidades al montar
         }
     }, [isAdmin]);
 
@@ -59,24 +60,19 @@ const AdminPanel = () => {
                 totalElements: response.data.totalElements,
                 pageSize: response.data.size
             });
-            
-            // Extraer todas las especialidades únicas de los usuarios
-            const allSpecialties = usersData.reduce((acc, user) => {
-                if (user.specialties && Array.isArray(user.specialties)) {
-                    user.specialties.forEach(specialty => {
-                        if (!acc.includes(specialty)) {
-                            acc.push(specialty);
-                        }
-                    });
-                }
-                return acc;
-            }, []);
-            
-            setSpecialties(allSpecialties);
         } catch (err) {
             setError('Error al cargar usuarios');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSpecialties = async () => {
+        try {
+            const response = await api.get('/api/specialties');
+            setSpecialties(response.data);
+        } catch (err) {
+            setError('Error al cargar especialidades');
         }
     };
 
@@ -90,7 +86,7 @@ const AdminPanel = () => {
                 lastName: formData.lastName,
                 phone: formData.phone,
                 specialties: formData.specialties,
-                role: formData.role
+                roles: formData.roles
             };
             if (selectedUser) {
                 await api.put(`/api/users/${selectedUser.id}`, payload);
@@ -109,16 +105,17 @@ const AdminPanel = () => {
         e.preventDefault();
         try {
             if (selectedSpecialty) {
-                await api.put(`/api/users/${selectedUser.id}/specialties`, {
-                    specialties: [...(selectedUser.specialties || []).filter(s => s !== selectedSpecialty), specialtyFormData.name]
-                });
+                // Aquí podrías implementar la edición de especialidad si tu backend lo permite
+                // await api.put(`/api/specialties/${selectedSpecialty.id}`, { name: specialtyFormData.name, data: specialtyFormData.description });
             } else {
-                await api.put(`/api/users/${selectedUser.id}/specialties`, {
-                    specialties: [...(selectedUser.specialties || []), specialtyFormData.name]
+                // Crear especialidad
+                await api.post('/api/specialties', {
+                    name: specialtyFormData.name,
+                    data: specialtyFormData.description
                 });
             }
             setShowSpecialtyModal(false);
-            fetchUsers(0);
+            fetchSpecialties(); // Recargar especialidades después de crear
             resetSpecialtyForm();
         } catch (err) {
             setError('Error al guardar especialidad');
@@ -177,7 +174,7 @@ const AdminPanel = () => {
             password: '',
             phone: '',
             specialties: [],
-            role: 'DOCTOR'
+            roles: ['DOCTOR']
         });
         setSelectedUser(null);
     };
@@ -193,6 +190,9 @@ const AdminPanel = () => {
     const handlePageChange = (page) => {
         fetchUsers(page - 1); // La API usa 0-based indexing
     };
+
+    // Para depuración, mostrar el array de especialidades en consola
+    console.log('Especialidades:', specialties);
 
     if (!isAdmin) {
         return <Alert variant="danger">No tienes permisos para acceder a esta página.</Alert>;
@@ -247,7 +247,7 @@ const AdminPanel = () => {
                                                         email: user.email,
                                                         phone: user.phone,
                                                         specialties: user.specialties || [],
-                                                        role: user.role || 'DOCTOR',
+                                                        roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
                                                         password: ''
                                                     });
                                                     setShowUserModal(true);
@@ -364,8 +364,8 @@ const AdminPanel = () => {
                         </thead>
                         <tbody>
                             {specialties.map(specialty => (
-                                <tr key={specialty}>
-                                    <td>{specialty}</td>
+                                <tr key={specialty.id}>
+                                    <td>{specialty.name}</td>
                                     <td>
                                         <OverlayTrigger placement="top" overlay={<Tooltip>Editar especialidad</Tooltip>}>
                                             <Button 
@@ -375,7 +375,8 @@ const AdminPanel = () => {
                                                 onClick={() => {
                                                     setSelectedSpecialty(specialty);
                                                     setSpecialtyFormData({
-                                                        name: specialty
+                                                        name: specialty.name,
+                                                        description: specialty.data || ''
                                                     });
                                                     setShowSpecialtyModal(true);
                                                 }}
@@ -387,7 +388,7 @@ const AdminPanel = () => {
                                             <Button 
                                                 variant="danger" 
                                                 size="sm"
-                                                onClick={() => handleDeleteSpecialty(specialty)}
+                                                onClick={() => handleDeleteSpecialty(specialty.name)}
                                             >
                                                 <FaTrash />
                                             </Button>
@@ -483,32 +484,32 @@ const AdminPanel = () => {
                                         </InputGroup>
                                         <div className="specialties-list">
                                             {specialties
-                                                .filter(spec => spec.toLowerCase().includes(specialtySearchTerm.toLowerCase()))
+                                                .filter(spec => spec.name.toLowerCase().includes(specialtySearchTerm.toLowerCase()))
                                                 .map(spec => (
                                                     <div
-                                                        key={spec}
-                                                        className={`specialty-item${formData.specialties.includes(spec) ? ' selected' : ''}`}
+                                                        key={spec.id}
+                                                        className={`specialty-item${formData.specialties.includes(spec.name) ? ' selected' : ''}`}
                                                         onClick={() => {
-                                                            if (formData.specialties.includes(spec)) {
+                                                            if (formData.specialties.includes(spec.name)) {
                                                                 setFormData({
                                                                     ...formData,
-                                                                    specialties: formData.specialties.filter(s => s !== spec)
+                                                                    specialties: formData.specialties.filter(s => s !== spec.name)
                                                                 });
                                                             } else {
                                                                 setFormData({
                                                                     ...formData,
-                                                                    specialties: [...formData.specialties, spec]
+                                                                    specialties: [...formData.specialties, spec.name]
                                                                 });
                                                             }
                                                         }}
                                                     >
                                                         <input
                                                             type="checkbox"
-                                                            checked={formData.specialties.includes(spec)}
+                                                            checked={formData.specialties.includes(spec.name)}
                                                             readOnly
                                                             style={{ marginRight: 8 }}
                                                         />
-                                                        <span>{spec}</span>
+                                                        <span>{spec.name}</span>
                                                     </div>
                                                 ))}
                                         </div>
@@ -519,11 +520,11 @@ const AdminPanel = () => {
                         <Form.Group className="mb-3">
                             <Form.Label>Rol</Form.Label>
                             <Form.Select
-                                value={formData.role}
-                                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                                value={formData.roles[0]}
+                                onChange={(e) => setFormData({...formData, roles: [e.target.value]})}
                             >
                                 <option value="DOCTOR">Doctor</option>
-                                <option value="ADMIN">Administrador</option>
+                                <option value="ADMINISTRATOR">Administrador</option>
                             </Form.Select>
                         </Form.Group>
                         <Button variant="primary" type="submit">
@@ -549,6 +550,14 @@ const AdminPanel = () => {
                                 required
                             />
                         </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Descripción</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={specialtyFormData.description}
+                                onChange={(e) => setSpecialtyFormData({...specialtyFormData, description: e.target.value})}
+                            />
+                        </Form.Group>
                         <Button variant="primary" type="submit">
                             {selectedSpecialty ? 'Guardar Cambios' : 'Crear Especialidad'}
                         </Button>
@@ -566,14 +575,17 @@ const AdminPanel = () => {
                         <Form.Group className="mb-3">
                             <Form.Label>Especialidad</Form.Label>
                             <Form.Select
-                                value={selectedSpecialty || ''}
-                                onChange={(e) => setSelectedSpecialty(e.target.value)}
+                                value={selectedSpecialty ? selectedSpecialty.id : ''}
+                                onChange={(e) => {
+                                    const found = specialties.find(s => s.id === e.target.value || s.id === Number(e.target.value));
+                                    setSelectedSpecialty(found || null);
+                                }}
                                 required
                             >
                                 <option value="">Seleccionar especialidad</option>
                                 {specialties.map(specialty => (
-                                    <option key={specialty} value={specialty}>
-                                        {specialty}
+                                    <option key={specialty.id} value={specialty.id}>
+                                        {specialty.name}
                                     </option>
                                 ))}
                             </Form.Select>

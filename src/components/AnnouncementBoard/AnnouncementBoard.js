@@ -118,7 +118,6 @@ const Announcement = ({ title, content, date, authorId, specialties, imageUrl })
 
 const AnnouncementBoard = () => {
     const { isAdmin, currentUser } = useContext(AuthContext);
-    console.log('AnnouncementBoard: isAdmin:', isAdmin, 'currentUser:', currentUser);
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -173,7 +172,6 @@ const AnnouncementBoard = () => {
     }, [currentPage, pageSize, userSpecialties]);
 
     useEffect(() => {
-        console.log('useEffect de AuthContext ejecutado');
         fetchUserSpecialties();
     }, [fetchUserSpecialties]);
 
