@@ -48,18 +48,7 @@ const AdminPanel = () => {
     const [confirmMessage, setConfirmMessage] = useState('');
     const [onConfirm, setOnConfirm] = useState(() => () => {});
 
-    useEffect(() => {
-        if (isAdmin) {
-            fetchUsers(0, {
-                email: filterEmail,
-                name: filterName,
-                specialties: filterSpecialties
-            });
-            fetchSpecialties();
-        }
-    }, [isAdmin]);
-
-    const fetchUsers = async (page = 0, filters = {}) => {
+    const fetchUsers = useCallback(async (page = 0, filters = {}) => {
         try {
             const params = {
                 page,
@@ -92,7 +81,18 @@ const AdminPanel = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination.pageSize]);
+
+    useEffect(() => {
+        if (isAdmin) {
+            fetchUsers(0, {
+                email: filterEmail,
+                name: filterName,
+                specialties: filterSpecialties
+            });
+            fetchSpecialties();
+        }
+    }, [isAdmin, fetchUsers, filterEmail, filterName, filterSpecialties]);
 
     const fetchSpecialties = async () => {
         try {
