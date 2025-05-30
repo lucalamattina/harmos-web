@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, Pagination, OverlayTrigger, Tooltip, InputGroup } from 'react-bootstrap';
+import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col } from 'react-bootstrap';
 import { FaTrash, FaEdit, FaPlus, FaUserPlus } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api/api';
@@ -9,7 +9,7 @@ const AdminPanel = () => {
     const { isAdmin } = useContext(AuthContext);
     const [users, setUsers] = useState([]);
     const [specialties, setSpecialties] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showUserModal, setShowUserModal] = useState(false);
     const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
@@ -39,21 +39,48 @@ const AdminPanel = () => {
     // Estado para el dropdown de especialidades
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
     const [specialtySearchTerm, setSpecialtySearchTerm] = useState('');
+    // Estados para filtros
+    const [filterEmail, setFilterEmail] = useState('');
+    const [filterName, setFilterName] = useState('');
+    const [filterSpecialties, setFilterSpecialties] = useState([]);
+    // Estado para el modal de confirmación
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [onConfirm, setOnConfirm] = useState(() => () => {});
 
     useEffect(() => {
         if (isAdmin) {
-            fetchUsers(0);
-            fetchSpecialties(); // Cargar especialidades al montar
+            fetchUsers(0, {
+                email: filterEmail,
+                name: filterName,
+                specialties: filterSpecialties
+            });
+            fetchSpecialties();
         }
     }, [isAdmin]);
 
-    const fetchUsers = async (page) => {
+    const fetchUsers = async (page = 0, filters = {}) => {
         try {
-            const response = await api.get(`/api/users?page=${page}&size=${pagination.pageSize}`);
+            const params = {
+                page,
+                size: pagination.pageSize,
+                ...filters
+            };
+            // specialties debe ser array de strings
+            if (filters.specialties && filters.specialties.length > 0) {
+                params.specialties = filters.specialties;
+            }
+            const query = new URLSearchParams();
+            if (params.email) query.append('email', params.email);
+            if (params.name) query.append('name', params.name);
+            if (params.specialties && params.specialties.length > 0) {
+                params.specialties.forEach(s => query.append('specialties', s));
+            }
+            query.append('page', params.page);
+            query.append('size', params.size);
+            const response = await api.get(`/api/users?${query.toString()}`);
             const usersData = response.data.content || [];
             setUsers(usersData);
-            
-            // Actualizar estado de paginación
             setPagination({
                 currentPage: response.data.number,
                 totalPages: response.data.totalPages,
@@ -122,35 +149,36 @@ const AdminPanel = () => {
         }
     };
 
+    // Nueva función para mostrar el modal de confirmación
+    const showConfirmation = (message, onConfirmAction) => {
+        setConfirmMessage(message);
+        setOnConfirm(() => onConfirmAction);
+        setShowConfirmModal(true);
+    };
+
     const handleDeleteUser = async (userId) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+        showConfirmation('¿Estás seguro de que deseas eliminar este usuario?', async () => {
             try {
                 await api.delete(`/api/users/${userId}`);
                 fetchUsers(0);
             } catch (err) {
                 setError('Error al eliminar usuario');
             }
-        }
+        });
     };
 
-    const handleDeleteSpecialty = async (specialtyName) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar esta especialidad?')) {
+    const handleDeleteSpecialty = async (specialtyNameOrObj) => {
+        // specialtyNameOrObj puede ser el objeto de especialidad
+        const specialty = typeof specialtyNameOrObj === 'object' ? specialtyNameOrObj : specialties.find(s => s.name === specialtyNameOrObj);
+        if (!specialty || !specialty.id) return;
+        showConfirmation('¿Estás seguro de que deseas eliminar esta especialidad?', async () => {
             try {
-                // Primero encontramos el usuario que tiene esta especialidad
-                const userWithSpecialty = users.find(user => 
-                    user.specialties && user.specialties.includes(specialtyName)
-                );
-                
-                if (userWithSpecialty) {
-                    await api.put(`/api/users/${userWithSpecialty.id}/specialties`, {
-                        specialties: userWithSpecialty.specialties.filter(s => s !== specialtyName)
-                    });
-                    fetchUsers(0);
-                }
+                await api.delete(`/api/specialties/${specialty.id}`);
+                fetchSpecialties();
             } catch (err) {
                 setError('Error al eliminar especialidad');
             }
-        }
+        });
     };
 
     const handleAssignSpecialty = async (e) => {
@@ -191,8 +219,6 @@ const AdminPanel = () => {
         fetchUsers(page - 1); // La API usa 0-based indexing
     };
 
-    // Para depuración, mostrar el array de especialidades en consola
-    console.log('Especialidades:', specialties);
 
     if (!isAdmin) {
         return <Alert variant="danger">No tienes permisos para acceder a esta página.</Alert>;
@@ -215,6 +241,70 @@ const AdminPanel = () => {
                     >
                         <FaPlus /> Nuevo Usuario
                     </Button>
+                    
+                    <Form className="mb-3">
+                        <Row className="align-items-end">
+                            <Col md={3}>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar por nombre..."
+                                        value={filterName}
+                                        onChange={e => {
+                                            setFilterName(e.target.value);
+                                            fetchUsers(0, {
+                                                email: filterEmail,
+                                                name: e.target.value,
+                                                specialties: filterSpecialties
+                                            });
+                                        }}
+                                    />
+                                </InputGroup>
+                            </Col>
+                            <Col md={3}>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar por email..."
+                                        value={filterEmail}
+                                        onChange={e => {
+                                            setFilterEmail(e.target.value);
+                                            fetchUsers(0, {
+                                                email: e.target.value,
+                                                name: filterName,
+                                                specialties: filterSpecialties
+                                            });
+                                        }}
+                                    />
+                                </InputGroup>
+                            </Col>
+                            <Col md={4}>
+                                <Form.Select
+                                    value={filterSpecialties[0] || ''}
+                                    onChange={e => {
+                                        const value = e.target.value;
+                                        setFilterSpecialties(value ? [value] : []);
+                                        fetchUsers(0, {
+                                            email: filterEmail,
+                                            name: filterName,
+                                            specialties: value ? [value] : []
+                                        });
+                                    }}
+                                >
+                                    <option value="">Todas las especialidades</option>
+                                    {specialties.map(spec => (
+                                        <option key={spec.id} value={spec.name}>{spec.name}</option>
+                                    ))}
+                                </Form.Select>
+                            </Col>
+                        </Row>
+                    </Form>
                     
                     <Table striped bordered hover>
                         <thead>
@@ -388,7 +478,7 @@ const AdminPanel = () => {
                                             <Button 
                                                 variant="danger" 
                                                 size="sm"
-                                                onClick={() => handleDeleteSpecialty(specialty.name)}
+                                                onClick={() => handleDeleteSpecialty(specialty)}
                                             >
                                                 <FaTrash />
                                             </Button>
@@ -595,6 +685,27 @@ const AdminPanel = () => {
                         </Button>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* Modal de confirmación */}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirmar acción</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>{confirmMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="danger" onClick={async () => {
+                        setShowConfirmModal(false);
+                        await onConfirm();
+                    }}>
+                        Confirmar
+                    </Button>
+                </Modal.Footer>
             </Modal>
         </Container>
     );

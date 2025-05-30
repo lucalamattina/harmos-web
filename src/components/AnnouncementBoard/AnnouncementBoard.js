@@ -4,9 +4,10 @@ import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 // Componente interno para un anuncio individual
-const Announcement = ({ title, content, date, authorId, specialties, imageUrl }) => {
+const Announcement = ({ id, title, content, date, authorId, specialties, imageUrl, isAdmin, onEdit, onDelete }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
     const [showFull, setShowFull] = useState(false);
     const MAX_TITLE_LENGTH = 50;
@@ -38,6 +39,16 @@ const Announcement = ({ title, content, date, authorId, specialties, imageUrl })
     return (
         <>
             <Card className="mb-3 announcement-card" onClick={() => setShowFull(true)}>
+                {isAdmin && (
+                    <div style={{ position: 'absolute', top: 8, right: 12, zIndex: 2, display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+                        <Button variant="link" size="sm" onClick={onEdit} style={{ color: '#6c757d', padding: 0 }} title="Editar">
+                            <FaEdit size={18} />
+                        </Button>
+                        <Button variant="link" size="sm" onClick={onDelete} style={{ color: '#6c757d', padding: 0 }} title="Eliminar">
+                            <FaTrash size={18} />
+                        </Button>
+                    </div>
+                )}
                 {imageUrl && (
                     <div className="announcement-image-container mb-3">
                         <img 
@@ -136,6 +147,10 @@ const AnnouncementBoard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
     const [userSpecialties, setUserSpecialties] = useState([]);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [onConfirm, setOnConfirm] = useState(() => () => {});
+    const [editAnnouncement, setEditAnnouncement] = useState(null);
 
     const fetchUserSpecialties = useCallback(async () => {
         try {
@@ -223,6 +238,35 @@ const AnnouncementBoard = () => {
         }
     };
 
+    const showConfirmation = (message, onConfirmAction) => {
+        setConfirmMessage(message);
+        setOnConfirm(() => onConfirmAction);
+        setShowConfirmModal(true);
+    };
+
+    const handleDeleteAnnouncement = (id) => {
+        showConfirmation('¿Estás seguro de que deseas eliminar este anuncio?', async () => {
+            try {
+                await api.delete(`/api/announcements/${id}`);
+                await fetchAnnouncements();
+            } catch (err) {
+                setError('Error al eliminar el anuncio');
+            }
+        });
+    };
+
+    const handleEditAnnouncement = (announcement) => {
+        setEditAnnouncement(announcement);
+        setShowNew(true);
+        setNewAnnouncement({
+            title: announcement.title,
+            content: announcement.content,
+            date: announcement.date,
+            specialties: announcement.specialties,
+            image: null
+        });
+    };
+
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
             try {
@@ -230,18 +274,15 @@ const AnnouncementBoard = () => {
                 if (!createdByUserId) {
                     throw new Error('No se pudo obtener el ID del usuario');
                 }
-
                 const now = new Date();
                 const pad = n => n.toString().padStart(2, '0');
                 const formattedDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
                 let specialtiesNames = [];
                 if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
                     specialtiesNames = specialtiesList
                         .filter(spec => newAnnouncement.specialties.includes(spec.id))
                         .map(spec => spec.name);
                 }
-
                 const formData = new FormData();
                 formData.append('title', newAnnouncement.title);
                 formData.append('content', newAnnouncement.content);
@@ -251,14 +292,22 @@ const AnnouncementBoard = () => {
                 if (newAnnouncement.image) {
                     formData.append('image', newAnnouncement.image);
                 }
-
-                await api.post('/api/announcements', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
+                if (editAnnouncement) {
+                    await api.put(`/api/announcements/${editAnnouncement.id}`, formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                } else {
+                    await api.post('/api/announcements', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                }
                 await fetchAnnouncements();
                 setShowNew(false);
+                setEditAnnouncement(null);
                 setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined, image: null });
             } catch (err) {
                 let errorMessage = 'Error al guardar el anuncio';
@@ -342,12 +391,16 @@ const AnnouncementBoard = () => {
             {announcements.map(announcement => (
                 <Announcement
                     key={announcement.id}
+                    id={announcement.id}
                     title={announcement.title}
                     content={announcement.content}
                     date={announcement.date}
                     authorId={announcement.createdByUserId}
                     specialties={announcement.specialties}
                     imageUrl={announcement.imageUrl}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEditAnnouncement(announcement)}
+                    onDelete={() => handleDeleteAnnouncement(announcement.id)}
                 />
             ))}
 
@@ -521,6 +574,26 @@ const AnnouncementBoard = () => {
                     </Button>
                     <Button variant="primary" onClick={handleSave}>
                         Guardar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirmar acción</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>{confirmMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="danger" onClick={async () => {
+                        setShowConfirmModal(false);
+                        await onConfirm();
+                    }}>
+                        Confirmar
                     </Button>
                 </Modal.Footer>
             </Modal>

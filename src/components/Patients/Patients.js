@@ -36,6 +36,11 @@ const Patients = () => {
     const [pageSize] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
 
+    // Estado para el modal de confirmación
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [onConfirm, setOnConfirm] = useState(() => () => {});
+
     const fetchStatuses = useCallback(async () => {
         try {
             const response = await api.get('/api/patients/statuses');
@@ -235,6 +240,25 @@ const Patients = () => {
         }
     };
 
+    // Función para mostrar el modal de confirmación
+    const showConfirmation = (message, onConfirmAction) => {
+        setConfirmMessage(message);
+        setOnConfirm(() => onConfirmAction);
+        setShowConfirmModal(true);
+    };
+
+    // Eliminar paciente
+    const handleDeletePatient = (patient) => {
+        showConfirmation('¿Estás seguro de que deseas eliminar este paciente?', async () => {
+            try {
+                await api.delete(`/api/patients/${patient.id}`);
+                await fetchPatients();
+            } catch (err) {
+                setError('Error al eliminar el paciente');
+            }
+        });
+    };
+
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
             <div className="text-center">
@@ -367,7 +391,7 @@ const Patients = () => {
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    // TODO: Implementar eliminación
+                                                    handleDeletePatient(patient);
                                                 }}
                                             >
                                                 <i className="bi bi-trash me-1"></i>
@@ -732,6 +756,27 @@ const Patients = () => {
                     </Button>
                     <Button variant="primary" onClick={handleSave}>
                         Guardar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal de confirmación */}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirmar acción</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>{confirmMessage}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="danger" onClick={async () => {
+                        setShowConfirmModal(false);
+                        await onConfirm();
+                    }}>
+                        Confirmar
                     </Button>
                 </Modal.Footer>
             </Modal>
