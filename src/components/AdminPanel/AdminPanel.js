@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col } from 'react-bootstrap';
 import { FaTrash, FaEdit, FaPlus, FaUserPlus } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
@@ -81,7 +81,7 @@ const AdminPanel = () => {
         } finally {
             setLoading(false);
         }
-    }, [pagination.pageSize]);
+    }, [pagination.pageSize, setLoading]);
 
     useEffect(() => {
         if (isAdmin) {
