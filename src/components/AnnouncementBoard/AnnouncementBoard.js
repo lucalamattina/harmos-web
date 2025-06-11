@@ -131,6 +131,7 @@ const AnnouncementBoard = () => {
     const { isAdmin, currentUser } = useContext(AuthContext);
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [showNew, setShowNew] = useState(false);
     const [newAnnouncement, setNewAnnouncement] = useState({
@@ -269,42 +270,47 @@ const AnnouncementBoard = () => {
 
     const handleSave = async () => {
         if (newAnnouncement.title && newAnnouncement.content) {
+            setSaving(true);
             try {
                 const createdByUserId = getTokenUserId();
                 if (!createdByUserId) {
                     throw new Error('No se pudo obtener el ID del usuario');
                 }
-                const now = new Date();
-                const pad = n => n.toString().padStart(2, '0');
-                const formattedDate = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+                
+                // Preparar especialidades
                 let specialtiesNames = [];
                 if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
                     specialtiesNames = specialtiesList
                         .filter(spec => newAnnouncement.specialties.includes(spec.id))
                         .map(spec => spec.name);
                 }
-                const formData = new FormData();
-                formData.append('title', newAnnouncement.title);
-                formData.append('content', newAnnouncement.content);
-                formData.append('date', formattedDate);
-                formData.append('createdByUserId', createdByUserId);
-                formData.append('specialties', JSON.stringify(specialtiesNames));
-                if (newAnnouncement.image) {
-                    formData.append('image', newAnnouncement.image);
-                }
+
+                // FLUJO 1: Crear/editar anuncio básico (JSON)
+                const announcementData = {
+                    title: newAnnouncement.title,
+                    content: newAnnouncement.content,
+                    specialties: specialtiesNames
+                };
+
+                let announcementId;
                 if (editAnnouncement) {
-                    await api.put(`/api/announcements/${editAnnouncement.id}`, formData, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    });
+                    // Editar anuncio existente
+                    await api.put(`/api/announcements/${editAnnouncement.id}`, announcementData);
+                    announcementId = editAnnouncement.id;
                 } else {
-                    await api.post('/api/announcements', formData, {
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    });
+                    // Crear nuevo anuncio
+                    const response = await api.post('/api/announcements', announcementData);
+                    announcementId = response.data.id;
                 }
+
+                // FLUJO 2: Subir imagen si existe
+                if (newAnnouncement.image && announcementId) {
+                    const formData = new FormData();
+                    formData.append('images', newAnnouncement.image);
+                    
+                    await api.post(`/api/announcements/${announcementId}/files`, formData);
+                }
+
                 await fetchAnnouncements();
                 setShowNew(false);
                 setEditAnnouncement(null);
@@ -319,6 +325,9 @@ const AnnouncementBoard = () => {
                     errorMessage += `: ${err.message}`;
                 }
                 setError(errorMessage);
+                console.error('Error details:', err.response?.data);
+            } finally {
+                setSaving(false);
             }
         }
     };
@@ -480,7 +489,9 @@ const AnnouncementBoard = () => {
 
             <Modal show={showNew} onHide={handleCloseNew}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Crear anuncio</Modal.Title>
+                    <Modal.Title>
+                        {editAnnouncement ? 'Editar anuncio' : 'Crear anuncio'}
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
@@ -569,11 +580,26 @@ const AnnouncementBoard = () => {
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseNew}>
+                    <Button 
+                        variant="secondary" 
+                        onClick={handleCloseNew}
+                        disabled={saving}
+                    >
                         Cancelar
                     </Button>
-                    <Button variant="primary" onClick={handleSave}>
-                        Guardar
+                    <Button 
+                        variant="primary" 
+                        onClick={handleSave}
+                        disabled={saving}
+                    >
+                        {saving ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Guardando...
+                            </>
+                        ) : (
+                            'Guardar'
+                        )}
                     </Button>
                 </Modal.Footer>
             </Modal>

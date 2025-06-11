@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dropdown, Badge, Button, Modal } from 'react-bootstrap';
+import { Dropdown, Badge, Button, Modal, Alert } from 'react-bootstrap';
 import { FaBell } from 'react-icons/fa';
 import { getNotifications, markNotificationAsRead } from '../../api/notifications';
 import api from '../../api/api';
@@ -11,19 +11,29 @@ const Notifications = () => {
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
     const [authorName, setAuthorName] = useState('');
+    const [error, setError] = useState('');
 
     const fetchNotifications = async () => {
         try {
+            setError('');
             const data = await getNotifications();
             setNotifications(data);
             setUnreadCount(data.filter(notif => !notif.read).length);
         } catch (error) {
             console.error('Error fetching notifications:', error);
+            if (error.response?.status === 401) {
+                setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            } else if (error.response?.status === 403) {
+                setError('No tienes permisos para acceder a las notificaciones.');
+            } else {
+                setError('Error al cargar las notificaciones.');
+            }
         }
     };
 
     const handleNotificationClick = async (notification) => {
         try {
+            setError('');
             // Marcar como leída
             await markNotificationAsRead(notification.id);
             setNotifications(notifications.map(notif => 
@@ -46,6 +56,13 @@ const Notifications = () => {
             }
         } catch (error) {
             console.error('Error handling notification:', error);
+            if (error.response?.status === 401) {
+                setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            } else if (error.response?.status === 403) {
+                setError('No tienes permisos para realizar esta acción.');
+            } else {
+                setError('Error al procesar la notificación.');
+            }
         }
     };
 
@@ -89,8 +106,15 @@ const Notifications = () => {
 
                 <Dropdown.Menu className="notification-dropdown">
                     <Dropdown.Header>Notificaciones</Dropdown.Header>
+                    {error && (
+                        <div className="px-3 py-2">
+                            <Alert variant="danger" className="mb-0 py-2">
+                                <small>{error}</small>
+                            </Alert>
+                        </div>
+                    )}
                     <div className="notification-list">
-                        {notifications.length === 0 ? (
+                        {notifications.length === 0 && !error ? (
                             <Dropdown.Item disabled>No hay notificaciones</Dropdown.Item>
                         ) : (
                             notifications.map(notification => (
