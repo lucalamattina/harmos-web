@@ -1,0 +1,103 @@
+.notification-dropdown {
+    position: relative;
+    min-width: 400px !important;
+    max-width: 450px !important;
+    width: 420px !important;
+    padding: 0;
+}
+
+.notification-toggle {
+    color: #333;
+    padding: 0;
+    position: relative;
+}
+
+.notification-toggle::after {
+    display: none;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.7rem;
+    padding: 0.25em 0.6em;
+}
+
+.notification-menu {
+    width: 320px;
+    padding: 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    width: 100%;
+    white-space: normal;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    font-weight: 500;
+}
+
+.notification-item:hover {
+    background-color: #f5f5f5;
+}
+
+.notification-item.unread:hover {
+    background-color: #d1e7dd;
+}
+
+.notification-content {
+    margin: 0;
+    width: 100%;
+}
+
+.notification-text {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
+    color: #333;
+    white-space: normal;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.notification-item.unread .notification-text {
+    color: #1976D2;
+    font-weight: 500;
+}
+
+.notification-date {
+    color: #6c757d;
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Selector más específico para el dropdown menu */
+.dropdown-menu.notification-dropdown {
+    min-width: 400px !important;
+    max-width: 450px !important;
+    width: 420px !important;
+} 

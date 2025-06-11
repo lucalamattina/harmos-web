@@ -184,9 +184,7 @@ const AdminPanel = () => {
     const handleAssignSpecialty = async (e) => {
         e.preventDefault();
         try {
-            await api.post(`/api/users/${selectedUser.id}/specialties`, {
-                specialtyId: selectedSpecialty.id
-            });
+            await api.post(`/api/users/${selectedUser.id}/specialties/${selectedSpecialty.id}`);
             setShowAssignModal(false);
             fetchUsers(0);
         } catch (err) {
