@@ -1,0 +1,121 @@
+{
+	"info": {
+		"_postman_id": "f731d887-fdd5-429b-a069-14199e944ef7",
+		"name": "Harmos Announcements Files API",
+		"description": "Endpoints para manejo de archivos en anuncios",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14903722"
+	},
+	"item": [
+		{
+			"name": "Subir archivos a anuncio",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIzMiIsImVtYWlsIjoibm9yZXBseWhhcm1vc0BnbWFpbC5jb20iLCJyb2xlcyI6WyJBRE1JTklTVFJBVE9SIl0sImV4cCI6MTc0OTc3MjkxOH0.GQ-KIeOp7yn-bxbysMnq6ZuigRa6CVxwTXY3BlxZgbp0nzLU0z8SDLXIlzZ_Pde4MGQaRNvTraFZnVMiTYZf-A",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "images",
+							"description": "Imágenes para el anuncio",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "files",
+							"description": "Documentos para el anuncio",
+							"type": "file",
+							"src": "/C:/Users/aleja/OneDrive/Escritorio/CurriculumVitae 2025.pdf"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{base_url}}/announcements/{{announcement_id}}/files",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"announcements",
+						"{{announcement_id}}",
+						"files"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Eliminar archivo de anuncio",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/announcements/{{announcement_id}}/files?fileUrl={{file_url}}&type={{file_type}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"announcements",
+						"{{announcement_id}}",
+						"files"
+					],
+					"query": [
+						{
+							"key": "fileUrl",
+							"value": "{{file_url}}"
+						},
+						{
+							"key": "type",
+							"value": "{{file_type}}",
+							"description": "image o file"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://harmos-api-a77d01707678.herokuapp.com/api"
+		},
+		{
+			"key": "token",
+			"value": "tu-token"
+		},
+		{
+			"key": "announcement_id",
+			"value": "1"
+		},
+		{
+			"key": "file_url",
+			"value": "https://res.cloudinary.com/..."
+		},
+		{
+			"key": "file_type",
+			"value": "image"
+		}
+	]
+}

@@ -35,3 +35,6 @@ yarn-error.log*
 # Por ejemplo, archivos con datos sensibles, archivos temporales, etc.
 # mi_archivo_temporal.txt
 # directorio_de_datos_locales/
+
+#env files
+.env.*
