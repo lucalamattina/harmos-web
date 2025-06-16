@@ -5,6 +5,7 @@ import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
 import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import FileViewer from '../FileViewer/FileViewer';
 
 // Componente para popup de imagen
 const ImageModal = ({ show, onHide, image, imageIndex, totalImages, onPrevious, onNext }) => {
@@ -145,6 +146,10 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [announcementFiles, setAnnouncementFiles] = useState([]);
+    const [showFileViewer, setShowFileViewer] = useState(false);
+    const [selectedFileData, setSelectedFileData] = useState(null);
+    const [fileViewerLoading, setFileViewerLoading] = useState(false);
+    const [fileViewerError, setFileViewerError] = useState(null);
     const MAX_TITLE_LENGTH = 50;
     const MAX_CONTENT_LENGTH = 150;
 
@@ -208,14 +213,40 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
     };
 
     const handleFilePreview = async (fileIndex) => {
-        await fetchAnnouncementFiles(); // Cargar archivos detallados
-        const detailedFiles = announcementFiles.files || [];
-        if (detailedFiles.length > fileIndex) {
-            const file = detailedFiles[fileIndex];
-            const previewUrl = file.preview_url || file.url;
-            if (previewUrl) {
-                window.open(previewUrl, '_blank');
+        try {
+            setFileViewerLoading(true);
+            setFileViewerError(null);
+            setShowFileViewer(true);
+            
+            // Cargar archivos detallados y esperar la respuesta
+            const response = await api.get(`/api/announcements/${id}/files`);
+            const detailedFiles = response.data.files || [];
+            
+            if (detailedFiles.length > fileIndex) {
+                const file = detailedFiles[fileIndex];
+                
+                // Preparar los datos según la estructura esperada por FileViewer
+                const fileData = {
+                    filename: file.filename || 'Documento',
+                    document_type: file.document_type || 'pdf',
+                    viewer_type: file.document_type || 'pdf',
+                    download_url: file.download_url || file.url,
+                    direct_url: file.direct_url || file.url,
+                    embed_url: file.embed_url || file.url,
+                    url: file.url,
+                    page_previews: file.pages || [],
+                    preview_url: file.preview_url
+                };
+                
+                setSelectedFileData(fileData);
+            } else {
+                setFileViewerError('Archivo no encontrado');
             }
+        } catch (error) {
+            console.error('Error al cargar archivo:', error);
+            setFileViewerError('Error al cargar el archivo');
+        } finally {
+            setFileViewerLoading(false);
         }
     };
 
@@ -439,6 +470,19 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                 onPrevious={handlePreviousImage}
                 onNext={handleNextImage}
             />
+
+            {/* Visualizador de archivos */}
+            <FileViewer
+                show={showFileViewer}
+                onHide={() => {
+                    setShowFileViewer(false);
+                    setSelectedFileData(null);
+                    setFileViewerError(null);
+                }}
+                fileData={selectedFileData}
+                isLoading={fileViewerLoading}
+                error={fileViewerError}
+            />
         </>
     );
 };
@@ -454,6 +498,10 @@ export const AnnouncementModal = ({
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [announcementFiles, setAnnouncementFiles] = useState([]);
+    const [showFileViewer, setShowFileViewer] = useState(false);
+    const [selectedFileData, setSelectedFileData] = useState(null);
+    const [fileViewerLoading, setFileViewerLoading] = useState(false);
+    const [fileViewerError, setFileViewerError] = useState(null);
 
     const formatSpecialties = (specialties) => {
         if (!specialties || specialties.length === 0) return 'Todas las especialidades';
@@ -498,14 +546,40 @@ export const AnnouncementModal = ({
     };
 
     const handleFilePreview = async (fileIndex) => {
-        await fetchAnnouncementFiles();
-        const detailedFiles = announcementFiles.files || [];
-        if (detailedFiles.length > fileIndex) {
-            const file = detailedFiles[fileIndex];
-            const previewUrl = file.preview_url || file.url;
-            if (previewUrl) {
-                window.open(previewUrl, '_blank');
+        try {
+            setFileViewerLoading(true);
+            setFileViewerError(null);
+            setShowFileViewer(true);
+            
+            // Cargar archivos detallados y esperar la respuesta
+            const response = await api.get(`/api/announcements/${announcement.id}/files`);
+            const detailedFiles = response.data.files || [];
+            
+            if (detailedFiles.length > fileIndex) {
+                const file = detailedFiles[fileIndex];
+                
+                // Preparar los datos según la estructura esperada por FileViewer
+                const fileData = {
+                    filename: file.filename || 'Documento',
+                    document_type: file.document_type || 'pdf',
+                    viewer_type: file.document_type || 'pdf',
+                    download_url: file.download_url || file.url,
+                    direct_url: file.direct_url || file.url,
+                    embed_url: file.embed_url || file.url,
+                    url: file.url,
+                    page_previews: file.pages || [],
+                    preview_url: file.preview_url
+                };
+                
+                setSelectedFileData(fileData);
+            } else {
+                setFileViewerError('Archivo no encontrado');
             }
+        } catch (error) {
+            console.error('Error al cargar archivo:', error);
+            setFileViewerError('Error al cargar el archivo');
+        } finally {
+            setFileViewerLoading(false);
         }
     };
 
@@ -746,6 +820,19 @@ export const AnnouncementModal = ({
                 totalImages={(announcementFiles.images || announcement.images || []).length}
                 onPrevious={handlePreviousImage}
                 onNext={handleNextImage}
+            />
+
+            {/* Visualizador de archivos */}
+            <FileViewer
+                show={showFileViewer}
+                onHide={() => {
+                    setShowFileViewer(false);
+                    setSelectedFileData(null);
+                    setFileViewerError(null);
+                }}
+                fileData={selectedFileData}
+                isLoading={fileViewerLoading}
+                error={fileViewerError}
             />
 
         </Modal>
