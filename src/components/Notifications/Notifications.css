@@ -13,7 +13,20 @@
 }
 
 .notification-toggle::after {
-    display: none;
+    display: none !important;
+}
+
+/* Asegurar que no haya flecha en el toggle de notificaciones */
+.dropdown-toggle.notification-toggle::after {
+    display: none !important;
+}
+
+/* Más específico para quitar la flecha */
+#notification-dropdown::after,
+#notification-dropdown.dropdown-toggle::after,
+.dropdown-toggle#notification-dropdown::after {
+    display: none !important;
+    content: none !important;
 }
 
 .notification-badge {

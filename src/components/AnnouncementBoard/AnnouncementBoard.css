@@ -299,3 +299,111 @@
     transform: translateY(0);
     box-shadow: none;
 }
+
+/* Estilos para modales de imagen y PDF */
+.image-modal .modal-dialog {
+    max-width: 90vw;
+    width: 90vw;
+    margin: 1.75rem auto;
+}
+
+.image-modal .modal-content {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.image-modal .modal-body {
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-modal img {
+    transition: opacity 0.3s ease;
+}
+
+.image-modal .btn-link {
+    text-decoration: none;
+    border: none;
+    background: none;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.image-modal .btn-link:hover {
+    color: #009A9E;
+    text-shadow: 0 0 5px rgba(0, 154, 158, 0.8);
+    transform: scale(1.1);
+}
+
+.pdf-modal .modal-dialog {
+    max-width: 95vw;
+    width: 95vw;
+    margin: 1rem auto;
+}
+
+.pdf-modal .modal-content {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pdf-modal .modal-body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.pdf-modal .modal-header {
+    flex-shrink: 0;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.pdf-modal .modal-header .btn {
+    margin-left: auto;
+}
+
+.pdf-modal .border-bottom {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.pdf-modal .border-top {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Responsive adjustments for modals */
+@media (max-width: 768px) {
+    .image-modal .modal-dialog {
+        max-width: 95vw;
+        width: 95vw;
+        margin: 0.5rem auto;
+    }
+    
+    .image-modal .modal-body {
+        min-height: 70vh;
+    }
+    
+    .pdf-modal .modal-dialog {
+        max-width: 98vw;
+        width: 98vw;
+        margin: 0.25rem auto;
+    }
+    
+    .pdf-modal .modal-content {
+        height: 95vh;
+    }
+}

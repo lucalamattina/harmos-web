@@ -4,12 +4,147 @@ import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+
+// Componente para popup de imagen
+const ImageModal = ({ show, onHide, image, imageIndex, totalImages, onPrevious, onNext }) => {
+    const getImageUrl = (img) => {
+        if (typeof img === 'string') return img;
+        if (typeof img === 'object' && img !== null) {
+            // Usar la variante 'original' si está disponible, sino la URL original
+            return img.variants?.original || img.url;
+        }
+        return '';
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'ArrowLeft' && onPrevious) {
+            onPrevious();
+        } else if (e.key === 'ArrowRight' && onNext) {
+            onNext();
+        } else if (e.key === 'Escape') {
+            onHide();
+        }
+    };
+
+    useEffect(() => {
+        if (show) {
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [show, onPrevious, onNext]);
+
+    if (!image) return null;
+
+    return (
+        <Modal 
+            show={show} 
+            onHide={onHide} 
+            size="xl"
+            centered
+            dialogClassName="image-modal"
+        >
+            <Modal.Body className="p-0 position-relative" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+                {/* Botón cerrar */}
+                <Button
+                    variant="link"
+                    className="position-absolute text-white"
+                    style={{ 
+                        top: '10px', 
+                        right: '10px', 
+                        zIndex: 1050,
+                        fontSize: '1.5rem'
+                    }}
+                    onClick={onHide}
+                >
+                    <FaTimes />
+                </Button>
+                
+                {/* Navegación anterior */}
+                {totalImages > 1 && onPrevious && (
+                    <Button
+                        variant="link"
+                        className="position-absolute text-white"
+                        style={{ 
+                            top: '50%', 
+                            left: '10px', 
+                            transform: 'translateY(-50%)',
+                            zIndex: 1050,
+                            fontSize: '1.5rem'
+                        }}
+                        onClick={onPrevious}
+                    >
+                        <FaChevronLeft />
+                    </Button>
+                )}
+                
+                {/* Navegación siguiente */}
+                {totalImages > 1 && onNext && (
+                    <Button
+                        variant="link"
+                        className="position-absolute text-white"
+                        style={{ 
+                            top: '50%', 
+                            right: '10px', 
+                            transform: 'translateY(-50%)',
+                            zIndex: 1050,
+                            fontSize: '1.5rem'
+                        }}
+                        onClick={onNext}
+                    >
+                        <FaChevronRight />
+                    </Button>
+                )}
+
+                {/* Imagen */}
+                <div className="text-center p-3">
+                    <img 
+                        src={getImageUrl(image)}
+                        alt={`Imagen ${imageIndex + 1}`}
+                        style={{ 
+                            maxWidth: '100%',
+                            maxHeight: '80vh',
+                            objectFit: 'contain'
+                        }}
+                        onError={(e) => {
+                            e.target.style.display = 'block';
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
+                        }}
+                    />
+                </div>
+
+                {/* Contador de imágenes */}
+                {totalImages > 1 && (
+                    <div 
+                        className="position-absolute text-white text-center"
+                        style={{ 
+                            bottom: '10px', 
+                            left: '50%', 
+                            transform: 'translateX(-50%)',
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: '5px 10px',
+                            borderRadius: '15px',
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        {imageIndex + 1} de {totalImages}
+                    </div>
+                )}
+            </Modal.Body>
+        </Modal>
+    );
+};
+
+
 
 // Componente interno para un anuncio individual
 const Announcement = ({ id, title, content, date, authorId, specialties, images, files, isAdmin, onEdit, onDelete }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
     const [showFull, setShowFull] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [announcementFiles, setAnnouncementFiles] = useState([]);
     const MAX_TITLE_LENGTH = 50;
     const MAX_CONTENT_LENGTH = 150;
 
@@ -26,6 +161,17 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
         fetchAuthor();
     }, [authorId]);
 
+    // Función para cargar archivos detallados del anuncio
+    const fetchAnnouncementFiles = async () => {
+        try {
+            const response = await api.get(`/api/announcements/${id}/files`);
+            setAnnouncementFiles(response.data);
+        } catch (err) {
+            console.error('Error al cargar archivos del anuncio:', err);
+            setAnnouncementFiles({ images: [], files: [], total: 0 });
+        }
+    };
+
     const truncateText = (text, maxLength) => {
         if (!text || text.length <= maxLength) return text;
         return text.slice(0, maxLength) + '...';
@@ -34,6 +180,60 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
     const formatSpecialties = (specialties) => {
         if (!specialties || specialties.length === 0) return 'Todas las especialidades';
         return specialties.map(spec => typeof spec === 'object' ? spec.name : spec).join(', ');
+    };
+
+    // Funciones para manejar modales
+    const handleImageClick = async (imageIndex) => {
+        await fetchAnnouncementFiles(); // Cargar archivos detallados si no están cargados
+        const detailedImages = announcementFiles.images || images || [];
+        if (detailedImages.length > 0) {
+            setSelectedImage(detailedImages[imageIndex]);
+            setSelectedImageIndex(imageIndex);
+            setShowImageModal(true);
+        }
+    };
+
+    const handlePreviousImage = () => {
+        const detailedImages = announcementFiles.images || images || [];
+        const newIndex = selectedImageIndex > 0 ? selectedImageIndex - 1 : detailedImages.length - 1;
+        setSelectedImage(detailedImages[newIndex]);
+        setSelectedImageIndex(newIndex);
+    };
+
+    const handleNextImage = () => {
+        const detailedImages = announcementFiles.images || images || [];
+        const newIndex = selectedImageIndex < detailedImages.length - 1 ? selectedImageIndex + 1 : 0;
+        setSelectedImage(detailedImages[newIndex]);
+        setSelectedImageIndex(newIndex);
+    };
+
+    const handleFilePreview = async (fileIndex) => {
+        await fetchAnnouncementFiles(); // Cargar archivos detallados
+        const detailedFiles = announcementFiles.files || [];
+        if (detailedFiles.length > fileIndex) {
+            const file = detailedFiles[fileIndex];
+            const previewUrl = file.preview_url || file.url;
+            if (previewUrl) {
+                window.open(previewUrl, '_blank');
+            }
+        }
+    };
+
+    const handleFileDownload = async (fileIndex) => {
+        await fetchAnnouncementFiles(); // Cargar archivos detallados
+        const detailedFiles = announcementFiles.files || [];
+        if (detailedFiles.length > fileIndex) {
+            const file = detailedFiles[fileIndex];
+            const downloadUrl = file.download_url || file.url;
+            if (downloadUrl) {
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = file.filename || 'documento';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
     };
 
     // Función para renderizar múltiples imágenes
@@ -77,7 +277,7 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    window.open(getImageUrl(image), '_blank');
+                                    handleImageClick(index);
                                 }}
                                 onError={(e) => {
                                     e.target.style.display = 'none';
@@ -134,11 +334,39 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                             file.split('/').pop() || `Archivo ${index + 1}`;
                         
                         return (
-                            <div key={index} className="d-flex align-items-center">
+                            <div key={index} className="d-flex align-items-center gap-1">
                                 <small className="text-muted" style={{ fontSize: '0.75rem' }}>
                                     <i className="bi bi-file-earmark me-1"></i>
-                                    {fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}
+                                    {fileName.length > 15 ? fileName.substring(0, 15) + '...' : fileName}
                                 </small>
+                                <div className="d-flex gap-1">
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="p-0"
+                                        style={{ fontSize: '0.7rem', color: '#6c757d' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleFilePreview(index);
+                                        }}
+                                        title="Ver archivo"
+                                    >
+                                        <FaEye />
+                                    </Button>
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="p-0"
+                                        style={{ fontSize: '0.7rem', color: '#6c757d' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleFileDownload(index);
+                                        }}
+                                        title="Descargar archivo"
+                                    >
+                                        <FaDownload />
+                                    </Button>
+                                </div>
                             </div>
                         );
                     })}
@@ -200,6 +428,17 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                 }}
                 authorName={authorName}
             />
+
+            {/* Modal para imagen */}
+            <ImageModal
+                show={showImageModal}
+                onHide={() => setShowImageModal(false)}
+                image={selectedImage}
+                imageIndex={selectedImageIndex}
+                totalImages={(announcementFiles.images || images || []).length}
+                onPrevious={handlePreviousImage}
+                onNext={handleNextImage}
+            />
         </>
     );
 };
@@ -211,9 +450,80 @@ export const AnnouncementModal = ({
     announcement, 
     authorName = 'Cargando...' 
 }) => {
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [announcementFiles, setAnnouncementFiles] = useState([]);
+
     const formatSpecialties = (specialties) => {
         if (!specialties || specialties.length === 0) return 'Todas las especialidades';
         return specialties.map(spec => typeof spec === 'object' ? spec.name : spec).join(', ');
+    };
+
+    // Función para cargar archivos detallados del anuncio
+    const fetchAnnouncementFiles = async () => {
+        if (!announcement?.id) return;
+        try {
+            const response = await api.get(`/api/announcements/${announcement.id}/files`);
+            setAnnouncementFiles(response.data);
+        } catch (err) {
+            console.error('Error al cargar archivos del anuncio:', err);
+            setAnnouncementFiles({ images: [], files: [], total: 0 });
+        }
+    };
+
+    // Funciones para manejar modales
+    const handleImageClick = async (imageIndex) => {
+        await fetchAnnouncementFiles();
+        const detailedImages = announcementFiles.images || announcement.images || [];
+        if (detailedImages.length > 0) {
+            setSelectedImage(detailedImages[imageIndex]);
+            setSelectedImageIndex(imageIndex);
+            setShowImageModal(true);
+        }
+    };
+
+    const handlePreviousImage = () => {
+        const detailedImages = announcementFiles.images || announcement.images || [];
+        const newIndex = selectedImageIndex > 0 ? selectedImageIndex - 1 : detailedImages.length - 1;
+        setSelectedImage(detailedImages[newIndex]);
+        setSelectedImageIndex(newIndex);
+    };
+
+    const handleNextImage = () => {
+        const detailedImages = announcementFiles.images || announcement.images || [];
+        const newIndex = selectedImageIndex < detailedImages.length - 1 ? selectedImageIndex + 1 : 0;
+        setSelectedImage(detailedImages[newIndex]);
+        setSelectedImageIndex(newIndex);
+    };
+
+    const handleFilePreview = async (fileIndex) => {
+        await fetchAnnouncementFiles();
+        const detailedFiles = announcementFiles.files || [];
+        if (detailedFiles.length > fileIndex) {
+            const file = detailedFiles[fileIndex];
+            const previewUrl = file.preview_url || file.url;
+            if (previewUrl) {
+                window.open(previewUrl, '_blank');
+            }
+        }
+    };
+
+    const handleFileDownload = async (fileIndex) => {
+        await fetchAnnouncementFiles();
+        const detailedFiles = announcementFiles.files || [];
+        if (detailedFiles.length > fileIndex) {
+            const file = detailedFiles[fileIndex];
+            const downloadUrl = file.download_url || file.url;
+            if (downloadUrl) {
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = file.filename || 'documento';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
     };
 
     // Función helper para obtener la URL de la imagen
@@ -294,7 +604,7 @@ export const AnnouncementModal = ({
                                                         border: '2px solid #e9ecef',
                                                         transition: 'transform 0.2s ease, border-color 0.2s ease'
                                                     }}
-                                                    onClick={() => window.open(imageUrl, '_blank')}
+                                                    onClick={() => handleImageClick(index)}
                                                     onError={(e) => {
                                                         e.target.style.display = 'none';
                                                     }}
@@ -313,7 +623,7 @@ export const AnnouncementModal = ({
                                                         className="btn btn-sm btn-light"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            window.open(imageUrl, '_blank');
+                                                            handleImageClick(index);
                                                         }}
                                                         title="Ver imagen completa"
                                                         style={{ 
@@ -368,13 +678,13 @@ export const AnnouncementModal = ({
                                 const handleDownload = (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    window.open(downloadUrl, '_blank');
+                                    handleFileDownload(index);
                                 };
                                 
                                 const handleView = (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    window.open(viewUrl, '_blank');
+                                    handleFilePreview(index);
                                 };
                                 
                                 return (
@@ -426,6 +736,18 @@ export const AnnouncementModal = ({
                     Cerrar
                 </Button>
             </Modal.Footer>
+
+            {/* Modal para imagen */}
+            <ImageModal
+                show={showImageModal}
+                onHide={() => setShowImageModal(false)}
+                image={selectedImage}
+                imageIndex={selectedImageIndex}
+                totalImages={(announcementFiles.images || announcement.images || []).length}
+                onPrevious={handlePreviousImage}
+                onNext={handleNextImage}
+            />
+
         </Modal>
     );
 };

@@ -86,7 +86,7 @@ const Notifications = () => {
     return (
         <>
             <Dropdown align="end">
-                <Dropdown.Toggle variant="link" id="notification-dropdown" className="position-relative p-2">
+                <Dropdown.Toggle variant="link" id="notification-dropdown" className="position-relative p-2 notification-toggle">
                     <FaBell size={20} color="#009A9E" />
                     {unreadCount > 0 && (
                         <Badge 
@@ -101,7 +101,21 @@ const Notifications = () => {
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu className="notification-dropdown">
-                    <Dropdown.Header>Notificaciones</Dropdown.Header>
+                    <Dropdown.Header className="d-flex justify-content-between align-items-center">
+                        <span>Notificaciones</span>
+                        <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                // Aquí podrías agregar la lógica para probar notificaciones
+                                alert('Función de probar notificaciones');
+                            }}
+                            style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
+                        >
+                            Probar
+                        </Button>
+                    </Dropdown.Header>
                     {error && (
                         <div className="px-3 py-2">
                             <Alert variant="danger" className="mb-0 py-2">
