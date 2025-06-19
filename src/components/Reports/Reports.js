@@ -75,10 +75,23 @@ const Reports = () => {
             if (selectedSpecialty) params.append('specialtyId', selectedSpecialty);
             
             const response = await api.get(`/api/reports?${params.toString()}`);
-            setReports(response.data || []);
+            // Asegurar que siempre sea un array - la respuesta tiene estructura {reports: [...], count: n}
+            const reportsData = response.data;
+            if (Array.isArray(reportsData)) {
+                setReports(reportsData);
+            } else if (reportsData && Array.isArray(reportsData.reports)) {
+                setReports(reportsData.reports);
+            } else if (reportsData && Array.isArray(reportsData.content)) {
+                setReports(reportsData.content);
+            } else if (reportsData && Array.isArray(reportsData.data)) {
+                setReports(reportsData.data);
+            } else {
+                setReports([]);
+            }
         } catch (err) {
             console.error('Error al cargar reportes:', err);
             setError('Error al cargar los reportes');
+            setReports([]); // Asegurar que reports sea un array vacío en caso de error
         } finally {
             setLoading(false);
         }
@@ -87,48 +100,73 @@ const Reports = () => {
     const fetchPatients = async () => {
         try {
             const response = await api.get('/api/patients');
-            setPatients(response.data.content || response.data || []);
+            const patientsData = response.data;
+            if (Array.isArray(patientsData)) {
+                setPatients(patientsData);
+            } else if (patientsData && Array.isArray(patientsData.content)) {
+                setPatients(patientsData.content);
+            } else if (patientsData && Array.isArray(patientsData.data)) {
+                setPatients(patientsData.data);
+            } else {
+                setPatients([]);
+            }
         } catch (err) {
             console.error('Error al cargar pacientes:', err);
+            setPatients([]);
         }
     };
 
     const fetchSpecialties = async () => {
         try {
             const response = await api.get('/api/specialties');
-            setSpecialties(response.data || []);
+            const specialtiesData = response.data;
+            if (Array.isArray(specialtiesData)) {
+                setSpecialties(specialtiesData);
+            } else if (specialtiesData && Array.isArray(specialtiesData.content)) {
+                setSpecialties(specialtiesData.content);
+            } else if (specialtiesData && Array.isArray(specialtiesData.data)) {
+                setSpecialties(specialtiesData.data);
+            } else {
+                setSpecialties([]);
+            }
         } catch (err) {
             console.error('Error al cargar especialidades:', err);
+            setSpecialties([]);
         }
     };
 
     // Filtrar reportes por término de búsqueda
-    const filteredReports = reports.filter(report =>
+    const filteredReports = (reports || []).filter(report =>
         report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (report.patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (report.specialty?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Funciones para manejar el archivo
-    const handleFilePreview = async (reportId) => {
+    const handleFilePreview = async (report) => {
         try {
             setFileViewerLoading(true);
             setFileViewerError(null);
             
-            const response = await api.get(`/api/reports/${reportId}/file`);
-            const fileData = response.data;
+            // Usar directamente los datos del archivo desde el reporte
+            const fileData = report.file;
             
-            // Adaptar la estructura para el FileViewer
+            if (!fileData) {
+                setFileViewerError('No se encontró archivo para este reporte');
+                return;
+            }
+            
+            // Adaptar la estructura para el FileViewer basado en la respuesta real
             const adaptedFileData = {
                 filename: fileData.filename || 'Documento',
-                document_type: fileData.document_type || 'pdf',
-                viewer_type: fileData.document_type || 'pdf',
-                download_url: fileData.download_url,
-                direct_url: fileData.direct_url,
+                document_type: fileData.filename?.split('.').pop()?.toLowerCase() || 'pdf',
+                viewer_type: fileData.filename?.split('.').pop()?.toLowerCase() || 'pdf',
+                download_url: fileData.downloadUrl,
+                direct_url: fileData.url,
                 embed_url: fileData.url,
                 url: fileData.url,
-                preview_url: fileData.preview_url,
-                thumbnail_url: fileData.thumbnail_url,
+                preview_url: fileData.url,
+                thumbnail_url: fileData.url,
                 page_previews: []
             };
             
@@ -142,18 +180,24 @@ const Reports = () => {
         }
     };
 
-    const handleFileDownload = async (reportId) => {
+    const handleFileDownload = async (report) => {
         try {
-            const response = await api.get(`/api/reports/${reportId}/file`);
-            const fileData = response.data;
+            const fileData = report.file;
             
-            if (fileData.download_url) {
+            if (!fileData) {
+                setError('No se encontró archivo para este reporte');
+                return;
+            }
+            
+            if (fileData.downloadUrl) {
                 const link = document.createElement('a');
-                link.href = fileData.download_url;
+                link.href = fileData.downloadUrl;
                 link.download = fileData.filename || 'reporte';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+            } else {
+                setError('URL de descarga no disponible');
             }
         } catch (error) {
             console.error('Error al descargar archivo:', error);
@@ -388,7 +432,7 @@ const Reports = () => {
                                                 <Button
                                                     variant="outline-secondary"
                                                     size="sm"
-                                                    onClick={() => handleFilePreview(report.id)}
+                                                    onClick={() => handleFilePreview(report)}
                                                     title="Ver archivo"
                                                 >
                                                     <FaFile />
@@ -396,7 +440,7 @@ const Reports = () => {
                                                 <Button
                                                     variant="outline-success"
                                                     size="sm"
-                                                    onClick={() => handleFileDownload(report.id)}
+                                                    onClick={() => handleFileDownload(report)}
                                                     title="Descargar archivo"
                                                 >
                                                     <FaDownload />
@@ -571,14 +615,14 @@ const Reports = () => {
                                 <div className="d-flex gap-2">
                                     <Button
                                         variant="primary"
-                                        onClick={() => handleFilePreview(selectedReport.id)}
+                                        onClick={() => handleFilePreview(selectedReport)}
                                     >
                                         <FaEye className="me-2" />
                                         Ver Archivo
                                     </Button>
                                     <Button
                                         variant="outline-primary"
-                                        onClick={() => handleFileDownload(selectedReport.id)}
+                                        onClick={() => handleFileDownload(selectedReport)}
                                     >
                                         <FaDownload className="me-2" />
                                         Descargar
