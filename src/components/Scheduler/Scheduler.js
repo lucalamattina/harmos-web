@@ -8,7 +8,7 @@ import React, {useCallback, useMemo, useState, useEffect} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup } from "react-bootstrap";
-import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule } from "../../api/api";
+import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule, deleteSchedule } from "../../api/api";
 import { es } from 'date-fns/locale';
 
 const locales = {
@@ -48,6 +48,7 @@ function Scheduler() {
     const [seeEvent, setSeeEvent] = useState({
         title: "",
         location: "",
+        id: null, // Para saber qué evento eliminar
     });
 
     const [showNew, setShowNew] = useState(false);
@@ -73,6 +74,12 @@ function Scheduler() {
     const [isSearchingPatients, setIsSearchingPatients] = useState(false);
     const [isSearchingLocations, setIsSearchingLocations] = useState(false);
     const [saveError, setSaveError] = useState('');
+
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -131,6 +138,7 @@ function Scheduler() {
                         title: doctorName,
                         start,
                         end,
+                        id: sch.id, // Guardamos el ID del schedule original
                         location: locationName,
                     };
                 });
@@ -236,6 +244,28 @@ function Scheduler() {
         setShowNew(false);
     };
 
+    const handleDeleteScheduleClick = () => {
+        setScheduleToDelete(seeEvent); // El evento actual en el modal de visualización
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteSchedule = async () => {
+        if (scheduleToDelete && scheduleToDelete.id) {
+            setIsDeleting(true);
+            setDeleteError('');
+            try {
+                await deleteSchedule(scheduleToDelete.id);
+                setAllEvents(prev => prev.filter(event => event.id !== scheduleToDelete.id));
+                setShowDeleteConfirm(false); // Cierra el modal de confirmación
+                handleClose(); // Cierra el modal de visualización principal
+            } catch (err) {
+                setDeleteError(err.response?.data?.message || err.message || "Error al eliminar el horario.");
+                // El modal de confirmación permanecerá abierto para mostrar el error.
+            } finally {
+                setIsDeleting(false);
+            }
+        }
+    };
     const searchDoctors = async (term) => {
         if (term.length < 2) {
             setDoctorResults([]);
@@ -339,6 +369,9 @@ function Scheduler() {
                 </Modal.Header>
                 <Modal.Body>Ubicación: {seeEvent.location}</Modal.Body>
                 <Modal.Footer>
+                    <Button variant="danger" onClick={handleDeleteScheduleClick}>
+                        Eliminar
+                    </Button>
                     <Button variant="primary" onClick={handleClose}>
                         Cerrar
                     </Button>
@@ -450,6 +483,33 @@ function Scheduler() {
                     </Button>
                     <Button variant="primary" onClick={handleSaveNewEvent}>
                         Guardar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal de Confirmación de Eliminación */}
+            <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirmar Eliminación</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {deleteError && <Alert variant="danger">{deleteError}</Alert>}
+                    <p>¿Está seguro que desea eliminar este horario?</p>
+                    <p><strong>{scheduleToDelete?.title}</strong></p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button 
+                        variant="secondary" 
+                        onClick={() => {
+                            setShowDeleteConfirm(false);
+                            setDeleteError(''); // Limpiar error al cancelar
+                        }}
+                        disabled={isDeleting}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button variant="danger" onClick={confirmDeleteSchedule} disabled={isDeleting}>
+                        {isDeleting ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Eliminar'}
                     </Button>
                 </Modal.Footer>
             </Modal>
