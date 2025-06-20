@@ -1,14 +1,14 @@
-import { Navbar, Container, Dropdown, Badge } from "react-bootstrap";
+import { Navbar, Container, Dropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import "./TopNavbar.css";
 import logo from "../../resources/images/Harmos-Logo-Transparente.png";
-import { useContext, useState } from "react";
-import { FaBell, FaUserCircle, FaCog, FaSignOutAlt, FaUserShield } from 'react-icons/fa';
+import { useContext } from "react";
+import { FaUserCircle, FaCog, FaSignOutAlt, FaUserShield } from 'react-icons/fa';
 import { AuthContext } from "../../context/AuthContext";
+import Notifications from "../Notifications/Notifications";
 
 const TopNavbar = () => {
     const { logout, isAdmin } = useContext(AuthContext);
-    const [notifications] = useState([]);
 
     const handleLogout = () => {
         logout();
@@ -37,29 +37,9 @@ const TopNavbar = () => {
                     )}
 
                     {/* Notificaciones */}
-                    <Dropdown align="end" className="me-3">
-                        <Dropdown.Toggle as="div" className="nav-icon-button">
-                            <FaBell className="nav-icon" />
-                            {notifications.length > 0 && (
-                                <Badge bg="danger" className="notification-badge">
-                                    {notifications.length}
-                                </Badge>
-                            )}
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu className="notification-dropdown">
-                            <Dropdown.Header>Notificaciones</Dropdown.Header>
-                            {notifications.length === 0 ? (
-                                <Dropdown.Item disabled>No hay notificaciones</Dropdown.Item>
-                            ) : (
-                                notifications.map((notification, index) => (
-                                    <Dropdown.Item key={index}>
-                                        {notification.message}
-                                    </Dropdown.Item>
-                                ))
-                            )}
-                        </Dropdown.Menu>
-                    </Dropdown>
+                    <div className="me-3">
+                        <Notifications />
+                    </div>
 
                     {/* Perfil de usuario */}
                     <Dropdown align="end">

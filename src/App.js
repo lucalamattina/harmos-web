@@ -14,6 +14,7 @@ import Footer from "./components/Footer/Footer";
 import ResetPassword from "./components/ForgotPassword/ResetPassword";
 import Profile from "./components/Profile/Profile";
 import AdminPanel from "./components/AdminPanel/AdminPanel";
+import Reports from "./components/Reports/Reports";
 
 const App = () => {
     return (
@@ -73,6 +74,16 @@ const App = () => {
                                 <SideNavbar/>
                                 <div className="main-content">
                                     <AdminPanel/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/informes" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <Reports/>
                                 </div>
                                 <Footer/>
                             </>
