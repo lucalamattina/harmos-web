@@ -33,6 +33,12 @@
     overflow: hidden;
 }
 
+.reports-table-container .card-header {
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
 .reports-table {
     margin: 0;
 }
