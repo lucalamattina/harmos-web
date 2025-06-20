@@ -7,8 +7,8 @@ import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
 import React, {useCallback, useMemo, useState, useEffect} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {Button, Form, Modal, Spinner, Container, Alert} from "react-bootstrap";
-import { getSchedules, getUserById, getLocationById } from "../../api/api";
+import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup } from "react-bootstrap";
+import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule } from "../../api/api";
 import { es } from 'date-fns/locale';
 
 const locales = {
@@ -55,10 +55,24 @@ function Scheduler() {
 
     const [newEvent, setNewEvent] = useState({
         title: "",
-        location: "",
         start: null,
         end: null,
+        selectedDoctor: null,
+        selectedPatient: null,
+        selectedLocation: null,
     });
+    const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
+    const [patientSearchTerm, setPatientSearchTerm] = useState("");
+    const [locationSearchTerm, setLocationSearchTerm] = useState("");
+
+    const [doctorResults, setDoctorResults] = useState([]);
+    const [patientResults, setPatientResults] = useState([]);
+    const [locationResults, setLocationResults] = useState([]);
+
+    const [isSearchingDoctors, setIsSearchingDoctors] = useState(false);
+    const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+    const [isSearchingLocations, setIsSearchingLocations] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -134,7 +148,15 @@ function Scheduler() {
     const handleSelectSlot = useCallback(
         ({ start, end }) => {
             handleShowNew()
-            setNewEvent({ title: "", location: "", start, end });
+            setNewEvent({
+                title: "",
+                start,
+                end,
+                selectedDoctor: null,
+                selectedPatient: null,
+                selectedLocation: null,
+            });
+            setSaveError('');
         },
         [setNewEvent]
     )
@@ -154,20 +176,120 @@ function Scheduler() {
         []
     )
 
-    const handleSaveNewEvent = () => {
-        if (newEvent.title && newEvent.location && newEvent.start && newEvent.end) {
-            // Aquí iría la lógica para guardar el evento en el backend si fuera necesario
-            setAllEvents((prev) => [...prev, newEvent]);
-            setNewEvent({ title: "", location: "", start: null, end: null }); // Reset form
+    const resetNewEventForm = () => {
+        setNewEvent({
+            title: "",
+            start: null,
+            end: null,
+            selectedDoctor: null,
+            selectedPatient: null,
+            selectedLocation: null,
+        });
+        setDoctorSearchTerm("");
+        setPatientSearchTerm("");
+        setLocationSearchTerm("");
+        setDoctorResults([]);
+        setPatientResults([]);
+        setLocationResults([]);
+        setSaveError('');
+    };
+
+    const handleSaveNewEvent = async () => {
+        setSaveError('');
+        if (!newEvent.selectedDoctor || !newEvent.selectedPatient || !newEvent.selectedLocation || !newEvent.start || !newEvent.end) {
+            setSaveError("Por favor, completa todos los campos: Doctor, Paciente, Ubicación y horario.");
+            return;
+        }
+
+        const dayOfWeekStrings = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+
+        const scheduleData = {
+            locationId: newEvent.selectedLocation.id,
+            dayOfWeek: dayOfWeekStrings[newEvent.start.getDay()],
+            hourFrom: newEvent.start.getHours(),
+            minuteFrom: newEvent.start.getMinutes(),
+            hourTo: newEvent.end.getHours(),
+            minuteTo: newEvent.end.getMinutes(),
+            doctorUserId: newEvent.selectedDoctor.id,
+            patientId: newEvent.selectedPatient.id,
+        };
+
+        try {
+            const created = await createSchedule(scheduleData);
+            const newCalendarEvent = {
+                title: `Dr. ${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.name}`,
+                start: newEvent.start,
+                end: newEvent.end,
+                location: newEvent.selectedLocation.name,
+                id: created.id 
+            };
+            setAllEvents((prev) => [...prev, newCalendarEvent]);
+            resetNewEventForm();
             setShowNew(false);
-        } else {
-            // Opcional: Mostrar alerta si faltan campos
+        } catch (err) {
+            setSaveError(err.response?.data?.message || err.message || "Error al crear el horario. Verifique los datos.");
         }
     };
 
     const handleCancelNewEvent = () => {
-        setNewEvent({ title: "", location: "", start: null, end: null }); // Reset form
+        resetNewEventForm();
         setShowNew(false);
+    };
+
+    const searchDoctors = async (term) => {
+        if (term.length < 2) {
+            setDoctorResults([]);
+            return;
+        }
+        setIsSearchingDoctors(true);
+        try {
+            const users = await getUsers({ name: term });
+            setDoctorResults(users.filter(u => u.roles && (u.roles.includes('DOCTOR') || u.roles.includes('ADMINISTRATOR'))));
+        } catch (error) {
+            setDoctorResults([]);
+        }
+        setIsSearchingDoctors(false);
+    };
+
+    const searchPatients = async (term) => {
+        if (term.length < 2) {
+            setPatientResults([]);
+            return;
+        }
+        setIsSearchingPatients(true);
+        try {
+            const patients = await getPatients({ name: term });
+            setPatientResults(patients);
+        } catch (error) {
+            setPatientResults([]);
+        }
+        setIsSearchingPatients(false);
+    };
+
+    const searchLocations = async (term) => {
+        if (term.length < 2) {
+            setLocationResults([]);
+            return;
+        }
+        setIsSearchingLocations(true);
+        try {
+            const locations = await getLocations({ name: term });
+            setLocationResults(locations);
+        } catch (error) {
+            setLocationResults([]);
+        }
+        setIsSearchingLocations(false);
+    };
+
+    const handleSelectDoctor = (doctor) => {
+        setNewEvent(prev => ({ ...prev, selectedDoctor: doctor }));
+        setDoctorSearchTerm(doctor.name);
+        setDoctorResults([]);
+    };
+    const handleSelectPatient = (patient) => {
+        setNewEvent(prev => ({ ...prev, selectedPatient: patient }));
+        setPatientSearchTerm(patient.name);
+        setPatientResults([]);
     };
 
     let formats = {
@@ -229,25 +351,97 @@ function Scheduler() {
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
+                        {saveError && <Alert variant="danger">{saveError}</Alert>}
                         <Form.Group className="mb-3">
-                            <Form.Label>Título</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Título"
-                                autoFocus
-                                value={newEvent.title}
-                                onChange={e => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                            />
+                            <Form.Label>Doctor</Form.Label>
+                            <InputGroup>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Buscar doctor por nombre..."
+                                    value={doctorSearchTerm}
+                                    onChange={e => {
+                                        setDoctorSearchTerm(e.target.value);
+                                        searchDoctors(e.target.value);
+                                        setNewEvent(prev => ({ ...prev, selectedDoctor: null }));
+                                    }}
+                                />
+                                {isSearchingDoctors && <InputGroup.Text><Spinner animation="border" size="sm" /></InputGroup.Text>}
+                            </InputGroup>
+                            {doctorResults.length > 0 && (
+                                <ListGroup className="search-results-dropdown">
+                                    {doctorResults.map(doc => (
+                                        <ListGroup.Item key={doc.id} action onClick={() => handleSelectDoctor(doc)}>
+                                            {doc.name} ({doc.email})
+                                        </ListGroup.Item>
+                                    ))}
+                                </ListGroup>
+                            )}
+                            {newEvent.selectedDoctor && <small className="text-success d-block mt-1">Seleccionado: {newEvent.selectedDoctor.name}</small>}
                         </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Paciente</Form.Label>
+                            <InputGroup>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Buscar paciente por nombre..."
+                                    value={patientSearchTerm}
+                                    onChange={e => {
+                                        setPatientSearchTerm(e.target.value);
+                                        searchPatients(e.target.value);
+                                        setNewEvent(prev => ({ ...prev, selectedPatient: null }));
+                                    }}
+                                />
+                                {isSearchingPatients && <InputGroup.Text><Spinner animation="border" size="sm" /></InputGroup.Text>}
+                            </InputGroup>
+                            {patientResults.length > 0 && (
+                                <ListGroup className="search-results-dropdown">
+                                    {patientResults.map(pat => (
+                                        <ListGroup.Item key={pat.id} action onClick={() => handleSelectPatient(pat)}>
+                                            {pat.name}
+                                        </ListGroup.Item>
+                                    ))}
+                                </ListGroup>
+                            )}
+                            {newEvent.selectedPatient && <small className="text-success d-block mt-1">Seleccionado: {newEvent.selectedPatient.name}</small>}
+                        </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label>Ubicación</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Ubicación"
-                                value={newEvent.location}
-                                onChange={e => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
-                            />
+                            <InputGroup>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Buscar ubicación por nombre..."
+                                    value={locationSearchTerm}
+                                    onChange={e => {
+                                        setLocationSearchTerm(e.target.value);
+                                        searchLocations(e.target.value);
+                                        setNewEvent(prev => ({ ...prev, selectedLocation: null }));
+                                    }}
+                                />
+                                {isSearchingLocations && <InputGroup.Text><Spinner animation="border" size="sm" /></InputGroup.Text>}
+                            </InputGroup>
+                            {locationResults.length > 0 && (
+                                <ListGroup className="search-results-dropdown">
+                                    {locationResults.map(loc => (
+                                        <ListGroup.Item key={loc.id} action onClick={() => {
+                                            setNewEvent(prev => ({ ...prev, selectedLocation: loc }));
+                                            setLocationSearchTerm(loc.name);
+                                            setLocationResults([]);
+                                        }}>
+                                            {loc.name}
+                                        </ListGroup.Item>
+                                    ))}
+                                </ListGroup>
+                            )}
+                            {newEvent.selectedLocation && <small className="text-success d-block mt-1">Seleccionado: {newEvent.selectedLocation.name}</small>}
                         </Form.Group>
+
+                        {newEvent.start && newEvent.end && (
+                            <Alert variant="info">
+                                Horario seleccionado: {format(newEvent.start, "dd/MM/yyyy HH:mm")} - {format(newEvent.end, "HH:mm")}
+                            </Alert>
+                        )}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
