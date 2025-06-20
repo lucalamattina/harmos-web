@@ -13,3 +13,22 @@
     padding-left: 60px;
     padding-bottom: 5px;
 }
+
+.search-results-dropdown {
+    position: absolute;
+    z-index: 1050; /* Ensure it's above other elements in the modal */
+    width: calc(100% - 2rem); /* Adjust based on modal padding */
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-top: none;
+    background-color: white;
+}
+
+.search-results-dropdown .list-group-item {
+    cursor: pointer;
+}
+
+.search-results-dropdown .list-group-item:hover {
+    background-color: #f8f9fa;
+}

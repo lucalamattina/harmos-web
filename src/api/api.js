@@ -87,4 +87,65 @@ export const checkUserExists = async (email) => {
   }
 };
 
+// Obtener schedules con filtros opcionales
+export const getSchedules = async (params = {}) => {
+  const response = await api.get('/api/schedules', { params });
+  return response.data;
+};
+
+// Obtener todas las locaciones o filtrar por nombre
+export const getLocations = async (params = {}) => {
+  const response = await api.get('/api/locations', { params });
+ return response.data;
+};
+
+// Obtener una locación por ID
+export const getLocationById = async (id) => {
+  if (!id) throw new Error("Location ID is required");
+  const response = await api.get(`/api/locations/${id}`);
+  return response.data;
+};
+
+// Obtener un usuario por ID
+export const getUserById = async (id) => {
+  if (!id) throw new Error("User ID is required");
+  const response = await api.get(`/api/users/${id}`);
+  return response.data;
+};
+
+// Obtener usuarios con filtros opcionales (ej. por nombre, rol)
+export const getUsers = async (params = {}) => {
+  const response = await api.get('/api/users', { params });
+  // Si la respuesta es paginada y tiene 'content', devolver 'content'.
+  // De lo contrario, si la respuesta es un array, devolverla.
+  // Si no, devolver un array vacío para evitar errores en el consumidor.
+  if (response.data && Array.isArray(response.data.content)) {
+    return response.data.content;
+  }
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+// Obtener pacientes con filtros opcionales (ej. por nombre)
+export const getPatients = async (params = {}) => {
+  const response = await api.get('/api/patients', { params });
+  if (response.data && Array.isArray(response.data.content)) {
+    return response.data.content;
+  }
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+// Crear un nuevo schedule
+export const createSchedule = async (scheduleData) => {
+  const response = await api.post('/api/schedules', scheduleData);
+  return response.data;
+};
+
+// Eliminar un schedule por ID
+export const deleteSchedule = async (id) => {
+  if (!id) throw new Error("Schedule ID is required");
+  await api.delete(`/api/schedules/${id}`);
+};
+
+
+
 export default api; 
