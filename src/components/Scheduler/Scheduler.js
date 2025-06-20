@@ -4,14 +4,34 @@ import getDay from "date-fns/getDay";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
 import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
-import React, {useCallback, useMemo, useState} from "react";
+import React, {useCallback, useMemo, useState, useEffect} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {Button, Form, Modal} from "react-bootstrap";
+import {Button, Form, Modal, Spinner, Container, Alert} from "react-bootstrap";
+import { getSchedules, getUserById, getLocationById } from "../../api/api";
+import { es } from 'date-fns/locale';
 
 const locales = {
-    "en-US": require("date-fns/locale/en-US"),
+    "es": es,
 };
+
+const messages = {
+    allDay: 'Todo el día',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    today: 'Hoy',
+    month: 'Mes',
+    week: 'Semana',
+    work_week: 'Semana laboral',
+    day: 'Día',
+    agenda: 'Agenda',
+    date: 'Fecha',
+    time: 'Hora',
+    event: 'Evento',
+    noEventsInRange: 'No hay eventos en este rango.',
+    showMore: total => `+ Ver más (${total})`
+};
+
 const localizer = dateFnsLocalizer({
     format,
     parse,
@@ -19,39 +39,6 @@ const localizer = dateFnsLocalizer({
     getDay,
     locales,
 });
-
-const events = [
-    {
-        title: "Dr Perez",
-        start: new Date(2023, 5, 5, 10, 0),
-        end: new Date(2023, 5, 5, 11, 0),
-        location: "Sala 1",
-    },
-    {
-        title: "Dr Perez",
-        start: new Date(2023, 5, 6, 10, 0),
-        end: new Date(2023, 5, 6, 11, 0),
-        location: "Sala 1",
-    },
-    {
-        title: "Dr Perez",
-        start: new Date(2023, 5, 7, 10, 0),
-        end: new Date(2023, 5, 7, 11, 0),
-        location: "Sala 1",
-    },
-    {
-        title: "Dr Perez",
-        start: new Date(2023, 5, 8, 10, 0),
-        end: new Date(2023, 5, 8, 11, 0),
-        location: "Sala 1",
-    },
-    {
-        title: "Dr Perez",
-        start: new Date(2023, 5, 9, 10, 0),
-        end: new Date(2023, 5, 9, 11, 0),
-        location: "Sala 1",
-    },
-];
 
 function Scheduler() {
     const [show, setShow] = useState(false);
@@ -64,25 +51,90 @@ function Scheduler() {
     });
 
     const [showNew, setShowNew] = useState(false);
-    const handleCloseNew = () => {
-        if (newEvent.title !== "" && newEvent.location !== "") {
-            setAllEvents((prev) => [...prev, newEvent])
-        }
-        setShowNew(false);
-    }
     const handleShowNew = () => setShowNew(true);
 
     const [newEvent, setNewEvent] = useState({
         title: "",
         location: "",
+        start: null,
+        end: null,
     });
 
-    const [allEvents, setAllEvents] = useState(events);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [allEvents, setAllEvents] = useState([]);
+
+    useEffect(() => {
+        async function fetchSchedules() {
+            setLoading(true);
+            setError(null);
+            try {
+                const schedules = await getSchedules();
+                const dayMap = {
+                    MONDAY: 1,
+                    TUESDAY: 2,
+                    WEDNESDAY: 3,
+                    THURSDAY: 4,
+                    FRIDAY: 5,
+                    SATURDAY: 6,
+                    SUNDAY: 0,
+                };
+
+                const now = new Date();
+                const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+
+                const eventPromises = schedules.map(async (sch) => {
+                    let doctorName = `Doctor ID: ${sch.doctorUserId}`;
+                    let locationName = `Ubicación ID: ${sch.locationId}`;
+
+                    try {
+                        if (sch.doctorUserId) {
+                            const doctor = await getUserById(sch.doctorUserId);
+                            doctorName = doctor ? `Dr. ${doctor.name || doctor.firstName}` : doctorName;
+                        }
+                    } catch (docError) {
+                        // Mantener el nombre por defecto si hay error al obtener el doctor
+                    }
+
+                    try {
+                        if (sch.locationId) {
+                            const location = await getLocationById(sch.locationId);
+                            locationName = location ? location.name : locationName;
+                        }
+                    } catch (locError) {
+                         // Mantener el nombre por defecto si hay error al obtener la locación
+                    }
+
+                    let dayOffset = dayMap[sch.dayOfWeek];
+                    if (dayOffset === 0) dayOffset = 7; // Para que SUNDAY sea el último día
+                    const date = new Date(weekStart);
+                    date.setDate(weekStart.getDate() + (dayOffset - 1));
+                    const start = new Date(date);
+                    start.setHours(sch.hourFrom, sch.minuteFrom);
+                    const end = new Date(date);
+                    end.setHours(sch.hourTo, sch.minuteTo);
+                    return {
+                        title: doctorName,
+                        start,
+                        end,
+                        location: locationName,
+                    };
+                });
+                const mappedEvents = await Promise.all(eventPromises);
+                setAllEvents(mappedEvents);
+            } catch (err) {
+                setError('Error al cargar los horarios.');
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchSchedules();
+    }, []);
 
     const handleSelectSlot = useCallback(
         ({ start, end }) => {
             handleShowNew()
-            setNewEvent((prev) => ({ ...prev, start, end }))
+            setNewEvent({ title: "", location: "", start, end });
         },
         [setNewEvent]
     )
@@ -102,9 +154,41 @@ function Scheduler() {
         []
     )
 
+    const handleSaveNewEvent = () => {
+        if (newEvent.title && newEvent.location && newEvent.start && newEvent.end) {
+            // Aquí iría la lógica para guardar el evento en el backend si fuera necesario
+            setAllEvents((prev) => [...prev, newEvent]);
+            setNewEvent({ title: "", location: "", start: null, end: null }); // Reset form
+            setShowNew(false);
+        } else {
+            // Opcional: Mostrar alerta si faltan campos
+        }
+    };
+
+    const handleCancelNewEvent = () => {
+        setNewEvent({ title: "", location: "", start: null, end: null }); // Reset form
+        setShowNew(false);
+    };
+
     let formats = {
         timeGutterFormat: 'HH:mm',
     }
+
+    if (loading) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <div className="text-center">
+                <Spinner animation="border" role="status" variant="primary">
+                    <span className="visually-hidden">Cargando...</span>
+                </Spinner>
+            </div>
+        </Container>
+    );
+
+    if (error) return (
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+            <Alert variant="danger" className="text-center">{error}</Alert>
+        </Container>
+    );
 
     return (
         <>
@@ -123,6 +207,8 @@ function Scheduler() {
                       min={new Date(2016, 10, 1, 8, 0, 0)}
                       toolbar={false}
                       formats={formats}
+                      culture='es'
+                      messages={messages}
             />
         </div>
             <Modal show={show} onHide={handleClose}>
@@ -137,7 +223,7 @@ function Scheduler() {
                 </Modal.Footer>
             </Modal>
 
-            <Modal show={showNew} onHide={handleCloseNew}>
+            <Modal show={showNew} onHide={handleCancelNewEvent}>
                 <Modal.Header closeButton>
                     <Modal.Title>Crear evento</Modal.Title>
                 </Modal.Header>
@@ -149,7 +235,8 @@ function Scheduler() {
                                 type="text"
                                 placeholder="Título"
                                 autoFocus
-                                onChange={e => setNewEvent((prev) => ({ ...prev, title: e.target.value }))}
+                                value={newEvent.title}
+                                onChange={e => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
@@ -157,16 +244,17 @@ function Scheduler() {
                             <Form.Control
                                 type="text"
                                 placeholder="Ubicación"
-                                onChange={e => setNewEvent((prev) => ({ ...prev, location: e.target.value }))}
+                                value={newEvent.location}
+                                onChange={e => setNewEvent(prev => ({ ...prev, location: e.target.value }))}
                             />
                         </Form.Group>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseNew}>
+                    <Button variant="secondary" onClick={handleCancelNewEvent}>
                         Cerrar
                     </Button>
-                    <Button variant="primary" onClick={handleCloseNew}>
+                    <Button variant="primary" onClick={handleSaveNewEvent}>
                         Guardar
                     </Button>
                 </Modal.Footer>

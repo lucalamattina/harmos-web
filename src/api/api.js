@@ -87,4 +87,30 @@ export const checkUserExists = async (email) => {
   }
 };
 
+// Obtener schedules con filtros opcionales
+export const getSchedules = async (params = {}) => {
+  const response = await api.get('/api/schedules', { params });
+  return response.data;
+};
+
+// Obtener todas las locaciones o filtrar por nombre
+export const getLocations = async (params = {}) => {
+  const response = await api.get('/api/locations', { params });
+ return response.data;
+};
+
+// Obtener una locación por ID
+export const getLocationById = async (id) => {
+  if (!id) throw new Error("Location ID is required");
+  const response = await api.get(`/api/locations/${id}`);
+  return response.data;
+};
+
+// Obtener un usuario por ID
+export const getUserById = async (id) => {
+  if (!id) throw new Error("User ID is required");
+  const response = await api.get(`/api/users/${id}`);
+  return response.data;
+};
+
 export default api; 
