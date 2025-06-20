@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { 
     Button, 
     Form, 
@@ -11,32 +11,37 @@ import {
     Spinner, 
     Alert,
     Card,
-    Badge
+    Badge,
+    Pagination
 } from "react-bootstrap";
-import { FaEye, FaDownload, FaPlus, FaEdit, FaTrash, FaFile, FaFilter } from 'react-icons/fa';
+import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import FileViewer from '../FileViewer/FileViewer';
 import './Reports.css';
 
 const Reports = () => {
-    const { isAdmin, user } = useContext(AuthContext);
+    const { isAdmin, currentUser: user } = useContext(AuthContext);
+    
+
     
     // Estados principales
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [tableLoading, setTableLoading] = useState(false);
     const [error, setError] = useState(null);
     
     // Estados para filtros
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPatient, setSelectedPatient] = useState('');
     const [selectedSpecialty, setSelectedSpecialty] = useState('');
+    const [selectedDoctor, setSelectedDoctor] = useState('');
     const [patients, setPatients] = useState([]);
     const [specialties, setSpecialties] = useState([]);
+    const [doctors, setDoctors] = useState([]);
     
     // Estados para modales
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -47,6 +52,14 @@ const Reports = () => {
     const [fileViewerLoading, setFileViewerLoading] = useState(false);
     const [fileViewerError, setFileViewerError] = useState(null);
     
+    // Estados para paginación
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    const [hasNext, setHasNext] = useState(false);
+    const [hasPrevious, setHasPrevious] = useState(false);
+    
     // Estados para formularios
     const [newReport, setNewReport] = useState({
         title: '',
@@ -54,52 +67,102 @@ const Reports = () => {
         specialtyId: '',
         file: null
     });
-    const [editReport, setEditReport] = useState({
-        title: '',
-        patientId: '',
-        specialtyId: ''
-    });
 
-    // Cargar datos iniciales
-    useEffect(() => {
-        fetchReports();
-        fetchPatients();
-        fetchSpecialties();
-    }, [selectedPatient, selectedSpecialty]);
+    // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
+    const [isFilterChange, setIsFilterChange] = useState(false);
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async (page = 0) => {
         try {
-            setLoading(true);
+            // Si es la primera carga, usar loading completo, sino solo tabla
+            if (loading) {
+                setLoading(true);
+            } else {
+                setTableLoading(true);
+            }
+            
             const params = new URLSearchParams();
+            params.append('page', page.toString());
+            params.append('size', pageSize.toString());
+            params.append('sortBy', 'date');
+            params.append('sortDirection', 'desc');
+            
+            // Agregar filtros - todos los usuarios pueden usar estos filtros
             if (selectedPatient) params.append('patientId', selectedPatient);
             if (selectedSpecialty) params.append('specialtyId', selectedSpecialty);
+            if (selectedDoctor) params.append('doctorId', selectedDoctor);
+            if (searchTerm.trim()) params.append('title', searchTerm.trim());
             
-            const response = await api.get(`/api/reports?${params.toString()}`);
-            // Asegurar que siempre sea un array - la respuesta tiene estructura {reports: [...], count: n}
-            const reportsData = response.data;
-            if (Array.isArray(reportsData)) {
-                setReports(reportsData);
-            } else if (reportsData && Array.isArray(reportsData.reports)) {
-                setReports(reportsData.reports);
-            } else if (reportsData && Array.isArray(reportsData.content)) {
-                setReports(reportsData.content);
-            } else if (reportsData && Array.isArray(reportsData.data)) {
-                setReports(reportsData.data);
+            let response;
+            if (isAdmin) {
+                // Los administradores ven todos los reportes usando el endpoint /all con paginación
+                response = await api.get(`/api/reports/all?${params.toString()}`);
+            } else {
+                // Los usuarios regulares ven solo sus reportes con paginación
+                response = await api.get(`/api/reports?${params.toString()}`);
+            }
+            
+            // Manejar la respuesta paginada
+            const responseData = response.data;
+            if (responseData && Array.isArray(responseData.reports)) {
+                setReports(responseData.reports);
+                setTotalPages(responseData.totalPages || 0);
+                setTotalElements(responseData.totalElements || 0);
+                setHasNext(responseData.hasNext || false);
+                setHasPrevious(responseData.hasPrevious || false);
+                setCurrentPage(responseData.currentPage || 0);
             } else {
                 setReports([]);
+                setTotalPages(0);
+                setTotalElements(0);
+                setHasNext(false);
+                setHasPrevious(false);
             }
         } catch (err) {
             console.error('Error al cargar reportes:', err);
             setError('Error al cargar los reportes');
-            setReports([]); // Asegurar que reports sea un array vacío en caso de error
+            setReports([]);
+            setTotalPages(0);
+            setTotalElements(0);
+            setHasNext(false);
+            setHasPrevious(false);
         } finally {
             setLoading(false);
+            setTableLoading(false);
         }
-    };
+    }, [pageSize, selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, isAdmin, loading]);
+
+    // Cargar datos iniciales
+    useEffect(() => {
+        fetchPatients();
+        fetchSpecialties();
+        fetchDoctors();
+        // Cargar reportes en el primer render
+        fetchReports(0);
+    }, [fetchReports]);
+
+    // Recargar reportes cuando cambien filtros (con debounce para searchTerm)
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setIsFilterChange(true);
+            setCurrentPage(0); // Reset a primera página cuando cambien filtros
+            fetchReports(0);
+            setIsFilterChange(false);
+        }, searchTerm ? 500 : 0); // Debounce de 500ms para búsqueda de texto
+
+        return () => clearTimeout(timeoutId);
+    }, [selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, isAdmin, fetchReports]); // Agregamos fetchReports como dependencia
+
+    // Cargar reportes cuando cambie la página (pero no si es un cambio de filtro)
+    useEffect(() => {
+        if (!isFilterChange) {
+            fetchReports(currentPage);
+        }
+    }, [currentPage, fetchReports, isFilterChange]);
 
     const fetchPatients = async () => {
         try {
-            const response = await api.get('/api/patients');
+            // Usar parámetros para obtener todos los pacientes
+            const response = await api.get('/api/patients?page=0&size=1000');
             const patientsData = response.data;
             if (Array.isArray(patientsData)) {
                 setPatients(patientsData);
@@ -135,12 +198,30 @@ const Reports = () => {
         }
     };
 
-    // Filtrar reportes por término de búsqueda
-    const filteredReports = (reports || []).filter(report =>
-        report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (report.patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (report.specialty?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const fetchDoctors = async () => {
+        try {
+            // Usar parámetros para obtener todos los doctores
+            const response = await api.get('/api/users?page=0&size=1000');
+            const doctorsData = response.data;
+            if (Array.isArray(doctorsData)) {
+                setDoctors(doctorsData);
+            } else if (doctorsData && Array.isArray(doctorsData.content)) {
+                setDoctors(doctorsData.content);
+            } else if (doctorsData && Array.isArray(doctorsData.data)) {
+                setDoctors(doctorsData.data);
+            } else {
+                setDoctors([]);
+            }
+        } catch (err) {
+            console.error('Error al cargar doctores:', err);
+            setDoctors([]);
+        }
+    };
+
+
+
+    // Los reportes ya están filtrados por el servidor - usar useMemo para optimización
+    const filteredReports = useMemo(() => reports || [], [reports]);
 
     // Funciones para manejar el archivo
     const handleFilePreview = async (report) => {
@@ -229,7 +310,8 @@ const Reports = () => {
 
             setShowCreateModal(false);
             setNewReport({ title: '', patientId: '', specialtyId: '', file: null });
-            fetchReports();
+            fetchReports(0); // Volver a la primera página después de crear
+            setCurrentPage(0);
             setError(null);
         } catch (error) {
             console.error('Error al crear reporte:', error);
@@ -237,37 +319,14 @@ const Reports = () => {
         }
     };
 
-    const handleEditReport = async (e) => {
-        e.preventDefault();
-        
-        if (!editReport.title) {
-            setError('El título es obligatorio');
-            return;
-        }
 
-        try {
-            await api.put(`/api/reports/${selectedReport.id}`, {
-                title: editReport.title,
-                patientId: editReport.patientId,
-                specialtyId: editReport.specialtyId
-            });
-
-            setShowEditModal(false);
-            setSelectedReport(null);
-            fetchReports();
-            setError(null);
-        } catch (error) {
-            console.error('Error al editar reporte:', error);
-            setError(error.response?.data?.error || 'Error al editar el reporte');
-        }
-    };
 
     const handleDeleteReport = async () => {
         try {
             await api.delete(`/api/reports/${selectedReport.id}`);
             setShowDeleteModal(false);
             setSelectedReport(null);
-            fetchReports();
+            fetchReports(currentPage); // Mantener la página actual después de eliminar
             setError(null);
         } catch (error) {
             console.error('Error al eliminar reporte:', error);
@@ -286,15 +345,7 @@ const Reports = () => {
         }
     };
 
-    const openEditModal = (report) => {
-        setSelectedReport(report);
-        setEditReport({
-            title: report.title,
-            patientId: report.patient?.id || '',
-            specialtyId: report.specialty?.id || ''
-        });
-        setShowEditModal(true);
-    };
+
 
     const openDeleteModal = (report) => {
         setSelectedReport(report);
@@ -311,6 +362,32 @@ const Reports = () => {
         });
     };
 
+    // Función optimizada para limpiar filtros
+    const clearFilters = useCallback(() => {
+        setSearchTerm('');
+        setSelectedPatient('');
+        setSelectedSpecialty('');
+        setSelectedDoctor('');
+        setCurrentPage(0);
+    }, []);
+
+    // Funciones de paginación
+    const handlePageChange = useCallback((page) => {
+        setCurrentPage(page);
+    }, []);
+
+    const handlePreviousPage = useCallback(() => {
+        if (hasPrevious) {
+            setCurrentPage(currentPage - 1);
+        }
+    }, [hasPrevious, currentPage]);
+
+    const handleNextPage = useCallback(() => {
+        if (hasNext) {
+            setCurrentPage(currentPage + 1);
+        }
+    }, [hasNext, currentPage]);
+
     if (loading) {
         return (
             <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
@@ -323,38 +400,53 @@ const Reports = () => {
         <Container className="reports-container">
             {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
 
+            {/* Indicador para administradores */}
+            {isAdmin && (
+                <Alert variant="info" className="mb-3">
+                    <strong>Vista de Administrador:</strong> Está viendo todos los informes del sistema de todos los doctores.
+                </Alert>
+            )}
+
             {/* Filtros */}
             <Card className="mb-4">
                 <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h5 className="filter-title mb-0"><FaFilter className="me-2" />Filtros</h5>
-                        <Button 
-                            className="create-button"
-                            onClick={() => setShowCreateModal(true)}
-                            disabled={!isAdmin}
-                        >
-                            <FaPlus className="me-2" />
-                            Nuevo Informe
-                        </Button>
+                        <div className="d-flex gap-2">
+                            <Button 
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={clearFilters}
+                            >
+                                Limpiar Filtros
+                            </Button>
+                            <Button 
+                                className="create-button"
+                                onClick={() => setShowCreateModal(true)}
+                            >
+                                <FaPlus className="me-2" />
+                                Nuevo Informe
+                            </Button>
+                        </div>
                     </div>
                     <Row>
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
-                                <Form.Label>Buscar</Form.Label>
+                                <Form.Label>Buscar por título</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
                                         <i className="bi bi-search"></i>
                                     </InputGroup.Text>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Buscar por título, paciente..."
+                                        placeholder="Buscar por título del informe..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </InputGroup>
                             </Form.Group>
                         </Col>
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Paciente</Form.Label>
                                 <Form.Select
@@ -370,7 +462,7 @@ const Reports = () => {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Especialidad</Form.Label>
                                 <Form.Select
@@ -386,13 +478,56 @@ const Reports = () => {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Doctor</Form.Label>
+                                <Form.Select
+                                    value={selectedDoctor}
+                                    onChange={(e) => setSelectedDoctor(e.target.value)}
+                                >
+                                    <option value="">Todos los doctores</option>
+                                    {doctors.map(doctor => (
+                                        <option key={doctor.id} value={doctor.id}>
+                                            {doctor.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
                     </Row>
                 </Card.Body>
             </Card>
 
             {/* Tabla de reportes */}
             <Card className="reports-table-container">
-                <Card.Body>
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                    <span>Informes Médicos</span>
+                    <div className="d-flex align-items-center gap-3">
+                        <Badge bg="secondary">
+                            Página {currentPage + 1} de {totalPages || 1}
+                        </Badge>
+                        <Badge bg="info">
+                            {totalElements} informes en total
+                        </Badge>
+                    </div>
+                </Card.Header>
+                <Card.Body style={{position: 'relative', minHeight: '200px'}}>
+                    {tableLoading && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 10
+                        }}>
+                            <Spinner animation="border" variant="primary" />
+                        </div>
+                    )}
                     <Table responsive hover className="reports-table">
                         <thead>
                             <tr>
@@ -445,16 +580,17 @@ const Reports = () => {
                                                 >
                                                     <FaDownload />
                                                 </Button>
-                                                {(isAdmin || report.doctor?.id === user?.id) && (
-                                                    <>
-                                                        <Button
-                                                            variant="outline-warning"
-                                                            size="sm"
-                                                            onClick={() => openEditModal(report)}
-                                                            title="Editar"
-                                                        >
-                                                            <FaEdit />
-                                                        </Button>
+                                                {(() => {
+                                                    // Verificar si el usuario puede eliminar este reporte
+                                                    const canDelete = isAdmin || (
+                                                        report.doctor?.id && 
+                                                        user?.id && 
+                                                        Number(report.doctor.id) === Number(user.id)
+                                                    );
+                                                    
+
+                                                    
+                                                    return canDelete ? (
                                                         <Button
                                                             variant="outline-danger"
                                                             size="sm"
@@ -463,8 +599,8 @@ const Reports = () => {
                                                         >
                                                             <FaTrash />
                                                         </Button>
-                                                    </>
-                                                )}
+                                                    ) : null;
+                                                })()}
                                             </div>
                                         </td>
                                     </tr>
@@ -479,6 +615,64 @@ const Reports = () => {
                         </tbody>
                     </Table>
                 </Card.Body>
+                
+                {/* Controles de paginación */}
+                {totalPages > 1 && (
+                    <Card.Footer>
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex align-items-center">
+                                <span className="text-muted me-3">
+                                    Mostrando {reports.length} de {totalElements} informes
+                                </span>
+                            </div>
+                            <Pagination className="mb-0">
+                                <Pagination.First 
+                                    onClick={() => handlePageChange(0)}
+                                    disabled={!hasPrevious}
+                                />
+                                <Pagination.Prev 
+                                    onClick={handlePreviousPage}
+                                    disabled={!hasPrevious}
+                                />
+                                
+                                {/* Mostrar páginas alrededor de la actual */}
+                                {[...Array(totalPages)].map((_, index) => {
+                                    // Mostrar solo páginas cercanas a la actual
+                                    if (
+                                        index === 0 || // Primera página
+                                        index === totalPages - 1 || // Última página
+                                        Math.abs(index - currentPage) <= 2 // Páginas cercanas
+                                    ) {
+                                        return (
+                                            <Pagination.Item
+                                                key={index}
+                                                active={index === currentPage}
+                                                onClick={() => handlePageChange(index)}
+                                            >
+                                                {index + 1}
+                                            </Pagination.Item>
+                                        );
+                                    } else if (
+                                        index === currentPage - 3 || 
+                                        index === currentPage + 3
+                                    ) {
+                                        return <Pagination.Ellipsis key={index} disabled />;
+                                    }
+                                    return null;
+                                })}
+                                
+                                <Pagination.Next 
+                                    onClick={handleNextPage}
+                                    disabled={!hasNext}
+                                />
+                                <Pagination.Last 
+                                    onClick={() => handlePageChange(totalPages - 1)}
+                                    disabled={!hasNext}
+                                />
+                            </Pagination>
+                        </div>
+                    </Card.Footer>
+                )}
             </Card>
 
             {/* Modal Crear Reporte */}
@@ -561,36 +755,7 @@ const Reports = () => {
                 </Form>
             </Modal>
 
-            {/* Modal Editar Reporte */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Editar Informe</Modal.Title>
-                </Modal.Header>
-                <Form onSubmit={handleEditReport}>
-                    <Modal.Body>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Título *</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={editReport.title}
-                                onChange={(e) => setEditReport({...editReport, title: e.target.value})}
-                                required
-                            />
-                        </Form.Group>
-                        <Alert variant="info">
-                            <small>Nota: Solo se puede modificar el título del informe. Para cambiar el paciente, especialidad o archivo, elimine este informe y cree uno nuevo.</small>
-                        </Alert>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                            Cancelar
-                        </Button>
-                        <Button variant="primary" type="submit">
-                            Guardar Cambios
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
+
 
             {/* Modal Ver Reporte */}
             <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg">

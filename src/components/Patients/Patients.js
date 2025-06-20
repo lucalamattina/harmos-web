@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner } from "react-bootstrap";
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge } from "react-bootstrap";
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
+import './Patients.css';
 
 const Patients = () => {
     const { isAdmin } = useContext(AuthContext);
@@ -14,12 +15,13 @@ const Patients = () => {
     const [showDetails, setShowDetails] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [doctors, setDoctors] = useState([]);
+    const [allDoctors, setAllDoctors] = useState([]); // Para el filtro dropdown
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
     const [specialties, setSpecialties] = useState([]);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [selectedSpecialty, setSelectedSpecialty] = useState('');
-    const [doctorFilterTerm, setDoctorFilterTerm] = useState('');
+    const [selectedDoctor, setSelectedDoctor] = useState(''); // Cambio de doctorFilterTerm a selectedDoctor
     const [statuses, setStatuses] = useState([]);
     const [newPatient, setNewPatient] = useState({
         name: "",
@@ -63,6 +65,17 @@ const Patients = () => {
         }
     }, []);
 
+    // Función para cargar todos los doctores para el filtro dropdown
+    const fetchAllDoctors = useCallback(async () => {
+        try {
+            const response = await api.get('/api/users?page=0&size=1000'); // Cargar muchos doctores
+            const doctorsData = response.data.content || response.data || [];
+            setAllDoctors(doctorsData);
+        } catch (err) {
+            setAllDoctors([]);
+        }
+    }, []);
+
     const fetchPatients = useCallback(async () => {
         try {
             const params = new URLSearchParams();
@@ -72,8 +85,8 @@ const Patients = () => {
             if (searchTerm) {
                 params.append('name', searchTerm);
             }
-            if (doctorFilterTerm) {
-                params.append('doctor', doctorFilterTerm);
+            if (selectedDoctor) {
+                params.append('doctorId', selectedDoctor); // Cambio a doctorId para ser más específico
             }
             if (selectedStatus) {
                 params.append('status', selectedStatus);
@@ -92,16 +105,17 @@ const Patients = () => {
             setError('Error al cargar los pacientes');
             setLoading(false);
         }
-    }, [currentPage, pageSize, searchTerm, doctorFilterTerm, selectedStatus, selectedSpecialty]);
+    }, [currentPage, pageSize, searchTerm, selectedDoctor, selectedStatus, selectedSpecialty]);
 
     useEffect(() => {
         fetchPatients();
         fetchStatuses();
         fetchSpecialties();
-    }, [fetchPatients, fetchStatuses, fetchSpecialties]);
+        fetchAllDoctors(); // Cargar todos los doctores para el filtro
+    }, [fetchPatients, fetchStatuses, fetchSpecialties, fetchAllDoctors]);
 
     const handleDoctorFilterChange = (e) => {
-        setDoctorFilterTerm(e.target.value);
+        setSelectedDoctor(e.target.value);
     };
 
     const handleStatusFilterChange = (e) => {
@@ -114,8 +128,9 @@ const Patients = () => {
 
     const fetchDoctors = useCallback(async () => {
         try {
-            let url = '/api/users';
             const params = new URLSearchParams();
+            params.append('page', '0');
+            params.append('size', '1000'); // Cargar muchos doctores
             
             if (doctorSearchTerm) {
                 params.append('name', doctorSearchTerm);
@@ -124,12 +139,7 @@ const Patients = () => {
                 params.append('specialties', doctorSpecialty);
             }
 
-            const queryString = params.toString();
-            if (queryString) {
-                url += `?${queryString}`;
-            }
-
-            const response = await api.get(url);
+            const response = await api.get(`/api/users?${params.toString()}`);
             const allDoctors = response.data.content || response.data || [];
             setDoctors(allDoctors);
         } catch (err) {
@@ -278,139 +288,197 @@ const Patients = () => {
     );
 
     return (
-        <Container>
-            <Form className="mb-4">
-                <Row>
-                    <Col md={3}>
-                        <InputGroup>
-                            <InputGroup.Text>
-                                <i className="bi bi-search"></i>
-                            </InputGroup.Text>
-                            <Form.Control
-                                type="text"
-                                placeholder="Buscar paciente por nombre..."
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                            />
-                        </InputGroup>
-                    </Col>
-                    <Col md={3}>
-                        <InputGroup>
-                            <InputGroup.Text>
-                                <i className="bi bi-search"></i>
-                            </InputGroup.Text>
-                            <Form.Control
-                                type="text"
-                                placeholder="Buscar por doctor..."
-                                value={doctorFilterTerm}
-                                onChange={handleDoctorFilterChange}
-                            />
-                        </InputGroup>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Select
-                            value={selectedSpecialty}
-                            onChange={handleSpecialtyChange}
-                        >
-                            <option value="">Todas las especialidades</option>
-                            {specialties.map(specialty => (
-                                <option key={specialty.id} value={specialty.name}>
-                                    {specialty.name}
-                                </option>
-                            ))}
-                        </Form.Select>
-                    </Col>
-                    <Col md={3}>
-                        <Form.Select
-                            value={selectedStatus}
-                            onChange={handleStatusFilterChange}
-                        >
-                            <option value="">Todos los estados</option>
-                            {statuses.map(status => (
-                                <option key={status} value={status}>
-                                    {status === 'ACTIVE' ? 'Activo' : 
-                                     status === 'INACTIVE' ? 'Inactivo' : 
-                                     status === 'DISCHARGED' ? 'Dado de alta' :
-                                     status === 'PENDING' ? 'Pendiente' :
-                                     status === 'REFERRED' ? 'Derivado' : status}
-                                </option>
-                            ))}
-                        </Form.Select>
-                    </Col>
-                </Row>
-            </Form>
+        <Container className="patients-container">
+            {/* Filtros */}
+            <Card className="mb-4">
+                <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h5 className="filter-title mb-0"><i className="bi bi-funnel me-2"></i>Filtros</h5>
+                        <div className="d-flex gap-2">
+                            <Button 
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setSelectedDoctor('');
+                                    setSelectedSpecialty('');
+                                    setSelectedStatus('');
+                                    setCurrentPage(0);
+                                }}
+                            >
+                                Limpiar Filtros
+                            </Button>
+                            {isAdmin && (
+                                <Button 
+                                    className="create-button"
+                                    onClick={() => setShowNew(true)}
+                                >
+                                    <i className="bi bi-plus me-2"></i>
+                                    Nuevo Paciente
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <Row>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Buscar por nombre</Form.Label>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar paciente por nombre..."
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
+                                    />
+                                </InputGroup>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Doctor</Form.Label>
+                                <Form.Select
+                                    value={selectedDoctor}
+                                    onChange={handleDoctorFilterChange}
+                                >
+                                    <option value="">Todos los doctores</option>
+                                    {allDoctors.map(doctor => (
+                                        <option key={doctor.id} value={doctor.id}>
+                                            {doctor.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Especialidad</Form.Label>
+                                <Form.Select
+                                    value={selectedSpecialty}
+                                    onChange={handleSpecialtyChange}
+                                >
+                                    <option value="">Todas las especialidades</option>
+                                    {specialties.map(specialty => (
+                                        <option key={specialty.id} value={specialty.name}>
+                                            {specialty.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Estado</Form.Label>
+                                <Form.Select
+                                    value={selectedStatus}
+                                    onChange={handleStatusFilterChange}
+                                >
+                                    <option value="">Todos los estados</option>
+                                    {statuses.map(status => (
+                                        <option key={status} value={status}>
+                                            {status === 'ACTIVE' ? 'Activo' : 
+                                             status === 'INACTIVE' ? 'Inactivo' : 
+                                             status === 'DISCHARGED' ? 'Dado de alta' :
+                                             status === 'PENDING' ? 'Pendiente' :
+                                             status === 'REFERRED' ? 'Derivado' : status}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </Card.Body>
+            </Card>
 
-            <Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredPatients.length > 0 ? (
-                        filteredPatients.map(patient => (
-                            <tr key={patient.id}>
-                                <td>{patient.name}</td>
-                                <td>
-                                    <div className="d-flex align-items-center">
-                                        <i className="bi bi-telephone me-2"></i>
-                                        {patient.phone}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className={`badge bg-${
-                                        patient.status === 'ACTIVE' ? 'success' : 
-                                        patient.status === 'INACTIVE' ? 'danger' : 
-                                        patient.status === 'DISCHARGED' ? 'info' :
-                                        patient.status === 'PENDING' ? 'warning' :
-                                        patient.status === 'REFERRED' ? 'primary' : 'secondary'
-                                    }`}>
-                                        {patient.status === 'ACTIVE' ? 'Activo' : 
-                                         patient.status === 'INACTIVE' ? 'Inactivo' : 
-                                         patient.status === 'DISCHARGED' ? 'Dado de alta' :
-                                         patient.status === 'PENDING' ? 'Pendiente' :
-                                         patient.status === 'REFERRED' ? 'Derivado' : patient.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div className="d-flex gap-2">
-                                        <Button 
-                                            variant="outline-primary" 
-                                            size="sm"
-                                            onClick={() => fetchPatientDetails(patient.id)}
-                                        >
-                                            <i className="bi bi-eye me-1"></i>
-                                            Ver
-                                        </Button>
-                                        {isAdmin && (
-                                            <Button 
-                                                variant="outline-danger" 
-                                                size="sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeletePatient(patient);
-                                                }}
-                                            >
-                                                <i className="bi bi-trash me-1"></i>
-                                                Eliminar
-                                            </Button>
-                                        )}
-                                    </div>
-                                </td>
+            {/* Tabla de pacientes */}
+            <Card className="patients-table-container">
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                    <span>Pacientes</span>
+                    <div className="d-flex align-items-center gap-3">
+                        <Badge bg="secondary">
+                            Página {currentPage + 1} de {totalPages || 1}
+                        </Badge>
+                        <Badge bg="info">
+                            {filteredPatients.length} pacientes en total
+                        </Badge>
+                    </div>
+                </Card.Header>
+                <Card.Body style={{position: 'relative', minHeight: '200px'}}>
+                    <Table responsive hover className="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" className="text-center">
-                                No se encontraron pacientes con ese nombre
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </Table>
+                        </thead>
+                        <tbody>
+                            {filteredPatients.length > 0 ? (
+                                filteredPatients.map(patient => (
+                                    <tr key={patient.id}>
+                                        <td>{patient.name}</td>
+                                        <td>
+                                            <div className="d-flex align-items-center">
+                                                <i className="bi bi-telephone me-2"></i>
+                                                {patient.phone}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={`badge bg-${
+                                                patient.status === 'ACTIVE' ? 'success' : 
+                                                patient.status === 'INACTIVE' ? 'danger' : 
+                                                patient.status === 'DISCHARGED' ? 'info' :
+                                                patient.status === 'PENDING' ? 'warning' :
+                                                patient.status === 'REFERRED' ? 'primary' : 'secondary'
+                                            }`}>
+                                                {patient.status === 'ACTIVE' ? 'Activo' : 
+                                                 patient.status === 'INACTIVE' ? 'Inactivo' : 
+                                                 patient.status === 'DISCHARGED' ? 'Dado de alta' :
+                                                 patient.status === 'PENDING' ? 'Pendiente' :
+                                                 patient.status === 'REFERRED' ? 'Derivado' : patient.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="d-flex gap-2">
+                                                <Button 
+                                                    variant="outline-primary" 
+                                                    size="sm"
+                                                    onClick={() => fetchPatientDetails(patient.id)}
+                                                >
+                                                    <i className="bi bi-eye me-1"></i>
+                                                    Ver
+                                                </Button>
+                                                {isAdmin && (
+                                                    <Button 
+                                                        variant="outline-danger" 
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeletePatient(patient);
+                                                        }}
+                                                    >
+                                                        <i className="bi bi-trash me-1"></i>
+                                                        Eliminar
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="text-center">
+                                        No se encontraron pacientes con ese nombre
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
 
             {/* Controles de paginación */}
             {totalPages > 1 && (
@@ -478,13 +546,7 @@ const Patients = () => {
                 </div>
             )}
 
-            {isAdmin && (
-                <div className="d-grid gap-2 mt-4">
-                    <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
-                        Nuevo Paciente
-                    </Button>
-                </div>
-            )}
+
 
             {/* Modal de Detalles del Paciente */}
             <Modal show={showDetails} onHide={() => setShowDetails(false)}>
