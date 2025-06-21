@@ -44,6 +44,24 @@ const FileViewer = ({ show, onHide, fileData, isLoading, error }) => {
         }
     };
 
+    const getFileExtension = () => {
+        if (!fileData?.filename) return '';
+        return fileData.filename.split('.').pop()?.toLowerCase() || '';
+    };
+
+    const getFileType = () => {
+        const extension = getFileExtension();
+        
+        if (extension === 'pdf') return 'pdf';
+        if (['docx', 'doc'].includes(extension)) return 'docx';
+        if (['xlsx', 'xls'].includes(extension)) return 'excel';
+        if (['pptx', 'ppt'].includes(extension)) return 'powerpoint';
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) return 'image';
+        if (['txt', 'md'].includes(extension)) return 'text';
+        
+        return 'other';
+    };
+
     const renderViewer = () => {
         if (isLoading) {
             return (
@@ -79,44 +97,95 @@ const FileViewer = ({ show, onHide, fileData, isLoading, error }) => {
             );
         }
 
-        switch (fileData.viewer_type || fileData.document_type) {
+        const fileType = getFileType();
+
+        switch (fileType) {
             case 'pdf':
                 return renderPdfViewer();
+            case 'docx':
+                return renderOfficeViewer('docx');
+            case 'excel':
+                return renderOfficeViewer('excel');
+            case 'powerpoint':
+                return renderOfficeViewer('powerpoint');
+            case 'image':
+                return renderImageViewer();
+            case 'text':
+                return renderTextViewer();
             case 'image_pages':
-            default:
                 if (fileData.page_previews && fileData.page_previews.length > 0) {
                     return renderDocumentViewer();
                 } else {
                     return renderDownloadOnly();
                 }
+            default:
+                return renderDownloadOnly();
         }
     };
 
     const renderPdfViewer = () => {
-        // Usar PDF.js de Mozilla con la URL embed
-        const pdfUrl = encodeURIComponent(fileData.embed_url || fileData.direct_url || fileData.url);
-        const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${pdfUrl}`;
+        // Usar embed directo del PDF ya que el viewer externo tiene problemas de CORS
+        const pdfUrl = fileData.embed_url || fileData.direct_url || fileData.url;
 
         return (
             <div className="pdf-viewer-container">
                 {iframeLoading && (
                     <div className="iframe-loading">
                         <Spinner animation="border" variant="primary" />
-                        <p>Cargando visualizador PDF...</p>
+                        <p>Cargando documento PDF...</p>
                     </div>
                 )}
-                <iframe
-                    src={viewerUrl}
+                <object
+                    data={pdfUrl}
+                    type="application/pdf"
                     style={{ 
                         width: '100%',
                         height: '100%',
-                        border: 'none', 
-                        borderRadius: '0 0 12px 12px',
+                        border: 'none',
                         display: iframeLoading ? 'none' : 'block'
                     }}
                     onLoad={() => setIframeLoading(false)}
-                    title={`Visualizador de ${fileData.filename}`}
-                />
+                >
+                    <iframe
+                        src={pdfUrl}
+                        style={{ 
+                            width: '100%',
+                            height: '100%',
+                            border: 'none'
+                        }}
+                        onLoad={() => setIframeLoading(false)}
+                        onError={() => {
+                            setIframeLoading(false);
+                            console.error('Error al cargar el PDF:', pdfUrl);
+                        }}
+                        title={`Visualizador de ${fileData.filename}`}
+                    />
+                    <p style={{ padding: '2rem', textAlign: 'center', color: '#6c757d' }}>
+                        No se puede mostrar el PDF en el navegador. 
+                        <br />
+                        <Button 
+                            variant="primary" 
+                            onClick={handleDownload}
+                            className="mt-2"
+                        >
+                            <FaDownload className="me-2" />
+                            Descargar PDF
+                        </Button>
+                    </p>
+                </object>
+                
+                {/* Botón de descarga como alternativa */}
+                <div className="pdf-viewer-controls">
+                    <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        onClick={handleDownload}
+                        className="download-alternative"
+                    >
+                        <FaDownload className="me-2" />
+                        Descargar PDF
+                    </Button>
+                </div>
             </div>
         );
     };
@@ -198,19 +267,149 @@ const FileViewer = ({ show, onHide, fileData, isLoading, error }) => {
         );
     };
 
+    const renderOfficeViewer = (type) => {
+        const fileUrl = encodeURIComponent(fileData.embed_url || fileData.direct_url || fileData.url);
+        let viewerUrl = '';
+        let typeName = '';
+
+        switch (type) {
+            case 'docx':
+                // Microsoft Office Online Viewer para Word
+                viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${fileUrl}`;
+                typeName = 'documento de Word';
+                break;
+            case 'excel':
+                // Microsoft Office Online Viewer para Excel
+                viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${fileUrl}`;
+                typeName = 'hoja de cálculo de Excel';
+                break;
+            case 'powerpoint':
+                // Microsoft Office Online Viewer para PowerPoint
+                viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${fileUrl}`;
+                typeName = 'presentación de PowerPoint';
+                break;
+            default:
+                return renderDownloadOnly();
+        }
+
+        return (
+            <div className="office-viewer-container">
+                {iframeLoading && (
+                    <div className="iframe-loading">
+                        <Spinner animation="border" variant="primary" />
+                        <p>Cargando {typeName}...</p>
+                    </div>
+                )}
+                <iframe
+                    src={viewerUrl}
+                    style={{ 
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        display: iframeLoading ? 'none' : 'block'
+                    }}
+                    onLoad={() => setIframeLoading(false)}
+                    onError={() => {
+                        setIframeLoading(false);
+                        console.error('Error al cargar el archivo de Office:', fileUrl);
+                    }}
+                    title={`Visualizador de ${fileData.filename}`}
+                />
+                {/* Botón de descarga como alternativa */}
+                <div className="office-viewer-controls">
+                    <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        onClick={handleDownload}
+                        className="download-alternative"
+                    >
+                        <FaDownload className="me-2" />
+                        Descargar {getFileExtension().toUpperCase()}
+                    </Button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderImageViewer = () => {
+        const imageUrl = fileData.embed_url || fileData.direct_url || fileData.url;
+        
+        return (
+            <div className="image-viewer-container">
+                <div className="image-container">
+                    <img 
+                        src={imageUrl}
+                        alt={fileData.filename}
+                        style={{ 
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain',
+                            display: 'block',
+                            margin: '0 auto'
+                        }}
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'block';
+                        }}
+                    />
+                    <div style={{ display: 'none', textAlign: 'center', padding: '2rem' }}>
+                        <p>No se pudo cargar la imagen</p>
+                        <Button variant="primary" onClick={handleDownload}>
+                            <FaDownload className="me-2" />
+                            Descargar imagen
+                        </Button>
+                    </div>
+                </div>
+                <div className="image-viewer-controls">
+                    <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        onClick={handleDownload}
+                        className="download-alternative"
+                    >
+                        <FaDownload className="me-2" />
+                        Descargar imagen
+                    </Button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderTextViewer = () => {
+        // Para archivos de texto, solo ofrecemos descarga por ahora
+        return renderDownloadOnly();
+    };
+
     const renderDownloadOnly = () => {
+        const extension = getFileExtension().toUpperCase();
+        const fileType = getFileType();
+        
+        let message = "Este tipo de archivo no puede previsualizarse en el navegador.";
+        let icon = "bi-file-earmark-text";
+        
+        if (fileType === 'docx') {
+            message = "Los archivos de Word pueden visualizarse usando Microsoft Office Online.";
+            icon = "bi-file-earmark-word";
+        } else if (fileType === 'excel') {
+            message = "Los archivos de Excel pueden visualizarse usando Microsoft Office Online.";
+            icon = "bi-file-earmark-excel";
+        } else if (fileType === 'powerpoint') {
+            message = "Los archivos de PowerPoint pueden visualizarse usando Microsoft Office Online.";
+            icon = "bi-file-earmark-ppt";
+        }
+
         return (
             <div className="download-only-container">
                 <div className="download-message">
-                    <i className="bi bi-file-earmark-text" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+                    <i className={`bi ${icon}`} style={{ fontSize: '3rem', color: '#6c757d' }}></i>
                     <h5 className="mt-3">Vista previa no disponible</h5>
                     <p className="text-muted">
-                        Este tipo de archivo no puede previsualizarse en el navegador.
+                        {message}<br />
                         Puedes descargarlo para abrirlo en la aplicación correspondiente.
                     </p>
                     <Button variant="primary" onClick={handleDownload} className="mt-3">
                         <FaDownload className="me-2" />
-                        Descargar {fileData.filename}
+                        Descargar {extension} - {fileData.filename}
                     </Button>
                 </div>
             </div>

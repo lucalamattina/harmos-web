@@ -237,17 +237,20 @@ const Reports = () => {
                 return;
             }
             
+            // Construir la URL correcta para visualización (sin fl_attachment)
+            const viewUrl = fileData.url ? fileData.url.replace('fl_attachment/', '') : null;
+            
             // Adaptar la estructura para el FileViewer basado en la respuesta real
             const adaptedFileData = {
                 filename: fileData.filename || 'Documento',
                 document_type: fileData.filename?.split('.').pop()?.toLowerCase() || 'pdf',
                 viewer_type: fileData.filename?.split('.').pop()?.toLowerCase() || 'pdf',
                 download_url: fileData.downloadUrl,
-                direct_url: fileData.url,
-                embed_url: fileData.url,
-                url: fileData.url,
-                preview_url: fileData.url,
-                thumbnail_url: fileData.url,
+                direct_url: viewUrl,
+                embed_url: viewUrl,
+                url: viewUrl,
+                preview_url: viewUrl,
+                thumbnail_url: viewUrl,
                 page_previews: []
             };
             

@@ -1,6 +1,7 @@
 {
   "short_name": "Harmos",
-  "name": "Harmos Association",
+  "name": "Harmos Medical Management",
+  "description": "Sistema de gestión médica para Harmos",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,23 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#009A9E",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "categories": ["medical", "health", "productivity"],
+  "lang": "es",
+  "prefer_related_applications": false
 }
