@@ -7,7 +7,7 @@ const tabs = [
   { to: '/', label: 'Anuncios', icon: <FiBell /> },
   { to: '/patients', label: 'Pacientes', icon: <FiUsers /> },
   { to: '/schedule', label: 'Horarios', icon: <FiCalendar /> },
-  { to: '/informes', label: 'Informes', icon: <FiFileText /> },
+      { to: '/reports', label: 'Informes', icon: <FiFileText /> },
 ];
 
 const SideNavbar = () => {

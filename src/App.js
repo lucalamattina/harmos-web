@@ -1,5 +1,6 @@
 import './App.css';
 import AnnouncementBoard from './components/AnnouncementBoard/AnnouncementBoard';
+import SingleAnnouncement from './components/AnnouncementBoard/SingleAnnouncement';
 import {Route, Routes} from "react-router-dom";
 import TopNavbar from "./components/TopNavbar/TopNavbar";
 import SideNavbar from "./components/SideNavbar/SideNavbar";
@@ -78,12 +79,22 @@ const App = () => {
                                 <Footer/>
                             </>
                         }/>
-                        <Route path="/informes" element={
+                        <Route path="/reports" element={
                             <>
                                 <TopNavbar/>
                                 <SideNavbar/>
                                 <div className="main-content">
                                     <Reports/>
+                                </div>
+                                <Footer/>
+                            </>
+                        }/>
+                        <Route path="/announcements/:id" element={
+                            <>
+                                <TopNavbar/>
+                                <SideNavbar/>
+                                <div className="main-content">
+                                    <SingleAnnouncement/>
                                 </div>
                                 <Footer/>
                             </>

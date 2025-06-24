@@ -356,13 +356,26 @@ const Reports = () => {
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        if (!dateString) return 'Fecha no disponible';
+        
+        try {
+            const date = new Date(dateString);
+            // Verificar si la fecha es válida
+            if (isNaN(date.getTime())) {
+                return 'Fecha inválida';
+            }
+            
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Error al formatear fecha:', error);
+            return 'Error en fecha';
+        }
     };
 
     // Función optimizada para limpiar filtros
@@ -556,7 +569,7 @@ const Reports = () => {
                                             </Badge>
                                         </td>
                                         <td>{report.doctor?.name || 'N/A'}</td>
-                                        <td className="date-text">{formatDate(report.createdAt)}</td>
+                                        <td className="date-text">{formatDate(report.date)}</td>
                                         <td>
                                             <div className="report-actions">
                                                 <Button
@@ -777,7 +790,7 @@ const Reports = () => {
                             </Col>
                             <Col md={6}>
                                 <p><strong>Doctor:</strong> {selectedReport.doctor?.name || 'N/A'}</p>
-                                <p><strong>Fecha de creación:</strong> {formatDate(selectedReport.createdAt)}</p>
+                                <p><strong>Fecha de creación:</strong> {formatDate(selectedReport.date)}</p>
                             </Col>
                             <Col md={12} className="mt-3">
                                 <div className="d-flex gap-2">
