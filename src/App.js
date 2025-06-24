@@ -1,7 +1,7 @@
 import './App.css';
 import AnnouncementBoard from './components/AnnouncementBoard/AnnouncementBoard';
 import SingleAnnouncement from './components/AnnouncementBoard/SingleAnnouncement';
-import {Route, Routes} from "react-router-dom";
+import {Route, Routes, Navigate} from "react-router-dom";
 import TopNavbar from "./components/TopNavbar/TopNavbar";
 import SideNavbar from "./components/SideNavbar/SideNavbar";
 import React from "react";
@@ -16,11 +16,13 @@ import ResetPassword from "./components/ForgotPassword/ResetPassword";
 import Profile from "./components/Profile/Profile";
 import AdminPanel from "./components/AdminPanel/AdminPanel";
 import Reports from "./components/Reports/Reports";
+import { Error404, Error500, Error503, ErrorBoundary } from "./components/ErrorPages";
 
 const App = () => {
     return (
-        <AuthProvider>
-            <div className="app-container">
+        <ErrorBoundary>
+            <AuthProvider>
+                <div className="app-container">
                 <Routes>
                     {/* Public routes without navigation */}
                     <Route path="/login" element={<LogIn/>}/>
@@ -99,12 +101,17 @@ const App = () => {
                                 <Footer/>
                             </>
                         }/>
+                        {/* Error pages */}
+                        <Route path="/error/500" element={<Error500 />} />
+                        <Route path="/error/503" element={<Error503 />} />
+                        {/* Redirect old Spanish routes to English routes */}
+                        <Route path="/informes" element={<Navigate to="/reports" replace />} />
                         <Route path="*" element={
                             <>
                                 <TopNavbar/>
                                 <SideNavbar/>
                                 <div className="main-content">
-                                    <div>Página no encontrada</div>
+                                    <Error404/>
                                 </div>
                                 <Footer/>
                             </>
@@ -113,6 +120,7 @@ const App = () => {
                 </Routes>
             </div>
         </AuthProvider>
+        </ErrorBoundary>
     );
 };
 

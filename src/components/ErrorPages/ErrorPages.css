@@ -1,0 +1,243 @@
+/* Error Pages Styles */
+.error-page-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 2rem 1rem;
+}
+
+.error-card {
+    border: none;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.error-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.error-icon {
+    animation: pulse 2s infinite;
+}
+
+.error-code {
+    position: relative;
+}
+
+.error-code h1 {
+    background: linear-gradient(45deg, #009A9E, #0056b3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-message h2 {
+    color: #333;
+    font-weight: 600;
+}
+
+.error-message p {
+    line-height: 1.6;
+}
+
+.error-actions {
+    margin-top: 2rem;
+}
+
+.error-actions .btn {
+    min-width: 150px;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.error-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.error-actions .btn-primary {
+    background: linear-gradient(45deg, #009A9E, #007bff);
+    border: none;
+}
+
+.error-actions .btn-primary:hover {
+    background: linear-gradient(45deg, #007d80, #0056b3);
+}
+
+.error-actions .btn-outline-primary {
+    border-color: #009A9E;
+    color: #009A9E;
+}
+
+.error-actions .btn-outline-primary:hover {
+    background-color: #009A9E;
+    border-color: #009A9E;
+}
+
+.error-actions .btn-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+}
+
+.error-actions .btn-success:hover {
+    background: linear-gradient(45deg, #218838, #1ba085);
+}
+
+.error-actions .btn-danger {
+    background: linear-gradient(45deg, #dc3545, #fd7e14);
+    border: none;
+}
+
+.error-actions .btn-danger:hover {
+    background: linear-gradient(45deg, #c82333, #e8650e);
+}
+
+/* Specific error code colors */
+.text-primary {
+    color: #009A9E !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Countdown and progress bar styles */
+.progress {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.progress-bar {
+    transition: width 1s ease;
+}
+
+/* Spinning animation for retry button */
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .error-page-container {
+        padding: 1rem 0.5rem;
+    }
+    
+    .error-card .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .error-code h1 {
+        font-size: 4rem !important;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 100%;
+        max-width: 250px;
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .error-icon svg {
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    .error-code h1 {
+        font-size: 3rem !important;
+    }
+    
+    .error-message h2 {
+        font-size: 1.5rem;
+    }
+    
+    .error-message p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Alert styles for error pages */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert-warning {
+    background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+    color: #856404;
+}
+
+.alert-info {
+    background: linear-gradient(45deg, #d1ecf1, #74b9ff);
+    color: #0c5460;
+}
+
+.alert-success {
+    background: linear-gradient(45deg, #d4edda, #00b894);
+    color: #155724;
+}
+
+/* List styles in alerts */
+.alert ul {
+    text-align: left;
+    margin-top: 0.5rem;
+}
+
+.alert li {
+    margin-bottom: 0.25rem;
+} 
