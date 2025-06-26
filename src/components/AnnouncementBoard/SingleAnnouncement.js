@@ -5,6 +5,7 @@ import { FaArrowLeft, FaCalendarAlt, FaUser, FaTags } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import { AnnouncementModal } from './AnnouncementBoard';
+import { formatDate } from '../../utils/dateUtils';
 import './AnnouncementBoard.css';
 
 const SingleAnnouncement = () => {
@@ -58,20 +59,7 @@ const SingleAnnouncement = () => {
         }
     }, [id]);
 
-    const formatDate = (dateString) => {
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (err) {
-            return 'Fecha no válida';
-        }
-    };
+    // La función formatDate ahora viene del utils/dateUtils.js
 
     const formatSpecialties = (specialties) => {
         if (!specialties || specialties.length === 0) return 'Todas las especialidades';

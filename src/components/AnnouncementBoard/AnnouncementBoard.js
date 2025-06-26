@@ -1,10 +1,11 @@
 import "./AnnouncementBoard.css";
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { Button, Form, Modal, Container, Card, InputGroup, Spinner } from "react-bootstrap";
+import { Button, Form, Modal, Container, Card, InputGroup, Spinner, Alert } from "react-bootstrap";
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle } from 'react-icons/fa';
+import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
 
 // Componente para popup de imagen
@@ -432,7 +433,7 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                     <Card.Footer className="text-muted">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <small>{new Date(date).toLocaleDateString()}</small>
+                                <small>{formatDate(date)}</small>
                                 <small className="ms-2">Autor: {authorName}</small>
                             </div>
                             <div>
@@ -621,7 +622,7 @@ export const AnnouncementModal = ({
                     <div>
                         <small className="text-muted">
                             <i className="bi bi-calendar me-1"></i>
-                            {new Date(announcement.date).toLocaleDateString()}
+                            {formatDate(announcement.date)}
                         </small>
                         <small className="text-muted ms-3">
                             <i className="bi bi-person me-1"></i>
@@ -866,6 +867,13 @@ const AnnouncementBoard = () => {
     const [onConfirm, setOnConfirm] = useState(() => () => {});
     const [editAnnouncement, setEditAnnouncement] = useState(null);
 
+    // Estados de validación de formulario
+    const [titleError, setTitleError] = useState('');
+    const [contentError, setContentError] = useState('');
+    const [titleTouched, setTitleTouched] = useState(false);
+    const [contentTouched, setContentTouched] = useState(false);
+    const [formError, setFormError] = useState('');
+
     const fetchUserSpecialties = useCallback(async () => {
         try {
             const userId = getTokenUserId();
@@ -970,7 +978,15 @@ const AnnouncementBoard = () => {
         }
     }, [showNew]);
 
-    const handleCloseNew = () => setShowNew(false);
+    const handleCloseNew = () => {
+        setShowNew(false);
+        // Limpiar errores cuando se cierra el modal
+        setTitleError('');
+        setContentError('');
+        setFormError('');
+        setTitleTouched(false);
+        setContentTouched(false);
+    };
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -995,6 +1011,75 @@ const AnnouncementBoard = () => {
             ...prev,
             files: files
         }));
+    };
+
+    // Funciones de validación
+    const validateTitle = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El título es obligatorio.';
+        }
+        if (value.trim().length < 3) {
+            return 'El título debe tener al menos 3 caracteres.';
+        }
+        if (value.length > 255) {
+            return 'El título no puede exceder 255 caracteres.';
+        }
+        return '';
+    };
+
+    const validateContent = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El contenido es obligatorio.';
+        }
+        if (value.trim().length < 10) {
+            return 'El contenido debe tener al menos 10 caracteres.';
+        }
+        if (value.length > 5000) {
+            return 'El contenido no puede exceder 5000 caracteres.';
+        }
+        return '';
+    };
+
+    // Manejadores de cambio con validación en tiempo real
+    const handleTitleChange = (e) => {
+        const value = e.target.value;
+        setNewAnnouncement(prev => ({
+            ...prev,
+            title: value
+        }));
+        if (titleTouched) {
+            setTitleError(validateTitle(value));
+        }
+        // Limpiar error general si existe
+        if (formError) {
+            setFormError('');
+        }
+    };
+
+    const handleContentChange = (e) => {
+        const value = e.target.value;
+        setNewAnnouncement(prev => ({
+            ...prev,
+            content: value
+        }));
+        if (contentTouched) {
+            setContentError(validateContent(value));
+        }
+        // Limpiar error general si existe
+        if (formError) {
+            setFormError('');
+        }
+    };
+
+    // Manejadores de blur
+    const handleTitleBlur = () => {
+        setTitleTouched(true);
+        setTitleError(validateTitle(newAnnouncement.title));
+    };
+
+    const handleContentBlur = () => {
+        setContentTouched(true);
+        setContentError(validateContent(newAnnouncement.content));
     };
 
     const showConfirmation = (message, onConfirmAction) => {
@@ -1025,156 +1110,188 @@ const AnnouncementBoard = () => {
             images: [],
             files: []
         });
+        
+        // Limpiar errores al abrir para editar
+        setTitleError('');
+        setContentError('');
+        setFormError('');
+        setTitleTouched(false);
+        setContentTouched(false);
     };
 
     const handleSave = async () => {
-        if (newAnnouncement.title && newAnnouncement.content) {
-            setSaving(true);
-            try {
-                const createdByUserId = getTokenUserId();
-                if (!createdByUserId) {
-                    throw new Error('No se pudo obtener el ID del usuario');
-                }
-                
-                // Preparar especialidades
-                let specialtiesNames = [];
-                if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
-                    specialtiesNames = specialtiesList
-                        .filter(spec => newAnnouncement.specialties.includes(spec.id))
-                        .map(spec => spec.name);
-                }
+        // Limpiar errores previos
+        setFormError('');
+        
+        // Marcar todos los campos como touched
+        setTitleTouched(true);
+        setContentTouched(true);
+        
+        // Validar todos los campos
+        const titleErr = validateTitle(newAnnouncement.title);
+        const contentErr = validateContent(newAnnouncement.content);
+        
+        setTitleError(titleErr);
+        setContentError(contentErr);
+        
+        // Si hay errores de validación, no continuar
+        if (titleErr || contentErr) {
+            setFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
 
-                // FLUJO 1: Crear/editar anuncio básico (JSON)
-                const announcementData = {
-                    title: newAnnouncement.title,
-                    content: newAnnouncement.content,
-                    specialties: specialtiesNames
-                };
-
-                let announcementId;
-                if (editAnnouncement) {
-                    // Editar anuncio existente
-                    await api.put(`/api/announcements/${editAnnouncement.id}`, announcementData);
-                    announcementId = editAnnouncement.id;
-                } else {
-                    // Crear nuevo anuncio
-                    const response = await api.post('/api/announcements', announcementData);
-                    announcementId = response.data.id;
-                }
-
-                // FLUJO 2: Subir archivos si existen
-                console.log('🔍 Estado antes de subir archivos:', {
-                    announcementId,
-                    imagesCount: newAnnouncement.images.length,
-                    filesCount: newAnnouncement.files.length,
-                    images: newAnnouncement.images,
-                    files: newAnnouncement.files
-                });
-                
-                if (announcementId && (newAnnouncement.images.length > 0 || newAnnouncement.files.length > 0)) {
-                    const formData = new FormData();
-                    let hasFilesToUpload = false;
-                    
-                    // Agregar imágenes SOLO si hay imágenes
-                    if (newAnnouncement.images.length > 0) {
-                        console.log('📸 Agregando imágenes al FormData:', newAnnouncement.images.length);
-                        newAnnouncement.images.forEach(image => {
-                            console.log('📸 Agregando imagen:', image.name);
-                            formData.append('images', image);
-                            hasFilesToUpload = true;
-                        });
-                    }
-                    
-                    // Agregar archivos SOLO si hay archivos
-                    if (newAnnouncement.files.length > 0) {
-                        console.log('📎 Agregando archivos al FormData:', newAnnouncement.files.length);
-                        newAnnouncement.files.forEach(file => {
-                            console.log('📎 Agregando archivo:', file.name);
-                            formData.append('files', file);
-                            hasFilesToUpload = true;
-                        });
-                    }
-                    
-                    console.log('🔍 hasFilesToUpload:', hasFilesToUpload);
-                    
-                    // Solo hacer la petición si realmente hay archivos que subir
-                    if (hasFilesToUpload) {
-                        // Debug: verificar contenido del FormData
-                        console.log('📤 Enviando FormData con archivos...');
-                        for (let [key, value] of formData.entries()) {
-                            console.log(`📤 ${key}:`, value instanceof File ? value.name : value);
-                        }
-                        
-                        console.log('🔗 URL del endpoint:', `/api/announcements/${announcementId}/files`);
-                        
-                        // Eliminar el Content-Type por defecto para que axios maneje FormData automáticamente
-                        const uploadResponse = await api.post(`/api/announcements/${announcementId}/files`, formData, {
-                            headers: {
-                                'Content-Type': undefined, // Esto permite que axios establezca automáticamente multipart/form-data
-                            },
-                        });
-                        
-                        // Debug completo de la respuesta del backend
-                        console.log('🔍 Respuesta completa del backend:', uploadResponse);
-                        console.log('🔍 Datos de respuesta:', uploadResponse.data);
-                        console.log('🔍 Status de respuesta:', uploadResponse.status);
-                        
-                        // Manejar respuesta del backend con información detallada
-                        if (uploadResponse.data) {
-                            const { images: uploadedImages, files: uploadedFiles, uploaded, errors } = uploadResponse.data;
-                            
-                            console.log(`✅ Archivos subidos exitosamente: ${uploaded} de ${newAnnouncement.images.length + newAnnouncement.files.length}`);
-                            
-                            if (uploadedImages) {
-                                console.log(`📸 Imágenes subidas: ${uploadedImages.length}`);
-                                console.log('📸 Detalles de imágenes:', uploadedImages);
-                            }
-                            
-                            if (uploadedFiles) {
-                                console.log(`📎 Archivos subidos: ${uploadedFiles.length}`);
-                                console.log('📎 Detalles de archivos:', uploadedFiles);
-                            }
-                            
-                            // Si hay errores parciales, mostrarlos como warning pero no fallar completamente
-                            if (errors && errors.length > 0) {
-                                console.warn('⚠️ Algunos archivos tuvieron problemas:', errors);
-                                console.warn('⚠️ Detalles de errores:', JSON.stringify(errors, null, 2));
-                                const warningMessage = `Anuncio guardado correctamente, pero hubo problemas con algunos archivos:\n${errors.join('\n')}`;
-                                setError(warningMessage);
-                                // No hacer throw para que el anuncio se guarde
-                            }
-                            
-                            // Si no se subió ningún archivo, mostrar información adicional
-                            if (uploaded === 0) {
-                                console.error('❌ No se subió ningún archivo. Posibles causas:');
-                                console.error('- El backend no está procesando los archivos correctamente');
-                                console.error('- Problema con el formato del FormData');
-                                console.error('- Error en la validación del backend');
-                                console.error('- Problema con el servicio de almacenamiento (Cloudinary)');
-                            }
-                        }
-                    }
-                }
-
-                await fetchAnnouncements();
-                console.log('🔄 Anuncios recargados después de subir archivos');
-                setShowNew(false);
-                setEditAnnouncement(null);
-                setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined, images: [], files: [] });
-            } catch (err) {
-                let errorMessage = 'Error al guardar el anuncio';
-                if (err.response?.data?.message) {
-                    errorMessage += `: ${err.response.data.message}`;
-                } else if (err.response?.data?.error) {
-                    errorMessage += `: ${err.response.data.error}`;
-                } else if (err.message) {
-                    errorMessage += `: ${err.message}`;
-                }
-                setError(errorMessage);
-                console.error('Error details:', err.response?.data);
-            } finally {
-                setSaving(false);
+        setSaving(true);
+        try {
+            const createdByUserId = getTokenUserId();
+            if (!createdByUserId) {
+                throw new Error('No se pudo obtener el ID del usuario');
             }
+            
+            // Preparar especialidades
+            let specialtiesNames = [];
+            if (Array.isArray(newAnnouncement.specialties) && newAnnouncement.specialties.length > 0) {
+                specialtiesNames = specialtiesList
+                    .filter(spec => newAnnouncement.specialties.includes(spec.id))
+                    .map(spec => spec.name);
+            }
+
+            // FLUJO 1: Crear/editar anuncio básico (JSON)
+            const announcementData = {
+                title: newAnnouncement.title,
+                content: newAnnouncement.content,
+                specialties: specialtiesNames
+            };
+
+            let announcementId;
+            if (editAnnouncement) {
+                // Editar anuncio existente
+                await api.put(`/api/announcements/${editAnnouncement.id}`, announcementData);
+                announcementId = editAnnouncement.id;
+            } else {
+                // Crear nuevo anuncio
+                const response = await api.post('/api/announcements', announcementData);
+                announcementId = response.data.id;
+            }
+
+            // FLUJO 2: Subir archivos si existen
+            console.log('🔍 Estado antes de subir archivos:', {
+                announcementId,
+                imagesCount: newAnnouncement.images.length,
+                filesCount: newAnnouncement.files.length,
+                images: newAnnouncement.images,
+                files: newAnnouncement.files
+            });
+            
+            if (announcementId && (newAnnouncement.images.length > 0 || newAnnouncement.files.length > 0)) {
+                const formData = new FormData();
+                let hasFilesToUpload = false;
+                
+                // Agregar imágenes SOLO si hay imágenes
+                if (newAnnouncement.images.length > 0) {
+                    console.log('📸 Agregando imágenes al FormData:', newAnnouncement.images.length);
+                    newAnnouncement.images.forEach(image => {
+                        console.log('📸 Agregando imagen:', image.name);
+                        formData.append('images', image);
+                        hasFilesToUpload = true;
+                    });
+                }
+                
+                // Agregar archivos SOLO si hay archivos
+                if (newAnnouncement.files.length > 0) {
+                    console.log('📎 Agregando archivos al FormData:', newAnnouncement.files.length);
+                    newAnnouncement.files.forEach(file => {
+                        console.log('📎 Agregando archivo:', file.name);
+                        formData.append('files', file);
+                        hasFilesToUpload = true;
+                    });
+                }
+                
+                console.log('🔍 hasFilesToUpload:', hasFilesToUpload);
+                
+                // Solo hacer la petición si realmente hay archivos que subir
+                if (hasFilesToUpload) {
+                    // Debug: verificar contenido del FormData
+                    console.log('📤 Enviando FormData con archivos...');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`📤 ${key}:`, value instanceof File ? value.name : value);
+                    }
+                    
+                    console.log('🔗 URL del endpoint:', `/api/announcements/${announcementId}/files`);
+                    
+                    // Eliminar el Content-Type por defecto para que axios maneje FormData automáticamente
+                    const uploadResponse = await api.post(`/api/announcements/${announcementId}/files`, formData, {
+                        headers: {
+                            'Content-Type': undefined, // Esto permite que axios establezca automáticamente multipart/form-data
+                        },
+                    });
+                    
+                    // Debug completo de la respuesta del backend
+                    console.log('🔍 Respuesta completa del backend:', uploadResponse);
+                    console.log('🔍 Datos de respuesta:', uploadResponse.data);
+                    console.log('🔍 Status de respuesta:', uploadResponse.status);
+                    
+                    // Manejar respuesta del backend con información detallada
+                    if (uploadResponse.data) {
+                        const { images: uploadedImages, files: uploadedFiles, uploaded, errors } = uploadResponse.data;
+                        
+                        console.log(`✅ Archivos subidos exitosamente: ${uploaded} de ${newAnnouncement.images.length + newAnnouncement.files.length}`);
+                        
+                        if (uploadedImages) {
+                            console.log(`📸 Imágenes subidas: ${uploadedImages.length}`);
+                            console.log('📸 Detalles de imágenes:', uploadedImages);
+                        }
+                        
+                        if (uploadedFiles) {
+                            console.log(`📎 Archivos subidos: ${uploadedFiles.length}`);
+                            console.log('📎 Detalles de archivos:', uploadedFiles);
+                        }
+                        
+                        // Si hay errores parciales, mostrarlos como warning pero no fallar completamente
+                        if (errors && errors.length > 0) {
+                            console.warn('⚠️ Algunos archivos tuvieron problemas:', errors);
+                            console.warn('⚠️ Detalles de errores:', JSON.stringify(errors, null, 2));
+                            const warningMessage = `Anuncio guardado correctamente, pero hubo problemas con algunos archivos:\n${errors.join('\n')}`;
+                            setFormError(warningMessage);
+                            // No hacer throw para que el anuncio se guarde
+                        }
+                        
+                        // Si no se subió ningún archivo, mostrar información adicional
+                        if (uploaded === 0) {
+                            console.error('❌ No se subió ningún archivo. Posibles causas:');
+                            console.error('- El backend no está procesando los archivos correctamente');
+                            console.error('- Problema con el formato del FormData');
+                            console.error('- Error en la validación del backend');
+                            console.error('- Problema con el servicio de almacenamiento (Cloudinary)');
+                        }
+                    }
+                }
+            }
+
+            await fetchAnnouncements();
+            console.log('🔄 Anuncios recargados después de subir archivos');
+            setShowNew(false);
+            setEditAnnouncement(null);
+            setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined, images: [], files: [] });
+            
+            // Limpiar errores cuando se guarda exitosamente
+            setTitleError('');
+            setContentError('');
+            setFormError('');
+            setTitleTouched(false);
+            setContentTouched(false);
+        } catch (err) {
+            let errorMessage = 'Error al guardar el anuncio';
+            if (err.response?.data?.message) {
+                errorMessage += `: ${err.response.data.message}`;
+            } else if (err.response?.data?.error) {
+                errorMessage += `: ${err.response.data.error}`;
+            } else if (err.message) {
+                errorMessage += `: ${err.message}`;
+            }
+            setFormError(errorMessage);
+            console.error('Error details:', err.response?.data);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -1279,34 +1396,52 @@ const AnnouncementBoard = () => {
                         1
                     </Button>
 
-                    {/* Puntos suspensivos iniciales si es necesario */}
-                    {currentPage > 2 && (
+                    {/* Puntos suspensivos iniciales si hay más de 3 páginas y estamos lejos del inicio */}
+                    {currentPage > 3 && totalPages > 4 && (
                         <span className="mx-2">...</span>
                     )}
 
                     {/* Páginas alrededor de la actual */}
                     {Array.from({ length: totalPages }, (_, i) => {
-                        if (i === 0 || i === totalPages - 1) return null; // Excluir primera y última página
-                        if (Math.abs(currentPage - (i + 1)) <= 1) { // Mostrar solo páginas adyacentes
+                        const page = i + 1;
+                        // Excluir primera y última página (ya se muestran por separado)
+                        if (page === 1 || page === totalPages) return null;
+                        
+                        // Mostrar páginas cerca de la actual
+                        if (totalPages <= 4) {
+                            // Si hay 4 o menos páginas, mostrar todas
                             return (
                                 <Button
-                                    key={i + 1}
-                                    variant={currentPage === i + 1 ? 'primary' : 'outline-primary'}
-                                    onClick={() => goToPage(i + 1)}
+                                    key={page}
+                                    variant={currentPage === page ? 'primary' : 'outline-primary'}
+                                    onClick={() => goToPage(page)}
                                 >
-                                    {i + 1}
+                                    {page}
                                 </Button>
                             );
+                        } else {
+                            // Solo mostrar páginas adyacentes a la actual
+                            if (Math.abs(currentPage - page) <= 1) {
+                                return (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? 'primary' : 'outline-primary'}
+                                        onClick={() => goToPage(page)}
+                                    >
+                                        {page}
+                                    </Button>
+                                );
+                            }
                         }
                         return null;
                     })}
 
-                    {/* Puntos suspensivos finales si es necesario */}
-                    {currentPage < totalPages - 3 && (
+                    {/* Puntos suspensivos finales si hay más de 3 páginas y estamos lejos del final */}
+                    {currentPage < totalPages - 2 && totalPages > 4 && (
                         <span className="mx-2">...</span>
                     )}
 
-                    {/* Última página */}
+                    {/* Última página (solo si hay más de 1 página) */}
                     {totalPages > 1 && (
                         <Button
                             variant={currentPage === totalPages ? 'primary' : 'outline-primary'}
@@ -1346,33 +1481,61 @@ const AnnouncementBoard = () => {
                             <Form.Label>Título</Form.Label>
                             <Form.Control
                                 type="text"
-                                placeholder="Título"
+                                placeholder="Título del anuncio"
                                 value={newAnnouncement.title}
                                 maxLength={255}
-                                onChange={e => setNewAnnouncement(prev => ({
-                                    ...prev,
-                                    title: e.target.value
-                                }))}
+                                onChange={handleTitleChange}
+                                onBlur={handleTitleBlur}
+                                style={titleTouched && titleError ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={titleTouched && titleError ? 'error-input' : ''}
                             />
-                            <Form.Text className="text-muted">
-                                {newAnnouncement.title.length}/255 caracteres
-                            </Form.Text>
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {titleTouched && titleError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {titleError}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {newAnnouncement.title.length}/255 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Contenido</Form.Label>
                             <Form.Control
                                 as="textarea"
-                                rows={3}
-                                placeholder="Contenido del anuncio"
+                                rows={4}
+                                placeholder="Escribe el contenido del anuncio..."
                                 value={newAnnouncement.content}
-                                onChange={e => setNewAnnouncement(prev => ({
-                                    ...prev,
-                                    content: e.target.value
-                                }))}
+                                maxLength={5000}
+                                onChange={handleContentChange}
+                                onBlur={handleContentBlur}
+                                style={contentTouched && contentError ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={contentTouched && contentError ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {contentTouched && contentError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {contentError}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {newAnnouncement.content.length}/5000 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Especialidades</Form.Label>
+                            <Form.Label data-optional>Especialidades</Form.Label>
                             <div className="specialties-select-container">
                                 <div 
                                     className="specialties-select-trigger"
@@ -1414,7 +1577,7 @@ const AnnouncementBoard = () => {
                             </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Imágenes</Form.Label>
+                            <Form.Label data-optional>Imágenes</Form.Label>
                             <Form.Control
                                 type="file"
                                 accept="image/*"
@@ -1433,7 +1596,7 @@ const AnnouncementBoard = () => {
                             )}
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Archivos adjuntos</Form.Label>
+                            <Form.Label data-optional>Archivos adjuntos</Form.Label>
                             <Form.Control
                                 type="file"
                                 multiple
@@ -1450,6 +1613,14 @@ const AnnouncementBoard = () => {
                                 </div>
                             )}
                         </Form.Group>
+                        
+                        {/* Mensaje de error general */}
+                        {formError && (
+                            <Alert variant="danger" className="d-flex align-items-center">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{formError}</div>
+                            </Alert>
+                        )}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
@@ -1463,7 +1634,7 @@ const AnnouncementBoard = () => {
                     <Button 
                         variant="primary" 
                         onClick={handleSave}
-                        disabled={saving}
+                        disabled={saving || (titleTouched && titleError) || (contentTouched && contentError)}
                     >
                         {saving ? (
                             <>
@@ -1471,7 +1642,7 @@ const AnnouncementBoard = () => {
                                 Guardando...
                             </>
                         ) : (
-                            'Guardar'
+                            editAnnouncement ? 'Actualizar' : 'Crear Anuncio'
                         )}
                     </Button>
                 </Modal.Footer>

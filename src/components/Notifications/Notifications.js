@@ -4,6 +4,7 @@ import { FaBell } from 'react-icons/fa';
 import { getNotifications, markNotificationAsRead } from '../../api/notifications';
 import api from '../../api/api';
 import { AnnouncementModal } from '../AnnouncementBoard/AnnouncementBoard';
+import { formatNotificationDate } from '../../utils/dateUtils';
 import './Notifications.css';
 
 const Notifications = () => {
@@ -137,7 +138,7 @@ const Notifications = () => {
                                     <div className="notification-content">
                                         <p className="notification-text">{notification.message}</p>
                                         <small className="notification-date">
-                                            {new Date(notification.date).toLocaleString()}
+                                            {formatNotificationDate(notification.date)}
                                         </small>
                                     </div>
                                 </Dropdown.Item>

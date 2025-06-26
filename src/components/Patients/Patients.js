@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge } from "react-bootstrap";
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert } from "react-bootstrap";
+import { FaExclamationCircle, FaPlus } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import './Patients.css';
@@ -15,13 +16,13 @@ const Patients = () => {
     const [showDetails, setShowDetails] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [doctors, setDoctors] = useState([]);
-    const [allDoctors, setAllDoctors] = useState([]); // Para el filtro dropdown
+
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
     const [specialties, setSpecialties] = useState([]);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [selectedSpecialty, setSelectedSpecialty] = useState('');
-    const [selectedDoctor, setSelectedDoctor] = useState(''); // Cambio de doctorFilterTerm a selectedDoctor
+    const [doctorFilterTerm, setDoctorFilterTerm] = useState(''); // Campo de texto para filtrar por nombre de doctor
     const [statuses, setStatuses] = useState([]);
     const [newPatient, setNewPatient] = useState({
         name: "",
@@ -42,6 +43,13 @@ const Patients = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState('');
     const [onConfirm, setOnConfirm] = useState(() => () => {});
+
+    // Estados de validación de formulario
+    const [nameError, setNameError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
+    const [nameTouched, setNameTouched] = useState(false);
+    const [phoneTouched, setPhoneTouched] = useState(false);
+    const [formError, setFormError] = useState('');
 
     const fetchStatuses = useCallback(async () => {
         try {
@@ -65,16 +73,7 @@ const Patients = () => {
         }
     }, []);
 
-    // Función para cargar todos los doctores para el filtro dropdown
-    const fetchAllDoctors = useCallback(async () => {
-        try {
-            const response = await api.get('/api/users?page=0&size=1000'); // Cargar muchos doctores
-            const doctorsData = response.data.content || response.data || [];
-            setAllDoctors(doctorsData);
-        } catch (err) {
-            setAllDoctors([]);
-        }
-    }, []);
+
 
     const fetchPatients = useCallback(async () => {
         try {
@@ -85,8 +84,8 @@ const Patients = () => {
             if (searchTerm) {
                 params.append('name', searchTerm);
             }
-            if (selectedDoctor) {
-                params.append('doctorId', selectedDoctor); // Cambio a doctorId para ser más específico
+            if (doctorFilterTerm) {
+                params.append('doctor', doctorFilterTerm); // Enviar el nombre del doctor
             }
             if (selectedStatus) {
                 params.append('status', selectedStatus);
@@ -105,17 +104,16 @@ const Patients = () => {
             setError('Error al cargar los pacientes');
             setLoading(false);
         }
-    }, [currentPage, pageSize, searchTerm, selectedDoctor, selectedStatus, selectedSpecialty]);
+    }, [currentPage, pageSize, searchTerm, doctorFilterTerm, selectedStatus, selectedSpecialty]);
 
     useEffect(() => {
         fetchPatients();
         fetchStatuses();
         fetchSpecialties();
-        fetchAllDoctors(); // Cargar todos los doctores para el filtro
-    }, [fetchPatients, fetchStatuses, fetchSpecialties, fetchAllDoctors]);
+    }, [fetchPatients, fetchStatuses, fetchSpecialties]);
 
     const handleDoctorFilterChange = (e) => {
-        setSelectedDoctor(e.target.value);
+        setDoctorFilterTerm(e.target.value);
     };
 
     const handleStatusFilterChange = (e) => {
@@ -192,26 +190,55 @@ const Patients = () => {
 
     const handleCloseNew = () => {
         setShowNew(false);
+        setNewPatient({
+            name: "",
+            phone: "",
+            status: "unknown",
+            doctors: [],
+            doctorSpecialties: []
+        });
         setDoctorSearchTerm('');
         setDoctorSpecialty('');
+        clearFormErrors();
     };
 
     const handleSave = async () => {
-        if (newPatient.name && newPatient.phone) {
-            try {
-                await api.post('/api/patients', newPatient);
-                await fetchPatients();
-                setShowNew(false);
-                setNewPatient({
-                    name: "",
-                    phone: "",
-                    status: "unknown",
-                    doctors: [],
-                    doctorSpecialties: []
-                });
-            } catch (err) {
-                setError('Error al guardar el paciente');
-            }
+        // Limpiar errores previos
+        setFormError('');
+        
+        // Marcar todos los campos como touched
+        setNameTouched(true);
+        setPhoneTouched(true);
+        
+        // Validar todos los campos
+        const nameErr = validateName(newPatient.name);
+        const phoneErr = validatePhone(newPatient.phone);
+        
+        setNameError(nameErr);
+        setPhoneError(phoneErr);
+        
+        // Si hay errores de validación, no continuar
+        if (nameErr || phoneErr) {
+            setFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
+
+        try {
+            await api.post('/api/patients', newPatient);
+            await fetchPatients();
+            setShowNew(false);
+            setNewPatient({
+                name: "",
+                phone: "",
+                status: "unknown",
+                doctors: [],
+                doctorSpecialties: []
+            });
+            clearFormErrors();
+        } catch (err) {
+            console.error('Error al guardar el paciente:', err);
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar el paciente';
+            setFormError(errorMessage);
         }
     };
 
@@ -230,6 +257,12 @@ const Patients = () => {
     };
 
     const handleAddDoctors = async () => {
+        // Verificar que el usuario sea administrador
+        if (!isAdmin) {
+            setError('Solo los administradores pueden agregar doctores a pacientes');
+            return;
+        }
+
         if (selectedDoctors.length > 0 && selectedPatient) {
             try {
                 const promises = selectedDoctors.map(doctorId => 
@@ -259,6 +292,12 @@ const Patients = () => {
 
     // Eliminar paciente
     const handleDeletePatient = (patient) => {
+        // Verificar que el usuario sea administrador
+        if (!isAdmin) {
+            setError('Solo los administradores pueden eliminar pacientes');
+            return;
+        }
+
         showConfirmation('¿Estás seguro de que deseas eliminar este paciente?', async () => {
             try {
                 await api.delete(`/api/patients/${patient.id}`);
@@ -267,6 +306,71 @@ const Patients = () => {
                 setError('Error al eliminar el paciente');
             }
         });
+    };
+
+    // Funciones de validación
+    const validateName = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El nombre es obligatorio.';
+        }
+        if (value.trim().length < 2) {
+            return 'El nombre debe tener al menos 2 caracteres.';
+        }
+        if (value.length > 100) {
+            return 'El nombre no puede exceder 100 caracteres.';
+        }
+        return '';
+    };
+
+    const validatePhone = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El teléfono es obligatorio.';
+        }
+        // Expresión regular para validar números de teléfono (permite espacios, guiones, paréntesis)
+        const phoneRegex = /^[\d\s\-\(\)\+]{7,20}$/;
+        if (!phoneRegex.test(value.trim())) {
+            return 'Ingrese un número de teléfono válido (7-20 dígitos).';
+        }
+        return '';
+    };
+
+    // Manejadores de cambio con validación en tiempo real
+    const handleNameChange = (e) => {
+        const value = e.target.value;
+        setNewPatient(prev => ({ ...prev, name: value }));
+        if (nameTouched) {
+            setNameError(validateName(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    const handlePhoneChange = (e) => {
+        const value = e.target.value;
+        setNewPatient(prev => ({ ...prev, phone: value }));
+        if (phoneTouched) {
+            setPhoneError(validatePhone(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    // Manejadores de blur
+    const handleNameBlur = () => {
+        setNameTouched(true);
+        setNameError(validateName(newPatient.name));
+    };
+
+    const handlePhoneBlur = () => {
+        setPhoneTouched(true);
+        setPhoneError(validatePhone(newPatient.phone));
+    };
+
+    // Función para limpiar errores
+    const clearFormErrors = () => {
+        setNameError('');
+        setPhoneError('');
+        setFormError('');
+        setNameTouched(false);
+        setPhoneTouched(false);
     };
 
     if (loading) return (
@@ -300,7 +404,7 @@ const Patients = () => {
                                 size="sm"
                                 onClick={() => {
                                     setSearchTerm('');
-                                    setSelectedDoctor('');
+                                    setDoctorFilterTerm('');
                                     setSelectedSpecialty('');
                                     setSelectedStatus('');
                                     setCurrentPage(0);
@@ -313,7 +417,7 @@ const Patients = () => {
                                     className="create-button"
                                     onClick={() => setShowNew(true)}
                                 >
-                                    <i className="bi bi-plus me-2"></i>
+                                    <FaPlus className="me-2" />
                                     Nuevo Paciente
                                 </Button>
                             )}
@@ -339,17 +443,17 @@ const Patients = () => {
                         <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Doctor</Form.Label>
-                                <Form.Select
-                                    value={selectedDoctor}
-                                    onChange={handleDoctorFilterChange}
-                                >
-                                    <option value="">Todos los doctores</option>
-                                    {allDoctors.map(doctor => (
-                                        <option key={doctor.id} value={doctor.id}>
-                                            {doctor.name}
-                                        </option>
-                                    ))}
-                                </Form.Select>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-person"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Filtrar por nombre de doctor..."
+                                        value={doctorFilterTerm}
+                                        onChange={handleDoctorFilterChange}
+                                    />
+                                </InputGroup>
                             </Form.Group>
                         </Col>
                         <Col md={3}>
@@ -571,17 +675,19 @@ const Patients = () => {
                             <div className="doctors-section">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <h5 className="mb-0">Doctores Asignados</h5>
-                                    <Button 
-                                        variant="outline-primary" 
-                                        size="sm"
-                                        onClick={() => {
-                                            setShowAddDoctor(true);
-                                            fetchDoctors(); // Asegurarnos de cargar los doctores al abrir el modal
-                                        }}
-                                    >
-                                        <i className="bi bi-plus-circle me-1"></i>
-                                        Agregar Doctor
-                                    </Button>
+                                    {isAdmin && (
+                                        <Button 
+                                            variant="outline-primary" 
+                                            size="sm"
+                                            onClick={() => {
+                                                setShowAddDoctor(true);
+                                                fetchDoctors(); // Asegurarnos de cargar los doctores al abrir el modal
+                                            }}
+                                        >
+                                            <i className="bi bi-plus-circle me-1"></i>
+                                            Agregar Doctor
+                                        </Button>
+                                    )}
                                 </div>
                                 {selectedPatient.doctors && selectedPatient.doctors.length > 0 ? (
                                     <div className="doctors-list">
@@ -713,13 +819,29 @@ const Patients = () => {
                                     <Form.Label>Nombre</Form.Label>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Nombre completo"
+                                        placeholder="Nombre completo del paciente"
                                         value={newPatient.name}
-                                        onChange={e => setNewPatient(prev => ({
-                                            ...prev,
-                                            name: e.target.value
-                                        }))}
+                                        maxLength={100}
+                                        onChange={handleNameChange}
+                                        onBlur={handleNameBlur}
+                                        style={nameTouched && nameError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={nameTouched && nameError ? 'error-input' : ''}
                                     />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {nameTouched && nameError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {nameError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {newPatient.name.length}/100 caracteres
+                                        </Form.Text>
+                                    </div>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
@@ -727,19 +849,31 @@ const Patients = () => {
                                     <Form.Label>Teléfono</Form.Label>
                                     <Form.Control
                                         type="tel"
-                                        placeholder="Teléfono"
+                                        placeholder="Número de teléfono"
                                         value={newPatient.phone}
-                                        onChange={e => setNewPatient(prev => ({
-                                            ...prev,
-                                            phone: e.target.value
-                                        }))}
+                                        maxLength={20}
+                                        onChange={handlePhoneChange}
+                                        onBlur={handlePhoneBlur}
+                                        style={phoneTouched && phoneError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={phoneTouched && phoneError ? 'error-input' : ''}
                                     />
+                                    {phoneTouched && phoneError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {phoneError}
+                                        </div>
+                                    )}
+                                    <Form.Text className="text-muted">
+                                        Incluya código de área. Ej: +1234567890, (123) 456-7890
+                                    </Form.Text>
                                 </Form.Group>
                             </Col>
                         </Row>
 
                         <Form.Group>
-                            <Form.Label>Seleccionar Doctor</Form.Label>
+                            <Form.Label data-optional>Seleccionar Doctor</Form.Label>
                             <Row className="mb-2">
                                 <Col md={6}>
                                     <InputGroup>
@@ -810,14 +944,26 @@ const Patients = () => {
                                 </Table>
                             </div>
                         </Form.Group>
+                        
+                        {/* Mensaje de error general */}
+                        {formError && (
+                            <Alert variant="danger" className="d-flex align-items-center">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{formError}</div>
+                            </Alert>
+                        )}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleCloseNew}>
                         Cancelar
                     </Button>
-                    <Button variant="primary" onClick={handleSave}>
-                        Guardar
+                    <Button 
+                        variant="primary" 
+                        onClick={handleSave}
+                        disabled={(nameTouched && nameError) || (phoneTouched && phoneError)}
+                    >
+                        Guardar Paciente
                     </Button>
                 </Modal.Footer>
             </Modal>

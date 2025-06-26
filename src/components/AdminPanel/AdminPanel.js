@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col } from 'react-bootstrap';
-import { FaTrash, FaEdit, FaPlus, FaUserPlus } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaPlus, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../api/api';
 import './AdminPanel.css';
@@ -47,6 +47,34 @@ const AdminPanel = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState('');
     const [onConfirm, setOnConfirm] = useState(() => () => {});
+
+    // Estados de validación de formulario para usuarios
+    const [userFormErrors, setUserFormErrors] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        password: ''
+    });
+    const [userFieldsTouched, setUserFieldsTouched] = useState({
+        firstName: false,
+        lastName: false,
+        email: false,
+        phone: false,
+        password: false
+    });
+    const [userFormError, setUserFormError] = useState('');
+
+    // Estados de validación de formulario para especialidades
+    const [specialtyFormErrors, setSpecialtyFormErrors] = useState({
+        name: '',
+        description: ''
+    });
+    const [specialtyFieldsTouched, setSpecialtyFieldsTouched] = useState({
+        name: false,
+        description: false
+    });
+    const [specialtyFormError, setSpecialtyFormError] = useState('');
 
     const fetchUsers = useCallback(async (page = 0, filters = {}) => {
         try {
@@ -105,16 +133,53 @@ const AdminPanel = () => {
 
     const handleUserSubmit = async (e) => {
         e.preventDefault();
+        
+        // Limpiar errores previos
+        setUserFormError('');
+        
+        // Marcar todos los campos como touched
+        const fieldsToValidate = ['firstName', 'lastName', 'email', 'phone'];
+        if (!selectedUser) fieldsToValidate.push('password');
+        
+        const touchedFields = {};
+        fieldsToValidate.forEach(field => {
+            touchedFields[field] = true;
+        });
+        setUserFieldsTouched(prev => ({ ...prev, ...touchedFields }));
+        
+        // Validar todos los campos
+        const errors = {};
+        errors.firstName = validateFirstName(formData.firstName);
+        errors.lastName = validateLastName(formData.lastName);
+        errors.email = validateEmail(formData.email);
+        errors.phone = validatePhone(formData.phone);
+        if (!selectedUser) {
+            errors.password = validatePassword(formData.password);
+        }
+        
+        setUserFormErrors(errors);
+        
+        // Verificar si hay errores
+        const hasErrors = Object.values(errors).some(error => error !== '');
+        if (hasErrors) {
+            setUserFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
+
         try {
             const payload = {
                 email: formData.email,
-                password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 phone: formData.phone,
                 specialties: formData.specialties,
                 roles: formData.roles
             };
+            
+            if (!selectedUser) {
+                payload.password = formData.password;
+            }
+            
             if (selectedUser) {
                 await api.put(`/api/users/${selectedUser.id}`, payload);
             } else {
@@ -124,12 +189,38 @@ const AdminPanel = () => {
             fetchUsers(0);
             resetForm();
         } catch (err) {
-            setError('Error al guardar usuario');
+            console.error('Error al guardar usuario:', err);
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar usuario';
+            setUserFormError(errorMessage);
         }
     };
 
     const handleSpecialtySubmit = async (e) => {
         e.preventDefault();
+        
+        // Limpiar errores previos
+        setSpecialtyFormError('');
+        
+        // Marcar todos los campos como touched
+        setSpecialtyFieldsTouched({
+            name: true,
+            description: true
+        });
+        
+        // Validar todos los campos
+        const errors = {};
+        errors.name = validateSpecialtyName(specialtyFormData.name);
+        errors.description = validateSpecialtyDescription(specialtyFormData.description);
+        
+        setSpecialtyFormErrors(errors);
+        
+        // Verificar si hay errores
+        const hasErrors = Object.values(errors).some(error => error !== '');
+        if (hasErrors) {
+            setSpecialtyFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
+
         try {
             if (selectedSpecialty) {
                 // Aquí podrías implementar la edición de especialidad si tu backend lo permite
@@ -145,7 +236,9 @@ const AdminPanel = () => {
             fetchSpecialties(); // Recargar especialidades después de crear
             resetSpecialtyForm();
         } catch (err) {
-            setError('Error al guardar especialidad');
+            console.error('Error al guardar especialidad:', err);
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar especialidad';
+            setSpecialtyFormError(errorMessage);
         }
     };
 
@@ -203,6 +296,7 @@ const AdminPanel = () => {
             roles: ['DOCTOR']
         });
         setSelectedUser(null);
+        clearUserFormErrors();
     };
 
     const resetSpecialtyForm = () => {
@@ -211,12 +305,242 @@ const AdminPanel = () => {
             description: ''
         });
         setSelectedSpecialty(null);
+        clearSpecialtyFormErrors();
+    };
+
+    // Funciones para cerrar modales con limpieza de errores
+    const handleCloseUserModal = () => {
+        setShowUserModal(false);
+        resetForm();
+    };
+
+    const handleCloseSpecialtyModal = () => {
+        setShowSpecialtyModal(false);
+        resetSpecialtyForm();
     };
 
     const handlePageChange = (page) => {
         fetchUsers(page - 1); // La API usa 0-based indexing
     };
 
+    // Funciones de validación para usuarios
+    const validateFirstName = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El nombre es obligatorio.';
+        }
+        if (value.trim().length < 2) {
+            return 'El nombre debe tener al menos 2 caracteres.';
+        }
+        if (value.length > 50) {
+            return 'El nombre no puede exceder 50 caracteres.';
+        }
+        return '';
+    };
+
+    const validateLastName = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El apellido es obligatorio.';
+        }
+        if (value.trim().length < 2) {
+            return 'El apellido debe tener al menos 2 caracteres.';
+        }
+        if (value.length > 50) {
+            return 'El apellido no puede exceder 50 caracteres.';
+        }
+        return '';
+    };
+
+    const validateEmail = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El email es obligatorio.';
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+            return 'Ingrese un email válido.';
+        }
+        if (value.length > 100) {
+            return 'El email no puede exceder 100 caracteres.';
+        }
+        return '';
+    };
+
+    const validatePhone = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El teléfono es obligatorio.';
+        }
+        const phoneRegex = /^[\d\s\-\(\)\+]{7,20}$/;
+        if (!phoneRegex.test(value.trim())) {
+            return 'Ingrese un número de teléfono válido (7-20 dígitos).';
+        }
+        return '';
+    };
+
+    const validatePassword = (value) => {
+        if (!selectedUser) { // Solo validar contraseña para usuarios nuevos
+            if (!value || value.trim().length === 0) {
+                return 'La contraseña es obligatoria.';
+            }
+            if (value.length < 6) {
+                return 'La contraseña debe tener al menos 6 caracteres.';
+            }
+            if (value.length > 50) {
+                return 'La contraseña no puede exceder 50 caracteres.';
+            }
+        }
+        return '';
+    };
+
+    // Funciones de validación para especialidades
+    const validateSpecialtyName = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El nombre de la especialidad es obligatorio.';
+        }
+        if (value.trim().length < 2) {
+            return 'El nombre debe tener al menos 2 caracteres.';
+        }
+        if (value.length > 100) {
+            return 'El nombre no puede exceder 100 caracteres.';
+        }
+        return '';
+    };
+
+    const validateSpecialtyDescription = (value) => {
+        if (value && value.length > 500) {
+            return 'La descripción no puede exceder 500 caracteres.';
+        }
+        return '';
+    };
+
+    // Manejadores de cambio con validación en tiempo real para usuarios
+    const handleUserFieldChange = (fieldName, value) => {
+        setFormData(prev => ({ ...prev, [fieldName]: value }));
+        
+        if (userFieldsTouched[fieldName]) {
+            let error = '';
+            switch (fieldName) {
+                case 'firstName':
+                    error = validateFirstName(value);
+                    break;
+                case 'lastName':
+                    error = validateLastName(value);
+                    break;
+                case 'email':
+                    error = validateEmail(value);
+                    break;
+                case 'phone':
+                    error = validatePhone(value);
+                    break;
+                case 'password':
+                    error = validatePassword(value);
+                    break;
+                default:
+                    break;
+            }
+            setUserFormErrors(prev => ({ ...prev, [fieldName]: error }));
+        }
+        
+        if (userFormError) setUserFormError('');
+    };
+
+    // Manejadores de blur para usuarios
+    const handleUserFieldBlur = (fieldName) => {
+        setUserFieldsTouched(prev => ({ ...prev, [fieldName]: true }));
+        
+        let error = '';
+        const value = formData[fieldName];
+        switch (fieldName) {
+            case 'firstName':
+                error = validateFirstName(value);
+                break;
+            case 'lastName':
+                error = validateLastName(value);
+                break;
+            case 'email':
+                error = validateEmail(value);
+                break;
+            case 'phone':
+                error = validatePhone(value);
+                break;
+            case 'password':
+                error = validatePassword(value);
+                break;
+            default:
+                break;
+        }
+        setUserFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    };
+
+    // Manejadores de cambio para especialidades
+    const handleSpecialtyFieldChange = (fieldName, value) => {
+        setSpecialtyFormData(prev => ({ ...prev, [fieldName]: value }));
+        
+        if (specialtyFieldsTouched[fieldName]) {
+            let error = '';
+            switch (fieldName) {
+                case 'name':
+                    error = validateSpecialtyName(value);
+                    break;
+                case 'description':
+                    error = validateSpecialtyDescription(value);
+                    break;
+                default:
+                    break;
+            }
+            setSpecialtyFormErrors(prev => ({ ...prev, [fieldName]: error }));
+        }
+        
+        if (specialtyFormError) setSpecialtyFormError('');
+    };
+
+    // Manejadores de blur para especialidades
+    const handleSpecialtyFieldBlur = (fieldName) => {
+        setSpecialtyFieldsTouched(prev => ({ ...prev, [fieldName]: true }));
+        
+        let error = '';
+        const value = specialtyFormData[fieldName];
+        switch (fieldName) {
+            case 'name':
+                error = validateSpecialtyName(value);
+                break;
+            case 'description':
+                error = validateSpecialtyDescription(value);
+                break;
+            default:
+                break;
+        }
+        setSpecialtyFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    };
+
+    // Funciones para limpiar errores
+    const clearUserFormErrors = () => {
+        setUserFormErrors({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            password: ''
+        });
+        setUserFieldsTouched({
+            firstName: false,
+            lastName: false,
+            email: false,
+            phone: false,
+            password: false
+        });
+        setUserFormError('');
+    };
+
+    const clearSpecialtyFormErrors = () => {
+        setSpecialtyFormErrors({
+            name: '',
+            description: ''
+        });
+        setSpecialtyFieldsTouched({
+            name: false,
+            description: false
+        });
+        setSpecialtyFormError('');
+    };
 
     if (!isAdmin) {
         return <Alert variant="danger">No tienes permisos para acceder a esta página.</Alert>;
@@ -490,7 +814,7 @@ const AdminPanel = () => {
             </Tabs>
 
             {/* Modal para crear/editar usuario */}
-            <Modal show={showUserModal} onHide={() => setShowUserModal(false)}>
+            <Modal show={showUserModal} onHide={handleCloseUserModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>{selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}</Modal.Title>
                 </Modal.Header>
@@ -500,47 +824,138 @@ const AdminPanel = () => {
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control
                                 type="text"
+                                placeholder="Nombre del usuario"
                                 value={formData.firstName}
-                                onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                                required
+                                maxLength={50}
+                                onChange={(e) => handleUserFieldChange('firstName', e.target.value)}
+                                onBlur={(e) => handleUserFieldBlur('firstName')}
+                                style={userFieldsTouched.firstName && userFormErrors.firstName ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={userFieldsTouched.firstName && userFormErrors.firstName ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {userFieldsTouched.firstName && userFormErrors.firstName && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {userFormErrors.firstName}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {formData.firstName.length}/50 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Apellido</Form.Label>
                             <Form.Control
                                 type="text"
+                                placeholder="Apellido del usuario"
                                 value={formData.lastName}
-                                onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                                required
+                                maxLength={50}
+                                onChange={(e) => handleUserFieldChange('lastName', e.target.value)}
+                                onBlur={(e) => handleUserFieldBlur('lastName')}
+                                style={userFieldsTouched.lastName && userFormErrors.lastName ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={userFieldsTouched.lastName && userFormErrors.lastName ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {userFieldsTouched.lastName && userFormErrors.lastName && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {userFormErrors.lastName}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {formData.lastName.length}/50 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Email</Form.Label>
                             <Form.Control
                                 type="email"
+                                placeholder="correo@ejemplo.com"
                                 value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                required
+                                maxLength={100}
+                                onChange={(e) => handleUserFieldChange('email', e.target.value)}
+                                onBlur={(e) => handleUserFieldBlur('email')}
+                                style={userFieldsTouched.email && userFormErrors.email ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={userFieldsTouched.email && userFormErrors.email ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {userFieldsTouched.email && userFormErrors.email && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {userFormErrors.email}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {formData.email.length}/100 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Teléfono</Form.Label>
                             <Form.Control
                                 type="tel"
+                                placeholder="Número de teléfono"
                                 value={formData.phone}
-                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                required
+                                maxLength={20}
+                                onChange={(e) => handleUserFieldChange('phone', e.target.value)}
+                                onBlur={(e) => handleUserFieldBlur('phone')}
+                                style={userFieldsTouched.phone && userFormErrors.phone ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={userFieldsTouched.phone && userFormErrors.phone ? 'error-input' : ''}
                             />
+                            {userFieldsTouched.phone && userFormErrors.phone && (
+                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                    <FaExclamationCircle className="me-1" /> {userFormErrors.phone}
+                                </div>
+                            )}
+                            <Form.Text className="text-muted">
+                                Incluya código de área. Ej: +1234567890, (123) 456-7890
+                            </Form.Text>
                         </Form.Group>
                         {!selectedUser && (
                             <Form.Group className="mb-3">
                                 <Form.Label>Contraseña</Form.Label>
                                 <Form.Control
                                     type="password"
+                                    placeholder="Contraseña (mínimo 6 caracteres)"
                                     value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    required
+                                    maxLength={50}
+                                    onChange={(e) => handleUserFieldChange('password', e.target.value)}
+                                    onBlur={(e) => handleUserFieldBlur('password')}
+                                    style={userFieldsTouched.password && userFormErrors.password ? { 
+                                        border: '2px solid #d00', 
+                                        background: '#fff6f6' 
+                                    } : {}}
+                                    className={userFieldsTouched.password && userFormErrors.password ? 'error-input' : ''}
                                 />
+                                <div className="d-flex justify-content-between">
+                                    <div>
+                                        {userFieldsTouched.password && userFormErrors.password && (
+                                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                <FaExclamationCircle className="me-1" /> {userFormErrors.password}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Form.Text className="text-muted">
+                                        {formData.password.length}/50 caracteres
+                                    </Form.Text>
+                                </div>
                             </Form.Group>
                         )}
                         <Form.Group className="mb-3">
@@ -615,15 +1030,36 @@ const AdminPanel = () => {
                                 <option value="ADMINISTRATOR">Administrador</option>
                             </Form.Select>
                         </Form.Group>
-                        <Button variant="primary" type="submit">
-                            {selectedUser ? 'Guardar Cambios' : 'Crear Usuario'}
-                        </Button>
+                        
+                        {/* Mensaje de error general */}
+                        {userFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center mb-3">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{userFormError}</div>
+                            </Alert>
+                        )}
+                        
+                        <div className="d-flex gap-2">
+                            <Button variant="secondary" onClick={handleCloseUserModal}>
+                                Cancelar
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                type="submit"
+                                disabled={
+                                    Object.values(userFormErrors).some(error => error !== '') && 
+                                    Object.values(userFieldsTouched).some(touched => touched)
+                                }
+                            >
+                                {selectedUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                            </Button>
+                        </div>
                     </Form>
                 </Modal.Body>
             </Modal>
 
             {/* Modal para crear/editar especialidad */}
-            <Modal show={showSpecialtyModal} onHide={() => setShowSpecialtyModal(false)}>
+            <Modal show={showSpecialtyModal} onHide={handleCloseSpecialtyModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>{selectedSpecialty ? 'Editar Especialidad' : 'Nueva Especialidad'}</Modal.Title>
                 </Modal.Header>
@@ -633,22 +1069,83 @@ const AdminPanel = () => {
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control
                                 type="text"
+                                placeholder="Nombre de la especialidad"
                                 value={specialtyFormData.name}
-                                onChange={(e) => setSpecialtyFormData({...specialtyFormData, name: e.target.value})}
-                                required
+                                maxLength={100}
+                                onChange={(e) => handleSpecialtyFieldChange('name', e.target.value)}
+                                onBlur={(e) => handleSpecialtyFieldBlur('name')}
+                                style={specialtyFieldsTouched.name && specialtyFormErrors.name ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={specialtyFieldsTouched.name && specialtyFormErrors.name ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {specialtyFieldsTouched.name && specialtyFormErrors.name && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {specialtyFormErrors.name}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {specialtyFormData.name.length}/100 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Descripción</Form.Label>
+                            <Form.Label data-optional>Descripción</Form.Label>
                             <Form.Control
-                                type="text"
+                                as="textarea"
+                                rows={3}
+                                placeholder="Descripción de la especialidad (opcional)"
                                 value={specialtyFormData.description}
-                                onChange={(e) => setSpecialtyFormData({...specialtyFormData, description: e.target.value})}
+                                maxLength={500}
+                                onChange={(e) => handleSpecialtyFieldChange('description', e.target.value)}
+                                onBlur={(e) => handleSpecialtyFieldBlur('description')}
+                                style={specialtyFieldsTouched.description && specialtyFormErrors.description ? { 
+                                    border: '2px solid #d00', 
+                                    background: '#fff6f6' 
+                                } : {}}
+                                className={specialtyFieldsTouched.description && specialtyFormErrors.description ? 'error-input' : ''}
                             />
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    {specialtyFieldsTouched.description && specialtyFormErrors.description && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {specialtyFormErrors.description}
+                                        </div>
+                                    )}
+                                </div>
+                                <Form.Text className="text-muted">
+                                    {specialtyFormData.description.length}/500 caracteres
+                                </Form.Text>
+                            </div>
                         </Form.Group>
-                        <Button variant="primary" type="submit">
-                            {selectedSpecialty ? 'Guardar Cambios' : 'Crear Especialidad'}
-                        </Button>
+                        
+                        {/* Mensaje de error general */}
+                        {specialtyFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center mb-3">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{specialtyFormError}</div>
+                            </Alert>
+                        )}
+                        
+                        <div className="d-flex gap-2">
+                            <Button variant="secondary" onClick={handleCloseSpecialtyModal}>
+                                Cancelar
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                type="submit"
+                                disabled={
+                                    Object.values(specialtyFormErrors).some(error => error !== '') && 
+                                    Object.values(specialtyFieldsTouched).some(touched => touched)
+                                }
+                            >
+                                {selectedSpecialty ? 'Guardar Cambios' : 'Crear Especialidad'}
+                            </Button>
+                        </div>
                     </Form>
                 </Modal.Body>
             </Modal>

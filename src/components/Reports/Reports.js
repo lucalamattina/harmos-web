@@ -14,9 +14,10 @@ import {
     Badge,
     Pagination
 } from "react-bootstrap";
-import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter } from 'react-icons/fa';
+import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
+import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
 import './Reports.css';
 
@@ -67,6 +68,17 @@ const Reports = () => {
         specialtyId: '',
         file: null
     });
+
+    // Estados de validación de formulario
+    const [titleError, setTitleError] = useState('');
+    const [patientError, setPatientError] = useState('');
+    const [specialtyError, setSpecialtyError] = useState('');
+    const [fileError, setFileError] = useState('');
+    const [titleTouched, setTitleTouched] = useState(false);
+    const [patientTouched, setPatientTouched] = useState(false);
+    const [specialtyTouched, setSpecialtyTouched] = useState(false);
+    const [fileTouched, setFileTouched] = useState(false);
+    const [formError, setFormError] = useState('');
 
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
@@ -218,7 +230,139 @@ const Reports = () => {
         }
     };
 
+    // Funciones de validación
+    const validateTitle = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El título es obligatorio.';
+        }
+        if (value.trim().length < 3) {
+            return 'El título debe tener al menos 3 caracteres.';
+        }
+        if (value.length > 255) {
+            return 'El título no puede exceder 255 caracteres.';
+        }
+        return '';
+    };
 
+    const validatePatient = (value) => {
+        if (!value || value === '') {
+            return 'Debe seleccionar un paciente.';
+        }
+        return '';
+    };
+
+    const validateSpecialty = (value) => {
+        if (!value || value === '') {
+            return 'Debe seleccionar una especialidad.';
+        }
+        return '';
+    };
+
+    const validateFile = (file) => {
+        if (!file) {
+            return 'Debe seleccionar un archivo.';
+        }
+        
+        // Validar tipo de archivo
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'image/jpeg',
+            'image/jpg',
+            'image/png'
+        ];
+        
+        if (!allowedTypes.includes(file.type)) {
+            return 'Formato de archivo no permitido. Use PDF, DOC, DOCX, JPG o PNG.';
+        }
+        
+        // Validar tamaño (25MB = 25 * 1024 * 1024 bytes)
+        const maxSize = 25 * 1024 * 1024;
+        if (file.size > maxSize) {
+            return 'El archivo no puede exceder 25MB.';
+        }
+        
+        return '';
+    };
+
+    // Manejadores de cambio con validación en tiempo real
+    const handleTitleChange = (e) => {
+        const value = e.target.value;
+        setNewReport(prev => ({ ...prev, title: value }));
+        if (titleTouched) {
+            setTitleError(validateTitle(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    const handlePatientChange = (e) => {
+        const value = e.target.value;
+        setNewReport(prev => ({ ...prev, patientId: value }));
+        if (patientTouched) {
+            setPatientError(validatePatient(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    const handleSpecialtyChange = (e) => {
+        const value = e.target.value;
+        setNewReport(prev => ({ ...prev, specialtyId: value }));
+        if (specialtyTouched) {
+            setSpecialtyError(validateSpecialty(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        setNewReport(prev => ({ ...prev, file }));
+        if (fileTouched) {
+            setFileError(validateFile(file));
+        }
+        if (formError) setFormError('');
+    };
+
+    // Manejadores de blur
+    const handleTitleBlur = () => {
+        setTitleTouched(true);
+        setTitleError(validateTitle(newReport.title));
+    };
+
+    const handlePatientBlur = () => {
+        setPatientTouched(true);
+        setPatientError(validatePatient(newReport.patientId));
+    };
+
+    const handleSpecialtyBlur = () => {
+        setSpecialtyTouched(true);
+        setSpecialtyError(validateSpecialty(newReport.specialtyId));
+    };
+
+    const handleFileBlur = () => {
+        setFileTouched(true);
+        setFileError(validateFile(newReport.file));
+    };
+
+    // Función para limpiar errores
+    const clearFormErrors = () => {
+        setTitleError('');
+        setPatientError('');
+        setSpecialtyError('');
+        setFileError('');
+        setFormError('');
+        setTitleTouched(false);
+        setPatientTouched(false);
+        setSpecialtyTouched(false);
+        setFileTouched(false);
+    };
+
+    // Funciones para cerrar modales con limpieza de errores
+    const handleCloseCreateModal = () => {
+        setShowCreateModal(false);
+        setNewReport({ title: '', patientId: '', specialtyId: '', file: null });
+        clearFormErrors();
+    };
 
     // Los reportes ya están filtrados por el servidor - usar useMemo para optimización
     const filteredReports = useMemo(() => reports || [], [reports]);
@@ -293,8 +437,29 @@ const Reports = () => {
     const handleCreateReport = async (e) => {
         e.preventDefault();
         
-        if (!newReport.title || !newReport.patientId || !newReport.specialtyId || !newReport.file) {
-            setError('Todos los campos son obligatorios');
+        // Limpiar errores previos
+        setFormError('');
+        
+        // Marcar todos los campos como touched
+        setTitleTouched(true);
+        setPatientTouched(true);
+        setSpecialtyTouched(true);
+        setFileTouched(true);
+        
+        // Validar todos los campos
+        const titleErr = validateTitle(newReport.title);
+        const patientErr = validatePatient(newReport.patientId);
+        const specialtyErr = validateSpecialty(newReport.specialtyId);
+        const fileErr = validateFile(newReport.file);
+        
+        setTitleError(titleErr);
+        setPatientError(patientErr);
+        setSpecialtyError(specialtyErr);
+        setFileError(fileErr);
+        
+        // Si hay errores de validación, no continuar
+        if (titleErr || patientErr || specialtyErr || fileErr) {
+            setFormError('Por favor, corrige los errores antes de continuar.');
             return;
         }
 
@@ -313,16 +478,16 @@ const Reports = () => {
 
             setShowCreateModal(false);
             setNewReport({ title: '', patientId: '', specialtyId: '', file: null });
+            clearFormErrors();
             fetchReports(0); // Volver a la primera página después de crear
             setCurrentPage(0);
             setError(null);
         } catch (error) {
             console.error('Error al crear reporte:', error);
-            setError(error.response?.data?.error || 'Error al crear el reporte');
+            const errorMessage = error.response?.data?.error || 'Error al crear el reporte';
+            setFormError(errorMessage);
         }
     };
-
-
 
     const handleDeleteReport = async () => {
         try {
@@ -348,35 +513,12 @@ const Reports = () => {
         }
     };
 
-
-
     const openDeleteModal = (report) => {
         setSelectedReport(report);
         setShowDeleteModal(true);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'Fecha no disponible';
-        
-        try {
-            const date = new Date(dateString);
-            // Verificar si la fecha es válida
-            if (isNaN(date.getTime())) {
-                return 'Fecha inválida';
-            }
-            
-            return date.toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (error) {
-            console.error('Error al formatear fecha:', error);
-            return 'Error en fecha';
-        }
-    };
+    // La función formatDate ahora viene del utils/dateUtils.js
 
     // Función optimizada para limpiar filtros
     const clearFilters = useCallback(() => {
@@ -692,7 +834,7 @@ const Reports = () => {
             </Card>
 
             {/* Modal Crear Reporte */}
-            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size="lg">
+            <Modal show={showCreateModal} onHide={handleCloseCreateModal} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Nuevo Informe</Modal.Title>
                 </Modal.Header>
@@ -701,22 +843,46 @@ const Reports = () => {
                         <Row>
                             <Col md={12}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Título *</Form.Label>
+                                    <Form.Label>Título</Form.Label>
                                     <Form.Control
                                         type="text"
+                                        placeholder="Título del informe"
                                         value={newReport.title}
-                                        onChange={(e) => setNewReport({...newReport, title: e.target.value})}
-                                        required
+                                        maxLength={255}
+                                        onChange={handleTitleChange}
+                                        onBlur={handleTitleBlur}
+                                        style={titleTouched && titleError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={titleTouched && titleError ? 'error-input' : ''}
                                     />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {titleTouched && titleError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {titleError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {newReport.title.length}/255 caracteres
+                                        </Form.Text>
+                                    </div>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Paciente *</Form.Label>
+                                    <Form.Label>Paciente</Form.Label>
                                     <Form.Select
                                         value={newReport.patientId}
-                                        onChange={(e) => setNewReport({...newReport, patientId: e.target.value})}
-                                        required
+                                        onChange={handlePatientChange}
+                                        onBlur={handlePatientBlur}
+                                        style={patientTouched && patientError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={patientTouched && patientError ? 'error-input' : ''}
                                     >
                                         <option value="">Seleccionar paciente</option>
                                         {patients.map(patient => (
@@ -725,15 +891,25 @@ const Reports = () => {
                                             </option>
                                         ))}
                                     </Form.Select>
+                                    {patientTouched && patientError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {patientError}
+                                        </div>
+                                    )}
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Especialidad *</Form.Label>
+                                    <Form.Label>Especialidad</Form.Label>
                                     <Form.Select
                                         value={newReport.specialtyId}
-                                        onChange={(e) => setNewReport({...newReport, specialtyId: e.target.value})}
-                                        required
+                                        onChange={handleSpecialtyChange}
+                                        onBlur={handleSpecialtyBlur}
+                                        style={specialtyTouched && specialtyError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={specialtyTouched && specialtyError ? 'error-input' : ''}
                                     >
                                         <option value="">Seleccionar especialidad</option>
                                         {specialties.map(specialty => (
@@ -742,36 +918,67 @@ const Reports = () => {
                                             </option>
                                         ))}
                                     </Form.Select>
+                                    {specialtyTouched && specialtyError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {specialtyError}
+                                        </div>
+                                    )}
                                 </Form.Group>
                             </Col>
                             <Col md={12}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Archivo *</Form.Label>
+                                    <Form.Label>Archivo</Form.Label>
                                     <Form.Control
                                         type="file"
-                                        onChange={(e) => setNewReport({...newReport, file: e.target.files[0]})}
+                                        onChange={handleFileChange}
+                                        onBlur={handleFileBlur}
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        required
+                                        style={fileTouched && fileError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={fileTouched && fileError ? 'error-input' : ''}
                                     />
-                                    <Form.Text className="text-muted">
-                                        Formatos permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo 25MB.
-                                    </Form.Text>
+                                    <div>
+                                        {fileTouched && fileError && (
+                                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                <FaExclamationCircle className="me-1" /> {fileError}
+                                            </div>
+                                        )}
+                                        <Form.Text className="text-muted">
+                                            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo 25MB.
+                                            {newReport.file && (
+                                                <><br/>Archivo seleccionado: {newReport.file.name} ({(newReport.file.size / 1024 / 1024).toFixed(2)} MB)</>
+                                            )}
+                                        </Form.Text>
+                                    </div>
                                 </Form.Group>
                             </Col>
                         </Row>
+                        
+                        {/* Mensaje de error general */}
+                        {formError && (
+                            <Alert variant="danger" className="d-flex align-items-center">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{formError}</div>
+                            </Alert>
+                        )}
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+                        <Button variant="secondary" onClick={handleCloseCreateModal}>
                             Cancelar
                         </Button>
-                        <Button variant="primary" type="submit">
+                        <Button 
+                            variant="primary" 
+                            type="submit"
+                            disabled={(titleTouched && titleError) || (patientTouched && patientError) || 
+                                     (specialtyTouched && specialtyError) || (fileTouched && fileError)}
+                        >
                             Crear Informe
                         </Button>
                     </Modal.Footer>
                 </Form>
             </Modal>
-
-
 
             {/* Modal Ver Reporte */}
             <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg">
