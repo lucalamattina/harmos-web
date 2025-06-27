@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://harmos-api-a77d01707678.herokuapp.com',
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -113,6 +113,13 @@ export const getUserById = async (id) => {
   return response.data;
 };
 
+// Obtener un paciente por ID
+export const getPatientById = async (id) => {
+  if (!id) throw new Error("Patient ID is required");
+  const response = await api.get(`/api/patients/${id}`);
+  return response.data;
+};
+
 // Obtener usuarios con filtros opcionales (ej. por nombre, rol)
 export const getUsers = async (params = {}) => {
   const response = await api.get('/api/users', { params });
@@ -146,6 +153,25 @@ export const deleteSchedule = async (id) => {
   await api.delete(`/api/schedules/${id}`);
 };
 
+// Crear una nueva locación
+export const createLocation = async (locationData) => {
+  const response = await api.post('/api/locations', locationData);
+  return response.data;
+};
+
+// Eliminar una locación por ID
+export const deleteLocation = async (id) => {
+  if (!id) throw new Error("Location ID is required");
+  await api.delete(`/api/locations/${id}`);
+};
+
+// Actualizar una locación por ID
+export const updateLocation = async (id, locationData) => {
+  if (!id) throw new Error("Location ID is required");
+  const response = await api.put(`/api/locations/${id}`, locationData);
+  return response.data;
+};
 
 
-export default api; 
+
+export default api;
