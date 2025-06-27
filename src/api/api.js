@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://harmos-api-a77d01707678.herokuapp.com',
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -151,6 +151,25 @@ export const createSchedule = async (scheduleData) => {
 export const deleteSchedule = async (id) => {
   if (!id) throw new Error("Schedule ID is required");
   await api.delete(`/api/schedules/${id}`);
+};
+
+// Crear una nueva locación
+export const createLocation = async (locationData) => {
+  const response = await api.post('/api/locations', locationData);
+  return response.data;
+};
+
+// Eliminar una locación por ID
+export const deleteLocation = async (id) => {
+  if (!id) throw new Error("Location ID is required");
+  await api.delete(`/api/locations/${id}`);
+};
+
+// Actualizar una locación por ID
+export const updateLocation = async (id, locationData) => {
+  if (!id) throw new Error("Location ID is required");
+  const response = await api.put(`/api/locations/${id}`, locationData);
+  return response.data;
 };
 
 
