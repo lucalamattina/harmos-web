@@ -173,7 +173,7 @@ function Scheduler() {
                             } else {
                                 const doctor = await getUserById(sch.doctorUserId);
                                 if (doctor) {
-                                    doctorName = `Dr. ${doctor.name || doctor.firstName}`;
+                                    doctorName = `${doctor.name || doctor.firstName}`;
                                     doctorCache.set(sch.doctorUserId, doctorName);
                                 }
                             }
@@ -321,7 +321,7 @@ function Scheduler() {
         try {
             const created = await createSchedule(scheduleData);
             const newCalendarEvent = {
-                title: `Dr. ${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.name}`,
+                title: `${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.name}`,
                 start: newEvent.start,
                 end: newEvent.end,
                 location: newEvent.selectedLocation.name,
