@@ -8,6 +8,7 @@
     text-align: left;
     padding-top: 75px;
 }
+
 .scheduler-title{
     font-size: 40px;
     padding-left: 60px;
@@ -31,4 +32,14 @@
 
 .search-results-dropdown .list-group-item:hover {
     background-color: #f8f9fa;
+}
+
+/* En tu archivo CSS global o en un componente con estilos */
+.rbc-allday-cell {
+  display: none !important;
+}
+
+/* Opcional: Para la vista de semana, también podrías necesitar esto */
+.rbc-time-header-content .rbc-row-bg:first-child {
+  display: none !important;
 }

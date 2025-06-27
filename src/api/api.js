@@ -113,6 +113,13 @@ export const getUserById = async (id) => {
   return response.data;
 };
 
+// Obtener un paciente por ID
+export const getPatientById = async (id) => {
+  if (!id) throw new Error("Patient ID is required");
+  const response = await api.get(`/api/patients/${id}`);
+  return response.data;
+};
+
 // Obtener usuarios con filtros opcionales (ej. por nombre, rol)
 export const getUsers = async (params = {}) => {
   const response = await api.get('/api/users', { params });
@@ -148,4 +155,4 @@ export const deleteSchedule = async (id) => {
 
 
 
-export default api; 
+export default api;
