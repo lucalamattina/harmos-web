@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import reportWebVitals from "./reportWebVitals";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -32,41 +32,6 @@ ReactDOM.render(
     document.getElementById("root")
 );
 
-reportWebVitals();
 
-// Registrar Service Worker para cacheo
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-                console.log('[SW] Service Worker registrado:', registration);
-                
-                // Escuchar por actualizaciones
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    console.log('[SW] Nueva versión del SW disponible');
-                    
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // Nueva versión disponible
-                            console.log('[SW] Nueva versión lista, reinicia la app para aplicar cambios');
-                            
-                            // Opcional: mostrar notificación al usuario
-                            if (window.confirm('Nueva versión disponible. ¿Recargar la página?')) {
-                                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                window.location.reload();
-                            }
-                        }
-                    });
-                });
-            })
-            .catch((error) => {
-                console.error('[SW] Error al registrar Service Worker:', error);
-            });
-    });
 
-    // Escuchar cuando el SW toma control
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[SW] Service Worker ha tomado control');
-    });
-}
+
