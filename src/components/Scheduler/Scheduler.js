@@ -4,12 +4,13 @@ import getDay from "date-fns/getDay";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
 import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
-import React, {useCallback, useMemo, useState, useEffect} from "react";
+import React, {useCallback, useMemo, useState, useEffect, useContext} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup, Card, Row, Col, Badge } from "react-bootstrap";
 import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule, deleteSchedule, getPatientById } from "../../api/api";
 import { es } from 'date-fns/locale';
+import { AuthContext } from "../../context/AuthContext";
 
 // Custom hook for debouncing a value
 function useDebounce(value, delay) {
@@ -56,6 +57,7 @@ const localizer = dateFnsLocalizer({
 });
 
 function Scheduler() {
+    const { isAdmin } = useContext(AuthContext);
     const [show, setShow] = useState(false);
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -102,7 +104,7 @@ function Scheduler() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
-    const [loading, setLoading] = useState(true);
+
     const [error, setError] = useState(null);
     const [allEvents, setAllEvents] = useState([]);
 
@@ -135,7 +137,7 @@ function Scheduler() {
 
     useEffect(() => {
         const fetchSchedules = async () => {
-            setLoading(true);
+            
             setError(null);
             try {
                 const params = {};
@@ -243,13 +245,11 @@ function Scheduler() {
             } catch (err) {
                 setError('Error al cargar los horarios.');
                 console.error(err);
-            } finally {
-                setLoading(false);
             }
         };
 
         fetchSchedules();
-    }, [selectedLocation, selectedDoctorFilter, selectedPatientFilter]); // Re-fetch when filters change
+    }, [selectedLocation, selectedDoctorFilter, selectedPatientFilter]);
 
     const handleClearFilters = () => {
         setSelectedLocation('');
@@ -260,13 +260,14 @@ function Scheduler() {
     };
 
     const handleSelectSlot = useCallback(({ start, end }) => {
+        if (!isAdmin) return;
         handleShowNew();
         setNewEvent({
             title: "", start, end,
             selectedDoctor: null, selectedPatient: null, selectedLocation: null,
         });
         setSaveError('');
-    }, []);
+    }, [isAdmin]);
 
     const handleSelectEvent = useCallback((event) => {
         setSeeEvent(event);
@@ -490,15 +491,7 @@ function Scheduler() {
         timeGutterFormat: 'HH:mm',
     }
 
-    if (loading) return (
-        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-            <div className="text-center">
-                <Spinner animation="border" role="status" variant="primary">
-                    <span className="visually-hidden">Cargando...</span>
-                </Spinner>
-            </div>
-        </Container>
-    );
+    
 
     if (error) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
@@ -508,6 +501,11 @@ function Scheduler() {
 
     return (
         <Container className="scheduler-container">
+            {isAdmin && (
+                <Alert variant="info" className="mb-3">
+                    <strong>Vista de Administrador:</strong> Como administrador, tiene permisos para ver todos los horarios, crear nuevos y eliminarlos.
+                </Alert>
+            )}
             {/* Filters Card */}
             <Card className="mb-4">
                 <Card.Body>
@@ -524,38 +522,11 @@ function Scheduler() {
                     <Row>
                         <Col md={4}>
                             <Form.Group>
-                                <Form.Label>Doctor</Form.Label>
-                                <InputGroup>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Buscar por nombre de doctor..."
-                                        value={doctorFilterTerm}
-                                        onChange={e => {
-                                            setDoctorFilterTerm(e.target.value);
-                                            setSelectedDoctorFilter(null);
-                                        }}
-                                    />
-                                </InputGroup>
-                                {doctorFilterResults.length > 0 && (
-                                    <ListGroup className="search-results-dropdown">
-                                        {doctorFilterResults.map(doc => (
-                                            <ListGroup.Item key={doc.id} action onClick={() => {
-                                                setSelectedDoctorFilter(doc);
-                                                setDoctorFilterTerm(doc.name);
-                                                setDoctorFilterResults([]);
-                                            }}>
-                                                {doc.name} ({doc.email})
-                                            </ListGroup.Item>
-                                        ))}
-                                    </ListGroup>
-                                )}
-                                {selectedDoctorFilter && <small className="text-success d-block mt-1">Seleccionado: {selectedDoctorFilter.name}</small>}
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
                                 <Form.Label>Paciente</Form.Label>
                                 <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
                                     <Form.Control
                                         type="text"
                                         placeholder="Buscar por nombre de paciente..."
@@ -584,6 +555,39 @@ function Scheduler() {
                         </Col>
                         <Col md={4}>
                             <Form.Group>
+                                <Form.Label>Doctor</Form.Label>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-person"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar por nombre de doctor..."
+                                        value={doctorFilterTerm}
+                                        onChange={e => {
+                                            setDoctorFilterTerm(e.target.value);
+                                            setSelectedDoctorFilter(null);
+                                        }}
+                                    />
+                                </InputGroup>
+                                {doctorFilterResults.length > 0 && (
+                                    <ListGroup className="search-results-dropdown">
+                                        {doctorFilterResults.map(doc => (
+                                            <ListGroup.Item key={doc.id} action onClick={() => {
+                                                setSelectedDoctorFilter(doc);
+                                                setDoctorFilterTerm(doc.name);
+                                                setDoctorFilterResults([]);
+                                            }}>
+                                                {doc.name} ({doc.email})
+                                            </ListGroup.Item>
+                                        ))}
+                                    </ListGroup>
+                                )}
+                                {selectedDoctorFilter && <small className="text-success d-block mt-1">Seleccionado: {selectedDoctorFilter.name}</small>}
+                            </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                            <Form.Group>
                                 <Form.Label>Ubicación</Form.Label>
                                 <Form.Select
                                     value={selectedLocation}
@@ -604,7 +608,7 @@ function Scheduler() {
 
             <Card>
                 <Card.Header className="d-flex justify-content-between align-items-center">
-                    <span>Agenda Semanal</span>
+                    <span className="scheduler-card-title">Agenda Semanal</span>
                     <Badge bg="info">
                         {allEvents.length} turnos encontrados
                     </Badge>
@@ -617,7 +621,7 @@ function Scheduler() {
                                   events={allEvents}
                                   onSelectEvent={handleSelectEvent}
                                   onSelectSlot={handleSelectSlot}
-                                  selectable
+                                  selectable={isAdmin}
                                   scrollToTime={scrollToTime}
                                   startAccessor="start" endAccessor="end"
                                   style={{ height: 700, margin: "0" }}
@@ -646,9 +650,11 @@ function Scheduler() {
                     <p><strong>Ubicación:</strong> {seeEvent.location}</p>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="danger" onClick={handleDeleteScheduleClick}>
-                        Eliminar
-                    </Button>
+                    {isAdmin &&
+                        <Button variant="danger" onClick={handleDeleteScheduleClick}>
+                            Eliminar
+                        </Button>
+                    }
                     <Button variant="primary" onClick={handleClose}>
                         Cerrar
                     </Button>
