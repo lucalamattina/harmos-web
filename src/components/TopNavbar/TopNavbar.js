@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import "./TopNavbar.css";
 import logo from "../../resources/images/Harmos-Logo-Transparente.png";
 import { useContext } from "react";
-import { FaUserCircle, FaCog, FaSignOutAlt, FaUserShield } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaUserShield } from 'react-icons/fa';
 import { AuthContext } from "../../context/AuthContext";
 import Notifications from "../Notifications/Notifications";
 
@@ -51,9 +51,6 @@ const TopNavbar = () => {
                             <Dropdown.Header>Mi Cuenta</Dropdown.Header>
                             <Dropdown.Item as={Link} to="/profile">
                                 <FaUserCircle className="me-2" /> Perfil
-                            </Dropdown.Item>
-                            <Dropdown.Item as={Link} to="/settings">
-                                <FaCog className="me-2" /> Configuración
                             </Dropdown.Item>
                             <Dropdown.Divider />
                             <Dropdown.Item onClick={handleLogout} className="text-danger">

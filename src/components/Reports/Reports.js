@@ -104,14 +104,8 @@ const Reports = () => {
             if (selectedDoctor) params.append('doctorId', selectedDoctor);
             if (searchTerm.trim()) params.append('title', searchTerm.trim());
             
-            let response;
-            if (isAdmin) {
-                // Los administradores ven todos los reportes usando el endpoint /all con paginación
-                response = await api.get(`/api/reports/all?${params.toString()}`);
-            } else {
-                // Los usuarios regulares ven solo sus reportes con paginación
-                response = await api.get(`/api/reports?${params.toString()}`);
-            }
+            // Todos los usuarios ven todos los reportes usando el endpoint /all con paginación
+            const response = await api.get(`/api/reports/all?${params.toString()}`);
             
             // Manejar la respuesta paginada
             const responseData = response.data;
@@ -141,7 +135,7 @@ const Reports = () => {
             setLoading(false);
             setTableLoading(false);
         }
-    }, [pageSize, selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, isAdmin, loading]);
+    }, [pageSize, selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, loading]);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -162,7 +156,7 @@ const Reports = () => {
         }, searchTerm ? 500 : 0); // Debounce de 500ms para búsqueda de texto
 
         return () => clearTimeout(timeoutId);
-    }, [selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, isAdmin, fetchReports]); // Agregamos fetchReports como dependencia
+    }, [selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, fetchReports]); // Agregamos fetchReports como dependencia
 
     // Cargar reportes cuando cambie la página (pero no si es un cambio de filtro)
     useEffect(() => {
@@ -558,12 +552,11 @@ const Reports = () => {
         <Container className="reports-container">
             {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
 
-            {/* Indicador para administradores */}
-            {isAdmin && (
-                <Alert variant="info" className="mb-3">
-                    <strong>Vista de Administrador:</strong> Está viendo todos los informes del sistema de todos los doctores.
-                </Alert>
-            )}
+            {/* Indicador informativo */}
+            <Alert variant="info" className="mb-3">
+                <strong>Informes del Sistema:</strong> Está viendo todos los informes de todos los doctores. 
+                {isAdmin ? ' Como administrador, puede eliminar cualquier informe.' : ' Solo puede eliminar los informes que usted ha creado.'}
+            </Alert>
 
             {/* Filtros */}
             <Card className="mb-4">

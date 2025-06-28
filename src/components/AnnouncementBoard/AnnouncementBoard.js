@@ -1021,8 +1021,8 @@ const AnnouncementBoard = () => {
         if (value.trim().length < 3) {
             return 'El título debe tener al menos 3 caracteres.';
         }
-        if (value.length > 255) {
-            return 'El título no puede exceder 255 caracteres.';
+        if (value.length > 230) {
+            return 'El título no puede exceder 230 caracteres.';
         }
         return '';
     };
@@ -1483,7 +1483,7 @@ const AnnouncementBoard = () => {
                                 type="text"
                                 placeholder="Título del anuncio"
                                 value={newAnnouncement.title}
-                                maxLength={255}
+                                maxLength={230}
                                 onChange={handleTitleChange}
                                 onBlur={handleTitleBlur}
                                 style={titleTouched && titleError ? { 
@@ -1501,7 +1501,7 @@ const AnnouncementBoard = () => {
                                     )}
                                 </div>
                                 <Form.Text className="text-muted">
-                                    {newAnnouncement.title.length}/255 caracteres
+                                    {newAnnouncement.title.length}/230 caracteres
                                 </Form.Text>
                             </div>
                         </Form.Group>
