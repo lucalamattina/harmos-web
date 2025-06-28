@@ -6,6 +6,35 @@
     padding: 0;
 }
 
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        min-width: 280px !important;
+        max-width: 90vw !important;
+        width: auto !important;
+        right: 0 !important;
+        left: auto !important;
+        position: absolute;
+        transform: translateX(-10px);
+    }
+}
+
+@media (max-width: 576px) {
+    .notification-dropdown {
+        min-width: 250px !important;
+        max-width: 85vw !important;
+        transform: translateX(-20px);
+    }
+}
+
+@media (max-width: 400px) {
+    .notification-dropdown {
+        min-width: 220px !important;
+        max-width: 80vw !important;
+        transform: translateX(-30px);
+    }
+}
+
 .notification-toggle {
     color: #333;
     padding: 0;
@@ -113,4 +142,46 @@
     min-width: 400px !important;
     max-width: 450px !important;
     width: 420px !important;
+}
+
+/* Responsive override para móviles */
+@media (max-width: 768px) {
+    .dropdown-menu.notification-dropdown {
+        min-width: 280px !important;
+        max-width: 90vw !important;
+        width: auto !important;
+        right: 10px !important;
+        left: auto !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .dropdown-menu.notification-dropdown {
+        min-width: 250px !important;
+        max-width: 85vw !important;
+        right: 5px !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .dropdown-menu.notification-dropdown {
+        min-width: 220px !important;
+        max-width: 80vw !important;
+        right: 5px !important;
+    }
+}
+
+/* Mejoras adicionales para el dropdown */
+.dropdown-menu.notification-dropdown {
+    border: 1px solid rgba(0, 154, 158, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 154, 158, 0.1);
+    border-radius: 12px !important;
+}
+
+@media (max-width: 768px) {
+    .dropdown-menu.notification-dropdown {
+        border-radius: 8px !important;
+        margin-top: 5px;
+    }
 } 

@@ -10,6 +10,50 @@
     margin-bottom: 1rem;
 }
 
+/* Estilos para filtros colapsibles */
+.filters-toggle-btn {
+    color: #009A9E !important;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
+    transition: all 0.3s ease;
+}
+
+.filters-toggle-btn:hover {
+    color: #007A7D !important;
+    transform: translateX(2px);
+}
+
+.filters-toggle-btn:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.filters-collapse-section {
+    border-top: 1px solid #e9ecef;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filters-collapse-section .row {
+    margin-top: 0;
+}
+
 .create-button {
     background: linear-gradient(135deg, #009A9E 0%, #007A7D 100%);
     border: none;
@@ -17,6 +61,8 @@
     padding: 0.75rem 1.5rem;
     font-weight: 600;
     transition: all 0.3s ease;
+    font-size: 1rem;
+    min-height: 44px; /* Minimum touch target size */
 }
 
 .create-button:hover {
@@ -35,16 +81,20 @@
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-top: 1rem;
 }
 
 .patients-table-container .card-header {
     padding: 1rem;
     font-weight: 600;
     font-size: 1.1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .patients-table {
     margin: 0;
+    width: 100%;
 }
 
 .patients-table th {
@@ -53,6 +103,8 @@
     border: none;
     padding: 1rem;
     font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
 }
 
 .patients-table td {
@@ -69,6 +121,47 @@
 .table-responsive {
     border-radius: 8px;
     overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile card layout for better UX */
+.patients-mobile-card {
+    display: none;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-left: 4px solid #009A9E;
+}
+
+.patients-mobile-card h5 {
+    color: #009A9E;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.patients-mobile-card .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.patients-mobile-card .mobile-card-row:last-child {
+    border-bottom: none;
+}
+
+.patients-mobile-card .mobile-card-label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.patients-mobile-card .mobile-card-value {
+    color: #333;
+    text-align: right;
 }
 
 /* Animaciones */
@@ -87,9 +180,284 @@
     animation: fadeIn 0.5s ease;
 }
 
-/* Responsive */
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+    .patients-container {
+        padding: 1.5rem;
+    }
+    
+    .patients-table th,
+    .patients-table td {
+        padding: 0.8rem;
+        font-size: 0.95rem;
+    }
+    
+    .create-button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+    }
+    
+    .filters-toggle-btn {
+        font-size: 1rem;
+    }
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
     .patients-container {
         padding: 1rem;
     }
-} 
+    
+    .filter-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .filters-toggle-btn {
+        font-size: 0.95rem;
+    }
+    
+    .create-button {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Hide table on mobile, show cards instead */
+    .patients-table-container {
+        display: none;
+    }
+    
+    .patients-mobile-card {
+        display: block;
+    }
+    
+    .patients-table-container .card-header {
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+    
+    .filters-collapse-section {
+        padding-top: 0.8rem;
+        margin-top: 0.8rem;
+    }
+    
+    .filters-collapse-section .row {
+        gap: 0.5rem;
+    }
+    
+    .filters-collapse-section .col-md-3 {
+        margin-bottom: 0.8rem;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 576px) {
+    .patients-container {
+        padding: 0.8rem;
+    }
+    
+    .filter-title {
+        font-size: 1.1rem;
+    }
+    
+    .filters-toggle-btn {
+        font-size: 0.9rem;
+    }
+    
+    .create-button {
+        padding: 0.7rem;
+        font-size: 0.95rem;
+    }
+    
+    .patients-mobile-card {
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .patients-mobile-card h5 {
+        font-size: 1rem;
+    }
+    
+    .patients-mobile-card .mobile-card-row {
+        padding: 0.4rem 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+    
+    .patients-mobile-card .mobile-card-value {
+        text-align: left;
+        font-weight: 500;
+    }
+    
+    .filters-collapse-section .col-md-3 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 400px) {
+    .patients-container {
+        padding: 0.5rem;
+    }
+    
+    .patients-mobile-card {
+        padding: 0.6rem;
+        border-radius: 8px;
+    }
+    
+    .patients-mobile-card h5 {
+        font-size: 0.95rem;
+    }
+    
+    .patients-mobile-card .mobile-card-label,
+    .patients-mobile-card .mobile-card-value {
+        font-size: 0.85rem;
+    }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .patients-container {
+        padding: 0.8rem;
+    }
+    
+    .create-button {
+        width: auto;
+        display: inline-block;
+        margin-right: 1rem;
+    }
+    
+    .patients-mobile-card .mobile-card-row {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .patients-mobile-card .mobile-card-value {
+        text-align: right;
+    }
+    
+    .filters-collapse-section .row {
+        flex-direction: row;
+    }
+    
+    .filters-collapse-section .col-md-3 {
+        flex: 1;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .create-button {
+        min-height: 48px; /* Larger touch target */
+    }
+    
+    .filters-toggle-btn {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .filters-toggle-btn:hover {
+        transform: none;
+    }
+    
+    .filters-toggle-btn:active {
+        transform: scale(0.98);
+    }
+    
+    .patients-table tbody tr {
+        cursor: pointer;
+    }
+    
+    .patients-mobile-card {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .patients-mobile-card:active {
+        transform: scale(0.98);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .patients-table th {
+        background: #000;
+        color: #fff;
+    }
+    
+    .patients-mobile-card {
+        border-left-width: 6px;
+    }
+    
+    .filters-toggle-btn {
+        color: #000 !important;
+    }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .patients-container > *,
+    .create-button,
+    .patients-table tbody tr,
+    .patients-mobile-card,
+    .filters-toggle-btn,
+    .filters-collapse-section {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Ocultar texto de botones en móviles y remover bordes */
+@media (max-width: 768px) {
+    .patients-table .btn-text {
+        display: none;
+    }
+    
+    .patients-table .btn i {
+        margin-right: 0 !important;
+    }
+    
+    .patients-table .btn {
+        border: none !important;
+        background: transparent !important;
+        padding: 0.25rem !important;
+        box-shadow: none !important;
+        min-width: auto !important;
+        width: auto !important;
+        height: auto !important;
+    }
+    
+    .patients-table .btn:hover,
+    .patients-table .btn:focus,
+    .patients-table .btn:active {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: scale(1.1);
+    }
+    
+    .patients-table .btn-outline-primary {
+        color: #009A9E !important;
+    }
+    
+    .patients-table .btn-outline-danger {
+        color: #dc3545 !important;
+    }
+    
+    .patients-table .btn-outline-primary:hover,
+    .patients-table .btn-outline-primary:focus,
+    .patients-table .btn-outline-primary:active {
+        color: #007A7D !important;
+    }
+    
+    .patients-table .btn-outline-danger:hover,
+    .patients-table .btn-outline-danger:focus,
+    .patients-table .btn-outline-danger:active {
+        color: #b02a37 !important;
+    }
+}

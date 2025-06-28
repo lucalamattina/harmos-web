@@ -48,3 +48,419 @@
     font-size: 1.25rem;
     font-weight: 600;
 }
+
+/* Estilos para la navegación de 3 días */
+.three-day-navigation {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.day-badge {
+    background: #009A9E !important;
+    color: white;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-weight: 500;
+    margin: 0.1rem;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* Mejor visualización del calendario de 3 días */
+.rbc-calendar {
+    font-size: 0.9rem;
+}
+
+.rbc-time-view {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rbc-time-header {
+    background: linear-gradient(135deg, #009A9E 0%, #007A7D 100%);
+    border: none;
+}
+
+.rbc-time-header .rbc-header {
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rbc-time-content {
+    border-top: none;
+}
+
+.rbc-timeslot-group {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.rbc-time-slot {
+    border-top: 1px solid #f8f9fa;
+}
+
+.rbc-today {
+    background-color: rgba(0, 154, 158, 0.05);
+}
+
+.rbc-event {
+    background: linear-gradient(135deg, #009A9E 0%, #007A7D 100%);
+    border: none;
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rbc-event:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.rbc-event.rbc-selected {
+    background: linear-gradient(135deg, #007A7D 0%, #005f62 100%);
+}
+
+/* Responsive para tablets */
+@media (max-width: 1024px) {
+    .scheduler-container {
+        padding: 1.5rem;
+    }
+    
+    .day-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+        margin: 0.05rem;
+    }
+    
+    .rbc-calendar {
+        font-size: 0.85rem;
+    }
+    
+    .rbc-time-header .rbc-header {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .scheduler{
+        width: 100%;
+        padding-top: 20px;
+    }
+    
+    .scheduler-title{
+        font-size: 1.5rem;
+        padding-left: 0;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .three-day-navigation {
+        padding: 0.8rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .three-day-navigation .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .three-day-navigation .btn {
+        min-width: 120px;
+    }
+    
+    .day-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.05rem;
+        display: block;
+        text-align: center;
+        width: auto;
+    }
+    
+    .rbc-calendar {
+        font-size: 0.75rem;
+        height: auto !important;
+    }
+    
+    .rbc-time-view {
+        height: 500px !important;
+    }
+    
+    .rbc-time-header .rbc-header {
+        padding: 0.5rem 0.2rem;
+        font-size: 0.7rem;
+        text-align: center;
+    }
+    
+    .rbc-time-content {
+        height: 450px !important;
+    }
+    
+    .rbc-event {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.25rem;
+        border-radius: 3px;
+    }
+    
+    .rbc-time-slot {
+        height: 30px !important;
+    }
+    
+    .rbc-timeslot-group {
+        min-height: 60px !important;
+    }
+    
+    /* Ocultar algunos elementos en móviles para mejor visualización */
+    .rbc-time-gutter .rbc-timeslot-group {
+        font-size: 0.65rem;
+    }
+    
+    .search-results-dropdown {
+        max-height: 150px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 576px) {
+    .scheduler-container {
+        padding: 0.8rem;
+    }
+    
+    .three-day-navigation {
+        padding: 0.6rem;
+    }
+    
+    .three-day-navigation .btn {
+        min-width: 100px;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .day-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .rbc-time-view {
+        height: 400px !important;
+    }
+    
+    .rbc-time-content {
+        height: 350px !important;
+    }
+    
+    .rbc-time-header .rbc-header {
+        padding: 0.4rem 0.1rem;
+        font-size: 0.65rem;
+    }
+    
+    .rbc-event {
+        font-size: 0.6rem;
+        padding: 0.1rem 0.2rem;
+    }
+    
+    .rbc-time-slot {
+        height: 25px !important;
+    }
+    
+    .rbc-timeslot-group {
+        min-height: 50px !important;
+    }
+}
+
+/* Extra small mobile */
+@media (max-width: 400px) {
+    .three-day-navigation .btn {
+        min-width: 80px;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .day-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
+    }
+    
+    .rbc-time-view {
+        height: 350px !important;
+    }
+    
+    .rbc-time-content {
+        height: 300px !important;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+    .three-day-navigation .d-flex {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .rbc-time-view {
+        height: 400px !important;
+    }
+    
+    .rbc-time-content {
+        height: 350px !important;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .rbc-event {
+        min-height: 24px;
+        cursor: pointer;
+    }
+    
+    .three-day-navigation .btn {
+        min-height: 44px;
+    }
+    
+    .three-day-navigation .btn:active {
+        transform: scale(0.98);
+    }
+    
+    .rbc-event:active {
+        transform: scale(0.98);
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .rbc-time-header {
+        background: #000 !important;
+    }
+    
+    .rbc-event {
+        background: #000 !important;
+        color: #fff !important;
+        border: 2px solid #fff;
+    }
+    
+    .day-badge {
+        background: #000 !important;
+        color: #fff !important;
+        border: 1px solid #fff;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rbc-event,
+    .three-day-navigation .btn {
+        transition: none;
+    }
+    
+    .rbc-event:hover,
+    .three-day-navigation .btn:active {
+        transform: none;
+    }
+}
+
+/* Estilos de navegación móvil */
+@media (max-width: 768px) {
+    .mobile-navigation {
+        padding: 0.5rem !important;
+    }
+    
+    .mobile-nav-btn {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.3rem !important;
+        min-width: auto !important;
+        width: 60px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .mobile-nav-btn svg {
+        font-size: 0.6rem !important;
+        width: 8px !important;
+        height: 8px !important;
+    }
+    
+    .mobile-nav-btn .nav-btn-text {
+        font-size: 0.6rem;
+        margin: 0 0.2rem;
+    }
+    
+    .mobile-day-badge {
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.8rem !important;
+        flex: 1;
+        text-align: center;
+        max-width: 120px;
+    }
+    
+    /* Hacer el contenedor swipeable */
+    .mobile-navigation {
+        position: relative;
+        touch-action: pan-x;
+    }
+}
+
+/* Hacer botones aún más pequeños en pantallas muy pequeñas */
+@media (max-width: 576px) {
+    .mobile-nav-btn {
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.3rem !important;
+        width: 45px;
+        height: 28px;
+    }
+    
+    .mobile-nav-btn svg {
+        font-size: 0.5rem !important;
+        width: 6px !important;
+        height: 6px !important;
+    }
+    
+    .mobile-nav-btn .nav-btn-text {
+        display: none; /* Ocultar texto en pantallas muy pequeñas */
+    }
+    
+    .mobile-day-badge {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+    
+    .mobile-navigation {
+        padding: 0.3rem !important;
+        margin-top: 0.8rem !important;
+    }
+}
+
+/* Indicador visual para swipe */
+@media (max-width: 768px) {
+    .mobile-navigation::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 2px;
+        background: #ccc;
+        border-radius: 1px;
+        opacity: 0.5;
+    }
+    
+    .Scheduler {
+        position: relative;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: pan-y;
+    }
+}

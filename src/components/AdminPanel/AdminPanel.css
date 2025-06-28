@@ -191,4 +191,162 @@
     background-color: #6c757d;
     border-color: #6c757d;
     transform: none;
-} 
+}
+
+/* Mobile responsive para usuarios */
+@media (max-width: 768px) {
+    .admin-panel {
+        padding: 1rem;
+    }
+    
+    /* Ocultar tabla de usuarios en móviles - múltiples selectores para asegurar */
+    .admin-panel .table-responsive,
+    .admin-panel .tab-pane[data-rr-ui-event-key="users"] table,
+    .admin-panel .tab-pane[data-rr-ui-event-key="users"] .table,
+    .admin-panel [role="tabpanel"]:first-child table,
+    .admin-panel [role="tabpanel"]:first-child .table {
+        display: none !important;
+    }
+    
+    /* Permitir que otras tablas se vean en móviles */
+    .admin-panel .tab-pane[data-rr-ui-event-key="specialties"] table,
+    .admin-panel .tab-pane[data-rr-ui-event-key="locations"] table,
+    .admin-panel .tab-pane[data-rr-ui-event-key="specialties"] .table,
+    .admin-panel .tab-pane[data-rr-ui-event-key="locations"] .table {
+        display: table !important;
+    }
+    
+    /* Mostrar tarjetas en móviles */
+    .admin-panel .users-mobile-cards {
+        display: block !important;
+        width: 100% !important;
+        margin-top: 1rem;
+    }
+    
+    .admin-panel .user-mobile-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-left: 4px solid #009A9E;
+    }
+    
+    .admin-panel .user-mobile-card h6 {
+        color: #009A9E;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .admin-panel .user-mobile-card .mobile-card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .admin-panel .user-mobile-card .mobile-card-row:last-child {
+        border-bottom: none;
+    }
+    
+    .admin-panel .user-mobile-card .mobile-card-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .admin-panel .user-mobile-card .mobile-card-value {
+        color: #333;
+        text-align: right;
+        font-size: 0.9rem;
+        word-break: break-word;
+        max-width: 60%;
+    }
+    
+    .admin-panel .user-mobile-card .mobile-card-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+        flex-wrap: wrap;
+    }
+    
+    .admin-panel .user-mobile-card .btn {
+        border: none !important;
+        background: transparent !important;
+        padding: 0.5rem !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+        font-size: 1.1rem !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Icono de editar - azul */
+    .admin-panel .user-mobile-card .btn[title*="Editar"] {
+        color: #007bff !important;
+    }
+    
+    .admin-panel .user-mobile-card .btn[title*="Editar"]:hover {
+        color: #0056b3 !important;
+        background: rgba(0, 123, 255, 0.1) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Icono de asignar especialidad - verde */
+    .admin-panel .user-mobile-card .btn[title*="Asignar especialidad"] {
+        color: #28a745 !important;
+    }
+    
+    .admin-panel .user-mobile-card .btn[title*="Asignar especialidad"]:hover {
+        color: #1e7e34 !important;
+        background: rgba(40, 167, 69, 0.1) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Icono de eliminar - rojo */
+    .admin-panel .user-mobile-card .btn[title*="Eliminar"] {
+        color: #dc3545 !important;
+    }
+    
+    .admin-panel .user-mobile-card .btn[title*="Eliminar"]:hover {    
+        color: #c82333 !important;
+        background: rgba(220, 53, 69, 0.1) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Estilos alternativos usando variantes de Bootstrap como respaldo */
+    .admin-panel .user-mobile-card .btn-info {
+        color: #007bff !important;
+    }
+    
+    .admin-panel .user-mobile-card .btn-success {
+        color: #28a745 !important;
+    }
+    
+    .admin-panel .user-mobile-card .btn-danger {
+        color: #dc3545 !important;
+    }
+    
+    /* Estilo general para el hover de todos los botones */
+    .admin-panel .user-mobile-card .btn:focus,
+    .admin-panel .user-mobile-card .btn:active {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Desktop: ocultar tarjetas móviles */
+@media (min-width: 769px) {
+    .admin-panel .users-mobile-cards {
+        display: none;
+    }
+}

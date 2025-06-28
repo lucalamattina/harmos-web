@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert } from "react-bootstrap";
-import { FaExclamationCircle, FaPlus } from 'react-icons/fa';
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse } from "react-bootstrap";
+import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import './Patients.css';
@@ -16,6 +16,9 @@ const Patients = () => {
     const [showDetails, setShowDetails] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [doctors, setDoctors] = useState([]);
+
+    // Estado para filtros colapsibles
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
@@ -393,11 +396,20 @@ const Patients = () => {
 
     return (
         <Container className="patients-container">
-            {/* Filtros */}
+            {/* Filtros Colapsibles */}
             <Card className="mb-4">
                 <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="filter-title mb-0"><i className="bi bi-funnel me-2"></i>Filtros</h5>
+                        <Button
+                            variant="link"
+                            className="p-0 text-decoration-none d-flex align-items-center"
+                            onClick={() => setFiltersExpanded(!filtersExpanded)}
+                            style={{ color: '#009A9E', fontWeight: 600 }}
+                        >
+                            <i className="bi bi-funnel me-2"></i>
+                            Filtros
+                            {filtersExpanded ? <FaChevronUp className="ms-2" /> : <FaChevronDown className="ms-2" />}
+                        </Button>
                         <div className="d-flex gap-2">
                             <Button 
                                 variant="outline-secondary"
@@ -423,7 +435,9 @@ const Patients = () => {
                             )}
                         </div>
                     </div>
-                    <Row>
+                    <Collapse in={filtersExpanded}>
+                        <div>
+                            <Row>
                         <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Buscar por nombre</Form.Label>
@@ -493,6 +507,8 @@ const Patients = () => {
                             </Form.Group>
                         </Col>
                     </Row>
+                        </div>
+                    </Collapse>
                 </Card.Body>
             </Card>
 
@@ -553,7 +569,7 @@ const Patients = () => {
                                                     onClick={() => fetchPatientDetails(patient.id)}
                                                 >
                                                     <i className="bi bi-eye me-1"></i>
-                                                    Ver
+                                                    <span className="btn-text">Ver</span>
                                                 </Button>
                                                 {isAdmin && (
                                                     <Button 
@@ -565,7 +581,7 @@ const Patients = () => {
                                                         }}
                                                     >
                                                         <i className="bi bi-trash me-1"></i>
-                                                        Eliminar
+                                                        <span className="btn-text">Eliminar</span>
                                                     </Button>
                                                 )}
                                             </div>

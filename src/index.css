@@ -15,6 +15,10 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Mejoras para móviles */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 #root {
@@ -32,18 +36,283 @@ code {
 .btn-primary {
   background-color: #009A9E !important;
   border-color: #009A9E !important;
+  transition: all 0.3s ease;
+  min-height: 44px; /* Minimum touch target size */
 }
-.btn-primary:hover, .btn-primary:focus {
-  background-color: #047a7c !important;
-  border-color: #047a7c !important;
+
+.btn-primary:hover, 
+.btn-primary:focus {
+  background-color: #007A7D !important;
+  border-color: #007A7D !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 154, 158, 0.3);
 }
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
 .btn-outline-primary {
   color: #009A9E !important;
   border-color: #009A9E !important;
   background-color: transparent !important;
+  transition: all 0.3s ease;
+  min-height: 44px;
 }
-.btn-outline-primary:hover, .btn-outline-primary:focus {
+
+.btn-outline-primary:hover, 
+.btn-outline-primary:focus {
   background-color: #009A9E !important;
   color: #fff !important;
   border-color: #009A9E !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 154, 158, 0.3);
+}
+
+.btn-outline-primary:active {
+  transform: translateY(0);
+}
+
+/* Responsive typography */
+html {
+  font-size: 16px;
+}
+
+/* Form improvements for mobile */
+.form-control {
+  min-height: 44px;
+  font-size: 16px; /* Prevents zoom on iOS */
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 154, 158, 0.25);
+  border-color: #009A9E;
+}
+
+/* Table responsive improvements */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+
+/* Card improvements */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal improvements for mobile */
+.modal-dialog {
+  margin: 1rem;
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+  
+  .btn-primary,
+  .btn-outline-primary {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+  
+  .form-control {
+    font-size: 15px;
+  }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    line-height: 1.5;
+  }
+  
+  .btn-primary,
+  .btn-outline-primary {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    min-height: 48px; /* Larger touch target for mobile */
+  }
+  
+  .btn-primary:hover,
+  .btn-outline-primary:hover {
+    transform: none; /* Remove hover effects on mobile */
+  }
+  
+  .form-control {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 0.8rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  /* Improve spacing for mobile */
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+  
+  .col,
+  [class*="col-"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* Small mobile breakpoint */
+@media (max-width: 576px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .btn-primary,
+  .btn-outline-primary {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+  }
+  
+  .form-control {
+    padding: 0.7rem;
+  }
+  
+  .card {
+    border-radius: 6px;
+  }
+  
+  .container-fluid {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 400px) {
+  html {
+    font-size: 13px;
+  }
+  
+  .btn-primary,
+  .btn-outline-primary {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+  
+  .container-fluid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .btn-primary,
+  .btn-outline-primary {
+    width: auto;
+    display: inline-block;
+    margin-right: 0.5rem;
+    min-width: 120px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects and improve touch targets */
+  .btn-primary:hover,
+  .btn-outline-primary:hover,
+  .card:hover {
+    transform: none;
+  }
+  
+  /* Add active state feedback */
+  .btn-primary:active,
+  .btn-outline-primary:active {
+    transform: scale(0.98);
+  }
+  
+  .card:active {
+    transform: scale(0.99);
+  }
+  
+  /* Improve touch targets */
+  button,
+  .btn,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+  
+  /* Better touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    background-color: #000 !important;
+    border-color: #000 !important;
+    color: #fff !important;
+  }
+  
+  .btn-outline-primary {
+    border-color: #000 !important;
+    color: #000 !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .btn,
+  .navbar,
+  .footer {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
 }

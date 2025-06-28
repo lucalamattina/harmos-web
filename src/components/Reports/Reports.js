@@ -12,9 +12,10 @@ import {
     Alert,
     Card,
     Badge,
-    Pagination
+    Pagination,
+    Collapse
 } from "react-bootstrap";
-import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle } from 'react-icons/fa';
+import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import { formatDate } from '../../utils/dateUtils';
@@ -23,8 +24,6 @@ import './Reports.css';
 
 const Reports = () => {
     const { isAdmin, currentUser: user } = useContext(AuthContext);
-    
-
     
     // Estados principales
     const [reports, setReports] = useState([]);
@@ -82,6 +81,9 @@ const Reports = () => {
 
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
+
+    // Estado para filtros colapsibles
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     const fetchReports = useCallback(async (page = 0) => {
         try {
@@ -558,11 +560,20 @@ const Reports = () => {
                 {isAdmin ? ' Como administrador, puede eliminar cualquier informe.' : ' Solo puede eliminar los informes que usted ha creado.'}
             </Alert>
 
-            {/* Filtros */}
+            {/* Filtros Colapsibles */}
             <Card className="mb-4">
                 <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="filter-title mb-0"><FaFilter className="me-2" />Filtros</h5>
+                        <Button
+                            variant="link"
+                            className="p-0 text-decoration-none d-flex align-items-center"
+                            onClick={() => setFiltersExpanded(!filtersExpanded)}
+                            style={{ color: '#009A9E', fontWeight: 600 }}
+                        >
+                            <FaFilter className="me-2" />
+                            Filtros
+                            {filtersExpanded ? <FaChevronUp className="ms-2" /> : <FaChevronDown className="ms-2" />}
+                        </Button>
                         <div className="d-flex gap-2">
                             <Button 
                                 variant="outline-secondary"
@@ -580,7 +591,9 @@ const Reports = () => {
                             </Button>
                         </div>
                     </div>
-                    <Row>
+                    <Collapse in={filtersExpanded}>
+                        <div>
+                            <Row>
                         <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Buscar por título</Form.Label>
@@ -646,6 +659,8 @@ const Reports = () => {
                             </Form.Group>
                         </Col>
                     </Row>
+                        </div>
+                    </Collapse>
                 </Card.Body>
             </Card>
 

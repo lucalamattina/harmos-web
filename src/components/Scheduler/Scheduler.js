@@ -3,14 +3,17 @@ import format from "date-fns/format";
 import getDay from "date-fns/getDay";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
+import addDays from "date-fns/addDays";
+import subDays from "date-fns/subDays";
 import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
 import React, {useCallback, useMemo, useState, useEffect, useContext} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup, Card, Row, Col, Badge } from "react-bootstrap";
+import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup, Card, Row, Col, Badge, Collapse } from "react-bootstrap";
 import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule, deleteSchedule, getPatientById } from "../../api/api";
 import { es } from 'date-fns/locale';
 import { AuthContext } from "../../context/AuthContext";
+import { FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Custom hook for debouncing a value
 function useDebounce(value, delay) {
@@ -24,6 +27,28 @@ function useDebounce(value, delay) {
         };
     }, [value, delay]);
     return debouncedValue;
+}
+
+// Hook para detectar tamaño de pantalla
+function useWindowSize() {
+    const [windowSize, setWindowSize] = useState({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
+
+    useEffect(() => {
+        function handleResize() {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        }
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return windowSize;
 }
 
 
@@ -61,6 +86,22 @@ function Scheduler() {
     const [show, setShow] = useState(false);
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
+
+    // Hook para detectar tamaño de pantalla
+    const { width } = useWindowSize();
+    const isMobile = width <= 768;
+
+    // Estado para filtros colapsibles
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+    // Estado para navegación de días
+    const [currentDay, setCurrentDay] = useState(() => {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        // Calcular el lunes de esta semana
+        const monday = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
+        return monday;
+    });
 
     const [seeEvent, setSeeEvent] = useState({
         title: "",
@@ -120,6 +161,53 @@ function Scheduler() {
 
     const debouncedDoctorFilterTerm = useDebounce(doctorFilterTerm, 500);
     const debouncedPatientFilterTerm = useDebounce(patientFilterTerm, 500);
+
+    // Funciones de navegación
+    const navigateToPreviousDay = () => {
+        setCurrentDay(current => subDays(current, 1));
+    };
+
+    const navigateToNextDay = () => {
+        setCurrentDay(current => addDays(current, 1));
+    };
+
+    const navigateToToday = () => {
+        const today = new Date();
+        setCurrentDay(today);
+    };
+
+    // Estados para swipe en móviles
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    // Distancia mínima para considerar un swipe
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            navigateToNextDay();
+        } else if (isRightSwipe) {
+            navigateToPreviousDay();
+        }
+    };
+
+
+
 
 
     useEffect(() => {
@@ -489,6 +577,11 @@ function Scheduler() {
 
     let formats = {
         timeGutterFormat: 'HH:mm',
+        dayHeaderFormat: isMobile ? 'EEEE' : 'eeee',
+        weekdayFormat: 'eeee',
+        dayFormat: 'eeee',
+        dayRangeHeaderFormat: ({ start, end }, culture, localizer) =>
+            localizer.format(start, 'eeee', culture) + ' - ' + localizer.format(end, 'eeee', culture)
     }
 
     
@@ -510,7 +603,16 @@ function Scheduler() {
             <Card className="mb-4">
                 <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="filter-title mb-0"><i className="bi bi-funnel me-2"></i>Filtros</h5>
+                        <Button
+                            variant="link"
+                            className="p-0 text-decoration-none d-flex align-items-center"
+                            onClick={() => setFiltersExpanded(!filtersExpanded)}
+                            style={{ color: '#009A9E', fontWeight: 600 }}
+                        >
+                            <i className="bi bi-funnel me-2"></i>
+                            Filtros
+                            {filtersExpanded ? <FaChevronUp className="ms-2" /> : <FaChevronDown className="ms-2" />}
+                        </Button>
                         <Button 
                             variant="outline-secondary"
                             size="sm"
@@ -519,7 +621,9 @@ function Scheduler() {
                             Limpiar Filtros
                         </Button>
                     </div>
-                    <Row>
+                    <Collapse in={filtersExpanded}>
+                        <div>
+                            <Row>
                         <Col md={4}>
                             <Form.Group>
                                 <Form.Label>Paciente</Form.Label>
@@ -603,37 +707,88 @@ function Scheduler() {
                             </Form.Group>
                         </Col>
                     </Row>
+                        </div>
+                    </Collapse>
                 </Card.Body>
             </Card>
 
             <Card>
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                    <span className="scheduler-card-title">Agenda Semanal</span>
-                    <Badge bg="info">
-                        {allEvents.length} turnos encontrados
-                    </Badge>
+                <Card.Header>
+                    <div className="d-flex justify-content-between align-items-center">
+                        <span className="scheduler-card-title">Agenda por Días</span>
+                        <Badge bg="info">
+                            {allEvents.length} turnos encontrados
+                        </Badge>
+                    </div>
+                    {/* Controles de navegación personalizados - Solo en móviles */}
+                    {isMobile && (
+                        <div 
+                            className="d-flex justify-content-between align-items-center mt-3 p-2 bg-light rounded mobile-navigation"
+                            onTouchStart={onTouchStart}
+                            onTouchMove={onTouchMove}
+                            onTouchEnd={onTouchEnd}
+                        >
+                            <Button 
+                                variant="outline-primary" 
+                                size="sm"
+                                onClick={navigateToPreviousDay}
+                                className="mobile-nav-btn"
+                            >
+                                <FaChevronLeft />
+                                <span className="nav-btn-text">Anterior</span>
+                            </Button>
+                            
+                            <div className="d-flex align-items-center">
+                                <h6 className="mb-0 text-center">
+                                    <span className="badge bg-primary mobile-day-badge">
+                                        {format(currentDay, 'EEEE', { locale: es })}
+                                    </span>
+                                </h6>
+                            </div>
+                            
+                            <Button 
+                                variant="outline-primary" 
+                                size="sm"
+                                onClick={navigateToNextDay}
+                                className="mobile-nav-btn"
+                            >
+                                <span className="nav-btn-text">Siguiente</span>
+                                <FaChevronRight />
+                            </Button>
+                        </div>
+                    )}
                 </Card.Header>
                 <Card.Body>
-                    <div className="Scheduler">
-                        <Calendar views={[Views.WORK_WEEK]}
-                                  defaultView={Views.WORK_WEEK}
-                                  localizer={localizer}
-                                  events={allEvents}
-                                  onSelectEvent={handleSelectEvent}
-                                  onSelectSlot={handleSelectSlot}
-                                  selectable={isAdmin}
-                                  scrollToTime={scrollToTime}
-                                  startAccessor="start" endAccessor="end"
-                                  style={{ height: 700, margin: "0" }}
-                                  step={5}
-                                  timeslots={6}
-                                  min={new Date(2016, 10, 1, 8, 0, 0)}
-                                  toolbar={false}
-                                  formats={formats}
-                                  culture='es'
-                                  messages={messages}
-                                  components={components}
-                                  allDaySlot={false}
+                    <div 
+                        className="Scheduler"
+                        onTouchStart={isMobile ? onTouchStart : undefined}
+                        onTouchMove={isMobile ? onTouchMove : undefined}
+                        onTouchEnd={isMobile ? onTouchEnd : undefined}
+                    >
+                        <Calendar 
+                            views={isMobile ? [Views.DAY] : [Views.WORK_WEEK, Views.DAY]}
+                            defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
+                            localizer={localizer}
+                            events={allEvents}
+                            onSelectEvent={handleSelectEvent}
+                            onSelectSlot={handleSelectSlot}
+                            selectable={isAdmin}
+                            scrollToTime={scrollToTime}
+                            startAccessor="start" 
+                            endAccessor="end"
+                            style={{ height: 600, margin: "0" }}
+                            step={15}
+                            timeslots={4}
+                            min={new Date(2016, 10, 1, 8, 0, 0)}
+                            max={new Date(2016, 10, 1, 20, 0, 0)}
+                            toolbar={false}
+                            formats={formats}
+                            culture='es'
+                            messages={messages}
+                            components={components}
+                            allDaySlot={false}
+                            date={currentDay}
+                            onNavigate={() => {}} // Deshabilitamos la navegación por defecto
                         />
                     </div>
                 </Card.Body>

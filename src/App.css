@@ -16,6 +16,7 @@
   --navbar-height: 50px;
   --footer-height: 60px;
   --content-min-height: calc(100vh - var(--navbar-height) - var(--footer-height));
+  --mobile-navbar-height: 0px; /* Hidden on mobile */
 }
 
 .main-content {
@@ -30,6 +31,7 @@
   min-height: var(--content-min-height);
   display: flex;
   flex-direction: column;
+  margin-top: var(--navbar-height);
 }
 
 /* Asegurar que el contenido sea legible sobre el fondo */
@@ -64,11 +66,54 @@
   z-index: 2;
 }
 
-/* Responsive breakpoints */
+/* Tablet responsive breakpoints */
+@media screen and (max-width: 1024px) {
+  .main-content {
+    padding: 15px;
+  }
+}
+
+/* Mobile responsive breakpoints */
+@media screen and (max-width: 768px) {
+  :root {
+    --navbar-height: 0px; /* No navbar horizontal en móviles */
+    --footer-height: 50px;
+    --mobile-navbar-height: 60px; /* Espacio para el botón hamburguesa */
+  }
+  
+  .main-content {
+    margin-top: var(--mobile-navbar-height);
+    padding: 15px 10px;
+    background-attachment: scroll; /* Mejor performance en móviles */
+  }
+  
+  .app-footer {
+    padding: 10px 0;
+    font-size: 0.9rem;
+  }
+}
+
+/* Small mobile */
+@media screen and (max-width: 480px) {
+  .main-content {
+    padding: 10px 8px;
+  }
+  
+  .app-footer {
+    padding: 8px 0;
+    font-size: 0.8rem;
+  }
+}
+
+/* Responsive height adjustments */
 @media screen and (max-height: 600px) {
   :root {
     --navbar-height: 40px;
     --footer-height: 40px;
+  }
+  
+  .main-content {
+    padding: 10px;
   }
 }
 
@@ -76,6 +121,26 @@
   :root {
     --navbar-height: 60px;
     --footer-height: 70px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Estilos específicos para dispositivos táctiles */
+  .main-content {
+    background-attachment: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Landscape mobile optimization */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  :root {
+    --mobile-navbar-height: 50px;
+  }
+  
+  .main-content {
+    padding: 10px;
   }
 }
 

@@ -779,6 +779,68 @@ const AdminPanel = () => {
                         </tbody>
                     </Table>
 
+                    {/* Tarjetas móviles para usuarios */}
+                    <div className="users-mobile-cards">
+                        {users.map(user => (
+                            <div key={user.id} className="user-mobile-card">
+                                <h6>{user.name}</h6>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-label">Email:</span>
+                                    <span className="mobile-card-value">{user.email}</span>
+                                </div>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-label">Teléfono:</span>
+                                    <span className="mobile-card-value">{user.phone}</span>
+                                </div>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-label">Especialidades:</span>
+                                    <span className="mobile-card-value">{user.specialties?.join(', ') || 'Ninguna'}</span>
+                                </div>
+                                <div className="mobile-card-actions">
+                                    <Button 
+                                        variant="info" 
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedUser(user);
+                                            setFormData({
+                                                firstName: user.firstName || '',
+                                                lastName: user.lastName || '',
+                                                email: user.email,
+                                                phone: user.phone,
+                                                specialties: user.specialties || [],
+                                                roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
+                                                password: ''
+                                            });
+                                            setShowUserModal(true);
+                                        }}
+                                        title="Editar usuario"
+                                    >
+                                        <FaEdit />
+                                    </Button>
+                                    <Button 
+                                        variant="success" 
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedUser(user);
+                                            setShowAssignModal(true);
+                                        }}
+                                        title="Asignar especialidad"
+                                    >
+                                        <FaUserPlus />
+                                    </Button>
+                                    <Button 
+                                        variant="danger" 
+                                        size="sm"
+                                        onClick={() => handleDeleteUser(user.id)}
+                                        title="Eliminar usuario"
+                                    >
+                                        <FaTrash />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
                     {/* Paginación custom igual a pacientes */}
                     <div className="d-flex justify-content-center align-items-center my-4 gap-2">
                         <Button 
