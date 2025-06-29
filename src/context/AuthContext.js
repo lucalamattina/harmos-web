@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
         return () => {
             window.removeEventListener('auth-logout', handleLogout);
         };
-    }, [navigate]);
+    }, [navigate, fetchCurrentUser]);
 
     const login = async (token) => {
         try {

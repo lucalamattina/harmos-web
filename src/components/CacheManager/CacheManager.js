@@ -17,6 +17,7 @@ const CacheManager = () => {
     const [messageType, setMessageType] = useState('');
     const [cacheStats, setCacheStats] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [isClearing, setIsClearing] = useState(false);
 
     useEffect(() => {
         loadCacheStats();
@@ -92,6 +93,106 @@ const CacheManager = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    const clearAllCaches = async () => {
+        setIsClearing(true);
+        setMessage('');
+
+        try {
+            let clearedItems = [];
+
+            // 1. Limpiar localStorage
+            const localStorageKeys = Object.keys(localStorage);
+            if (localStorageKeys.length > 0) {
+                localStorage.clear();
+                clearedItems.push(`localStorage (${localStorageKeys.length} items)`);
+            }
+
+            // 2. Limpiar sessionStorage
+            const sessionStorageKeys = Object.keys(sessionStorage);
+            if (sessionStorageKeys.length > 0) {
+                sessionStorage.clear();
+                clearedItems.push(`sessionStorage (${sessionStorageKeys.length} items)`);
+            }
+
+            // 3. Limpiar caché del Service Worker
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                try {
+                    const channel = new MessageChannel();
+                    
+                    const swCacheCleared = await new Promise((resolve) => {
+                        channel.port1.onmessage = (event) => {
+                            resolve(event.data.success);
+                        };
+
+                        navigator.serviceWorker.controller.postMessage(
+                            { type: 'CLEAR_CACHE' },
+                            [channel.port2]
+                        );
+
+                        // Timeout después de 5 segundos
+                        setTimeout(() => resolve(false), 5000);
+                    });
+
+                    if (swCacheCleared) {
+                        clearedItems.push('Service Worker cache');
+                    }
+                } catch (swError) {
+                    console.warn('Error limpiando Service Worker cache:', swError);
+                }
+            }
+
+            // 4. Limpiar caché del navegador (si es posible)
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    if (cacheNames.length > 0) {
+                        clearedItems.push(`Browser caches (${cacheNames.length} caches)`);
+                    }
+                } catch (cacheError) {
+                    console.warn('Error limpiando browser caches:', cacheError);
+                }
+            }
+
+            if (clearedItems.length > 0) {
+                setMessage(`✅ Caché limpiado exitosamente: ${clearedItems.join(', ')}`);
+                setMessageType('success');
+                
+                // Auto-reload después de 2 segundos
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 2000);
+            } else {
+                setMessage('✅ No había caché para limpiar');
+                setMessageType('info');
+            }
+
+        } catch (error) {
+            console.error('Error limpiando caché:', error);
+            setMessage(`❌ Error limpiando caché: ${error.message}`);
+            setMessageType('danger');
+        } finally {
+            setIsClearing(false);
+        }
+    };
+
+    const forceRefresh = () => {
+        // Forzar recarga completa sin caché
+        window.location.reload(true);
+    };
+
+    const getCurrentCacheInfo = () => {
+        const info = {
+            localStorage: Object.keys(localStorage).length,
+            sessionStorage: Object.keys(sessionStorage).length,
+            hasServiceWorker: 'serviceWorker' in navigator,
+            hasCacheAPI: 'caches' in window
+        };
+        return info;
+    };
+
+    const cacheInfo = getCurrentCacheInfo();
+
     return (
         <Card className="cache-manager">
             <Card.Header className="d-flex justify-content-between align-items-center">
@@ -128,6 +229,11 @@ const CacheManager = () => {
                         className="mb-3"
                     >
                         {message}
+                        {messageType === 'success' && (
+                            <div className="mt-2 small">
+                                La página se recargará automáticamente en 2 segundos...
+                            </div>
+                        )}
                     </Alert>
                 )}
 
@@ -195,16 +301,19 @@ const CacheManager = () => {
                     <Col>
                         <div className="d-flex justify-content-center gap-3">
                             <Button
-                                variant="danger"
-                                onClick={handleClearAllCache}
-                                disabled={loading || !cacheStatus.isSupported}
+                                variant="warning"
+                                onClick={clearAllCaches}
+                                disabled={isClearing}
+                                size="sm"
                             >
-                                {loading ? (
-                                    <Spinner animation="border" size="sm" className="me-2" />
+                                {isClearing ? (
+                                    <>
+                                        <Spinner size="sm" className="me-2" />
+                                        Limpiando...
+                                    </>
                                 ) : (
-                                    <FaTrash className="me-2" />
+                                    '🗑️ Limpiar Todo el Caché'
                                 )}
-                                Limpiar Todo el Caché
                             </Button>
                         </div>
                     </Col>
@@ -269,6 +378,37 @@ const CacheManager = () => {
                         </ul>
                     </Card.Body>
                 </Card>
+
+                <div className="cache-info mb-3 p-2 bg-light rounded">
+                    <small>
+                        <strong>Estado actual:</strong><br/>
+                        • localStorage: {cacheInfo.localStorage} items<br/>
+                        • sessionStorage: {cacheInfo.sessionStorage} items<br/>
+                        • Service Worker: {cacheInfo.hasServiceWorker ? '✅ Disponible' : '❌ No disponible'}<br/>
+                        • Cache API: {cacheInfo.hasCacheAPI ? '✅ Disponible' : '❌ No disponible'}
+                    </small>
+                </div>
+
+                <div className="d-flex gap-2 flex-wrap">
+                    <Button
+                        variant="outline-secondary"
+                        onClick={forceRefresh}
+                        disabled={isClearing}
+                        size="sm"
+                    >
+                        🔄 Recarga Forzada
+                    </Button>
+                </div>
+
+                <div className="mt-3">
+                    <small className="text-muted">
+                        <strong>💡 Cuándo usar:</strong><br/>
+                        • Los cambios de CSS no se ven<br/>
+                        • La API cambia entre localhost y Heroku<br/>
+                        • Errores de autenticación persistentes<br/>
+                        • Después de actualizar la aplicación
+                    </small>
+                </div>
             </Card.Body>
         </Card>
     );

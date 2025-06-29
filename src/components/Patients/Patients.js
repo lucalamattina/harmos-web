@@ -330,7 +330,7 @@ const Patients = () => {
             return 'El teléfono es obligatorio.';
         }
         // Expresión regular para validar números de teléfono (permite espacios, guiones, paréntesis)
-        const phoneRegex = /^[\d\s\-\(\)\+]{7,20}$/;
+        const phoneRegex = /^[\d\s\-()+ ]{7,20}$/;
         if (!phoneRegex.test(value.trim())) {
             return 'Ingrese un número de teléfono válido (7-20 dígitos).';
         }

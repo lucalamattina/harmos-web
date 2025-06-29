@@ -29,30 +29,7 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-// Hook para detectar tamaño de pantalla
-function useWindowSize() {
-    const [windowSize, setWindowSize] = useState({
-        width: undefined,
-        height: undefined,
-    });
-
-    useEffect(() => {
-        function handleResize() {
-            setWindowSize({
-                width: window.innerWidth,
-                height: window.innerHeight,
-            });
-        }
-
-        // Llamar inmediatamente para obtener el tamaño inicial
-        handleResize();
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    return windowSize;
-}
+// Hook para detectar tamaño de pantalla (removido para evitar warning de unused)
 
 // Hook mejorado para detección móvil más confiable
 function useMobileDetection() {
@@ -274,10 +251,7 @@ function Scheduler() {
         setCurrentDay(current => addDays(current, 1));
     };
 
-    const navigateToToday = () => {
-        const today = new Date();
-        setCurrentDay(today);
-    };
+    // navigateToToday removido para evitar warning de unused
 
     // Estados para swipe en móviles
     const [touchStart, setTouchStart] = useState(null);

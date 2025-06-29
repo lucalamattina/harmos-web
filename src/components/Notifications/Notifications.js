@@ -15,11 +15,6 @@ const Notifications = () => {
     const [authorName, setAuthorName] = useState('');
     const [error, setError] = useState('');
 
-    const formatSpecialties = (specialties) => {
-        if (!specialties || specialties.length === 0) return 'Todas las especialidades';
-        return specialties.map(spec => typeof spec === 'object' ? spec.name : spec).join(', ');
-    };
-
     const fetchNotifications = async () => {
         try {
             setError('');

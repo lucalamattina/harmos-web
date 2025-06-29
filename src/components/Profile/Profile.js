@@ -3,7 +3,6 @@ import { Container, Card, Row, Col, Alert, Badge, Table, Spinner } from 'react-b
 import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaGraduationCap, FaUsers } from 'react-icons/fa';
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
-import { formatDate } from '../../utils/dateUtils';
 import './Profile.css';
 
 const Profile = () => {

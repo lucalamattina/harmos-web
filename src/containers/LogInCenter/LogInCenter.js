@@ -9,7 +9,7 @@ import { loginUser } from "../../api/api";
 import { FaEnvelope, FaLock, FaSpinner, FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 
 const Center = () => {
-    const navigate = useNavigate();
+    // const navigate = useNavigate(); // Removido para evitar warning de unused
     const { login } = useContext(AuthContext);
     
     const [formData, setFormData] = useState({

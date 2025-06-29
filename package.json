@@ -21,17 +21,19 @@
     "react-router-dom": "^6.12.0",
     "react-scripts": "^5.0.1",
     "serve": "^14.2.1",
-    "web-vitals": "^2.1.4",
-    "yarn": "^1.22.19"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && npm run copy-sw",
+    "build": "NODE_OPTIONS='--max-old-space-size=1024' react-scripts build && npm run copy-sw",
+    "build:heroku": "NODE_OPTIONS='--max-old-space-size=512' GENERATE_SOURCEMAP=false react-scripts build && npm run copy-sw",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "heroku-postbuild": "yarn install && yarn build",
+    "heroku-postbuild": "npm run build:heroku",
     "copy-sw": "cp public/sw.js build/sw.js",
-    "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'"
+    "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
+    "clear-cache": "rmdir /s /q node_modules\\.cache 2>nul & rmdir /s /q build 2>nul",
+    "start:production": "serve -s build -l 3000"
   },
   "eslintConfig": {
     "extends": [
@@ -53,5 +55,9 @@
   },
   "devDependencies": {
     "source-map": "^0.7.4"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   }
 }
