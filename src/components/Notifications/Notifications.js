@@ -87,14 +87,23 @@ const Notifications = () => {
     return (
         <>
             <Dropdown align="end">
-                <Dropdown.Toggle variant="link" id="notification-dropdown" className="position-relative p-2 notification-toggle">
-                    <FaBell size={20} color="#009A9E" />
+                <Dropdown.Toggle variant="link" id="notification-dropdown" className="nav-icon-button">
+                    <FaBell className="nav-icon" />
                     {unreadCount > 0 && (
                         <Badge 
                             bg="danger" 
                             pill 
-                            className="position-absolute top-0 start-100 translate-middle"
-                            style={{ fontSize: '0.7rem' }}
+                            className="position-absolute"
+                            style={{ 
+                                fontSize: '0.7rem',
+                                top: '-2px',
+                                right: '-2px',
+                                minWidth: '18px',
+                                height: '18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
                         >
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>

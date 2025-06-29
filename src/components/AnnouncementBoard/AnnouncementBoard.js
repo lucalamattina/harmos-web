@@ -415,6 +415,11 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
     return (
         <>
             <Card className="mb-3 announcement-card" onClick={() => setShowFull(true)}>
+                {/* Fecha arriba a la derecha */}
+                <div className="announcement-date-top">
+                    <small>{formatDate(date)}</small>
+                </div>
+                
                 {isAdmin && (
                     <div style={{ position: 'absolute', top: 8, right: 12, zIndex: 2, display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
                         <Button variant="link" size="sm" onClick={onEdit} style={{ color: '#6c757d', padding: 0 }} title="Editar">
@@ -433,14 +438,18 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                     <Card.Footer className="text-muted">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
-                                <small>{formatDate(date)}</small>
-                                <small className="ms-2">Autor: {authorName}</small>
+                                <small>Autor: {authorName}</small>
                             </div>
-                            <div>
+                            <div className="specialties-desktop">
                                 <small>
                                     Especialidades: {formatSpecialties(specialties)}
                                 </small>
                             </div>
+                        </div>
+                        <div className="mobile-author-date">
+                            <small>
+                                <span>{authorName}</span>
+                            </small>
                         </div>
                     </Card.Footer>
                 </Card.Body>

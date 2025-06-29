@@ -2,6 +2,22 @@
     text-align: center;
 }
 
+/* Vista desktop - asegurar que se muestren múltiples días */
+@media (min-width: 769px) {
+    .mobile-navigation {
+        display: none !important;
+    }
+    
+    /* Mostrar todas las columnas en desktop */
+    .rbc-time-view .rbc-time-header .rbc-header {
+        display: block !important;
+    }
+    
+    .rbc-time-view .rbc-time-content .rbc-day-slot {
+        display: block !important;
+    }
+}
+
 .scheduler{
     width: 90%;
     margin: 0 auto;
@@ -148,11 +164,25 @@
     }
 }
 
-/* Mobile responsive */
+/* Mobile responsive - Forzar vista de día en móviles */
 @media (max-width: 768px) {
     .scheduler{
         width: 100%;
         padding-top: 20px;
+    }
+    
+    /* Forzar vista de día en móviles - temporalmente comentado para debug */
+    /* .rbc-time-view .rbc-time-header .rbc-header:not(:first-child) {
+        display: none !important;
+    }
+    
+    .rbc-time-view .rbc-time-content .rbc-day-slot:not(:first-child) {
+        display: none !important;
+    } */
+    
+    /* Asegurar que el encabezado sea visible en móviles */
+    .mobile-navigation {
+        display: flex !important;
     }
     
     .scheduler-title{
@@ -462,5 +492,47 @@
         user-select: none;
         -webkit-user-select: none;
         touch-action: pan-y;
+    }
+}
+
+/* Week indicator styling */
+.scheduler-week-indicator {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border-left: 4px solid #007bff;
+    text-align: center;
+}
+
+/* Mobile navigation improvements */
+.mobile-nav-btn:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed;
+    background-color: transparent !important;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+}
+
+.mobile-nav-btn:disabled:hover {
+    background-color: transparent !important;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+    transform: none !important;
+}
+
+.mobile-nav-btn:disabled svg {
+    opacity: 0.5;
+}
+
+.mobile-nav-btn:disabled .nav-btn-text {
+    opacity: 0.5;
+}
+
+/* Enhanced week indicator for mobile */
+@media (max-width: 768px) {
+    .scheduler-week-indicator {
+        margin: 8px 0;
+        padding: 6px 8px;
+        font-size: 12px;
     }
 }

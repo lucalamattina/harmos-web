@@ -32,8 +32,8 @@ function useDebounce(value, delay) {
 // Hook para detectar tamaño de pantalla
 function useWindowSize() {
     const [windowSize, setWindowSize] = useState({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: undefined,
+        height: undefined,
     });
 
     useEffect(() => {
@@ -44,11 +44,74 @@ function useWindowSize() {
             });
         }
 
+        // Llamar inmediatamente para obtener el tamaño inicial
+        handleResize();
+
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     return windowSize;
+}
+
+// Hook mejorado para detección móvil más confiable
+function useMobileDetection() {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        function checkMobile() {
+            // Combinación de diferentes métodos de detección
+            const windowWidth = window.innerWidth;
+            const screenWidth = window.screen.width;
+            const userAgent = navigator.userAgent;
+            
+            // Detección por ancho de pantalla (usa el menor entre window y screen)
+            const effectiveWidth = Math.min(windowWidth, screenWidth);
+            const isMobileWidth = effectiveWidth <= 768;
+            
+            // Detección por user agent (respaldo)
+            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            
+            // Detección por capacidades touch
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // Es móvil si cumple el ancho Y (tiene touch O es mobile por UA)
+            const mobile = isMobileWidth && (isTouchDevice || isMobileUA);
+            
+            // Debug logging (solo en desarrollo)
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Mobile Detection:', {
+                    windowWidth,
+                    screenWidth,
+                    effectiveWidth,
+                    isMobileWidth,
+                    isMobileUA,
+                    isTouchDevice,
+                    finalResult: mobile
+                });
+            }
+            
+            setIsMobile(mobile);
+        }
+
+        // Llamar inmediatamente
+        checkMobile();
+
+        // Agregar listener para cambios de orientación y resize
+        window.addEventListener('resize', checkMobile);
+        window.addEventListener('orientationchange', checkMobile);
+
+        // Timeout para asegurar que se ejecute después del render inicial
+        const timeoutId = setTimeout(checkMobile, 100);
+
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+            window.removeEventListener('orientationchange', checkMobile);
+            clearTimeout(timeoutId);
+        };
+    }, []);
+
+    return isMobile;
 }
 
 
@@ -87,21 +150,61 @@ function Scheduler() {
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    // Hook para detectar tamaño de pantalla
-    const { width } = useWindowSize();
-    const isMobile = width <= 768;
+    // Hook mejorado para detección móvil
+    const isMobile = useMobileDetection();
+    
+    // Estado para evitar problemas de renderizado antes de la detección inicial
+    const [isInitialized, setIsInitialized] = useState(false);
+    
+    useEffect(() => {
+        // Pequeño delay para asegurar que la detección móvil esté completa
+        const timer = setTimeout(() => {
+            setIsInitialized(true);
+        }, 150);
+        
+        return () => clearTimeout(timer);
+    }, []);
 
     // Estado para filtros colapsibles
     const [filtersExpanded, setFiltersExpanded] = useState(true);
 
-    // Estado para navegación de días
+    // Estado para navegación de días - inicializar con lunes por defecto
     const [currentDay, setCurrentDay] = useState(() => {
         const today = new Date();
         const dayOfWeek = today.getDay();
-        // Calcular el lunes de esta semana
+        // Por defecto arrancar en lunes (se ajustará después con useEffect)
         const monday = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
+        console.log('Setting initial currentDay to monday:', monday.toISOString());
         return monday;
     });
+
+
+
+    // Ajustar currentDay según el dispositivo cuando esté inicializado
+    useEffect(() => {
+        if (!isInitialized) return;
+        
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        
+        let targetDay;
+        
+        if (!isMobile) {
+            // Desktop: siempre lunes de la semana actual
+            targetDay = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
+        } else {
+            // Móvil: mostrar día actual
+            targetDay = today;
+        }
+        
+        console.log('Adjusting currentDay based on device:', {
+            isMobile,
+            today: today.toISOString(),
+            targetDay: targetDay.toISOString()
+        });
+        
+        setCurrentDay(targetDay);
+    }, [isMobile, isInitialized]);
 
     const [seeEvent, setSeeEvent] = useState({
         title: "",
@@ -162,7 +265,7 @@ function Scheduler() {
     const debouncedDoctorFilterTerm = useDebounce(doctorFilterTerm, 500);
     const debouncedPatientFilterTerm = useDebounce(patientFilterTerm, 500);
 
-    // Funciones de navegación
+    // Funciones de navegación - navegación libre
     const navigateToPreviousDay = () => {
         setCurrentDay(current => subDays(current, 1));
     };
@@ -225,6 +328,7 @@ function Scheduler() {
 
     useEffect(() => {
         const fetchSchedules = async () => {
+            console.log('Fetching schedules...');
             
             setError(null);
             try {
@@ -233,7 +337,9 @@ function Scheduler() {
                 if (selectedDoctorFilter) params.doctorId = selectedDoctorFilter.id;
                 if (selectedPatientFilter) params.patientId = selectedPatientFilter.id;
 
+                console.log('Loading schedules with params:', params);
                 const schedules = await getSchedules(params);
+                console.log('Loaded schedules:', schedules.length);
                 const dayMap = {
                     MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
                     FRIDAY: 5, SATURDAY: 6, SUNDAY: 0,
@@ -329,6 +435,16 @@ function Scheduler() {
                 });
 
                 const mappedEvents = (await Promise.all(eventPromises)).filter(Boolean);
+                console.log('Final mapped events for calendar:', mappedEvents.length, mappedEvents);
+                
+                // Debug: mostrar las fechas de los primeros eventos
+                if (mappedEvents.length > 0) {
+                    console.log('Sample event dates:');
+                    mappedEvents.slice(0, 3).forEach((event, i) => {
+                        console.log(`Event ${i + 1}: ${event.title} - Start: ${event.start.toISOString()} - End: ${event.end.toISOString()}`);
+                    });
+                }
+                
                 setAllEvents(mappedEvents);
             } catch (err) {
                 setError('Error al cargar los horarios.');
@@ -348,7 +464,11 @@ function Scheduler() {
     };
 
     const handleSelectSlot = useCallback(({ start, end }) => {
-        if (!isAdmin) return;
+        console.log('handleSelectSlot called:', { start, end, isAdmin });
+        if (!isAdmin) {
+            console.log('User is not admin, cannot create events');
+            return;
+        }
         handleShowNew();
         setNewEvent({
             title: "", start, end,
@@ -592,6 +712,20 @@ function Scheduler() {
         </Container>
     );
 
+    // Mostrar loading mientras se inicializa la detección móvil
+    if (!isInitialized) {
+        return (
+            <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+                <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                    </div>
+                    <p className="mt-2 mb-0">Inicializando vista...</p>
+                </div>
+            </Container>
+        );
+    }
+
     return (
         <Container className="scheduler-container">
             {isAdmin && (
@@ -720,6 +854,7 @@ function Scheduler() {
                             {allEvents.length} turnos encontrados
                         </Badge>
                     </div>
+
                     {/* Controles de navegación personalizados - Solo en móviles */}
                     {isMobile && (
                         <div 
@@ -765,14 +900,29 @@ function Scheduler() {
                         onTouchMove={isMobile ? onTouchMove : undefined}
                         onTouchEnd={isMobile ? onTouchEnd : undefined}
                     >
+                        {console.log('Rendering Calendar with:', { 
+                            allEventsLength: allEvents.length, 
+                            isMobile, 
+                            isAdmin, 
+                            isInitialized,
+                            currentDay: currentDay.toISOString(),
+                            eventsForToday: allEvents.filter(event => {
+                                const eventDate = event.start.toDateString();
+                                const currentDate = currentDay.toDateString();
+                                return eventDate === currentDate;
+                            }).length
+                        })}
                         <Calendar 
-                            views={isMobile ? [Views.DAY] : [Views.WORK_WEEK, Views.DAY]}
+                            key={`calendar-${isMobile ? 'mobile' : 'desktop'}-${isInitialized ? 'ready' : 'loading'}`} // Forzar re-render cuando esté listo
+                            views={isMobile ? [Views.DAY] : [Views.WORK_WEEK]}
                             defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
+                            view={isMobile ? Views.DAY : Views.WORK_WEEK} // Forzar vista específica
                             localizer={localizer}
                             events={allEvents}
                             onSelectEvent={handleSelectEvent}
                             onSelectSlot={handleSelectSlot}
                             selectable={isAdmin}
+                            onView={() => console.log('Calendar view changed')}
                             scrollToTime={scrollToTime}
                             startAccessor="start" 
                             endAccessor="end"
@@ -788,7 +938,7 @@ function Scheduler() {
                             components={components}
                             allDaySlot={false}
                             date={currentDay}
-                            onNavigate={() => {}} // Deshabilitamos la navegación por defecto
+                            onNavigate={(date) => console.log('Calendar navigate to:', date)} // Debug + deshabilitar navegación
                         />
                     </div>
                 </Card.Body>

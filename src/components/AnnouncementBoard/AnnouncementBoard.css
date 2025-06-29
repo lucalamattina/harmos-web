@@ -46,6 +46,51 @@
 .announcement-card small {
     color: #999;
     font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+    .announcement-card small span:first-child {
+        font-weight: 600;
+        color: #4a5568;
+    }
+    
+    .announcement-card .mobile-author-date small {
+        display: block;
+        text-align: left;
+        justify-content: flex-start;
+    }
+
+/* Fecha arriba a la derecha */
+.announcement-date-top {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.announcement-date-top small {
+    color: #718096;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Posición cuando hay botones de admin - a la izquierda de los botones */
+.announcement-card:has(.btn[title="Editar"]) .announcement-date-top {
+    right: 80px; /* A la izquierda de los botones de admin */
+    top: 12px;
+}
+
+/* Layout responsive para footer de anuncios */
+.mobile-author-date {
+    display: none; /* Oculto por defecto (desktop) */
+}
+
+.specialties-desktop {
+    display: block; /* Visible por defecto (desktop) */
 }
 
 .announcement-content {
@@ -133,7 +178,197 @@
     color: #495057;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments - Mejoras principales para móviles */
+@media (max-width: 768px) {
+    .announcement {
+        width: 100%;
+        padding: 0.5rem;
+        padding-top: 20px;
+    }
+    
+    .announcement-title {
+        font-size: 1.8rem;
+        padding: 0 1rem 1rem 1rem;
+        text-align: center;
+        color: #009A9E;
+        font-weight: 600;
+    }
+    
+    .announcements-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0 1rem;
+    }
+    
+    .announcement-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 154, 158, 0.1);
+        border-left: 4px solid #009A9E;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+    }
+    
+    .announcement-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 154, 158, 0.15);
+        border-left-color: #007A7D;
+    }
+    
+    .announcement-card h3 {
+        color: #009A9E;
+        margin-bottom: 1rem;
+        font-size: 1.4rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    
+    .announcement-card p {
+        color: #4a5568;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+        font-size: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .announcement-card small {
+        color: #718096;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .announcement-card small span:first-child {
+        font-weight: 600;
+        color: #4a5568;
+    }
+    
+    .announcement-card small span:last-child {
+        color: #718096;
+        font-size: 0.8rem;
+    }
+    
+    /* Responsive: ocultar especialidades en móvil */
+    .announcement-card .d-flex.justify-content-between {
+        display: none !important; /* Ocultar layout desktop */
+    }
+    
+    .announcement-card .specialties-desktop {
+        display: none !important; /* Ocultar especialidades */
+    }
+    
+    .announcement-card .mobile-author-date {
+        display: block !important; /* Mostrar layout móvil */
+    }
+    
+    /* Fecha arriba a la derecha - estilos móvil */
+    .announcement-date-top {
+        top: 8px;
+        right: 8px;
+    }
+    
+    .announcement-date-top small {
+        font-size: 0.7rem;
+    }
+    
+    /* Ajustar cuando hay botones admin en móvil - a la izquierda */
+    .announcement-card:has(.btn[title="Editar"]) .announcement-date-top {
+        right: 70px;
+        top: 8px;
+    }
+    
+    /* Mejoras para crear/editar anuncios en móvil */
+    .modal-dialog-responsive {
+        width: 95vw;
+        max-width: 95vw;
+        margin: 0.5rem auto;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-body .form-control {
+        font-size: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-body .form-control:focus {
+        border-color: #009A9E;
+        box-shadow: 0 0 0 3px rgba(0, 154, 158, 0.1);
+    }
+    
+    .modal-body .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        background: #f7fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .modal-footer .btn {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        min-height: 44px;
+    }
+    
+    /* Especialidades selector mejorado para móvil */
+    .specialties-select-trigger {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+    
+    .specialties-dropdown {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e2e8f0;
+        margin-top: 0.5rem;
+    }
+    
+    .specialty-item {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        margin: 0.25rem;
+    }
+    
+    .specialty-item:hover {
+        background-color: rgba(0, 154, 158, 0.1);
+    }
+    
+    .specialty-item.selected {
+        background-color: rgba(0, 154, 158, 0.15);
+        color: #009A9E;
+        font-weight: 500;
+    }
+}
+
+/* Responsive adjustments for small heights */
 @media screen and (max-height: 600px) {
     .announcement {
         padding-top: 10px;
@@ -169,6 +404,123 @@
 
     .announcement-card {
         padding: 25px;
+    }
+}
+
+/* Mejoras adicionales para móviles muy pequeños */
+@media (max-width: 480px) {
+    .announcement-title {
+        font-size: 1.6rem;
+        padding: 0 0.5rem 0.8rem 0.5rem;
+    }
+    
+    .announcements-grid {
+        padding: 0 0.5rem;
+    }
+    
+    .announcement-card {
+        padding: 1.2rem;
+        border-radius: 12px;
+    }
+    
+    .announcement-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .announcement-card p {
+        font-size: 0.95rem;
+        margin-bottom: 0.8rem;
+        -webkit-line-clamp: 2;
+    }
+    
+    .announcement-card small {
+        font-size: 0.8rem;
+        padding-top: 0.5rem;
+    }
+    
+    .announcement-card small span:first-child {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.8rem;
+    }
+    
+    .announcement-card .mobile-author-date small {
+        display: block;
+        text-align: left;
+        justify-content: flex-start;
+        font-size: 0.75rem;
+    }
+    
+    /* Responsive: mantener ocultas las especialidades en móviles pequeños */
+    .announcement-card .d-flex.justify-content-between {
+        display: none !important;
+    }
+    
+    .announcement-card .specialties-desktop {
+        display: none !important;
+    }
+    
+    .announcement-card .mobile-author-date {
+        display: block !important;
+    }
+    
+    /* Fecha arriba a la derecha - estilos móvil pequeño */
+    .announcement-date-top {
+        top: 6px;
+        right: 6px;
+    }
+    
+    .announcement-date-top small {
+        font-size: 0.65rem;
+    }
+    
+    /* Ajustar cuando hay botones admin en móvil pequeño - a la izquierda */
+    .announcement-card:has(.btn[title="Editar"]) .announcement-date-top {
+        right: 60px;
+        top: 6px;
+    }
+    
+    /* Modales más pequeños en móviles pequeños */
+    .modal-dialog-responsive {
+        width: 98vw;
+        max-width: 98vw;
+        margin: 0.25rem auto;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-body .form-control {
+        padding: 0.6rem;
+        font-size: 0.95rem;
+    }
+    
+    .modal-body .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .modal-footer {
+        padding: 0.8rem 1rem;
+    }
+    
+    .modal-footer .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+        min-height: 40px;
+    }
+    
+    .specialties-select-trigger {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.95rem;
+        min-height: 44px;
+    }
+    
+    .specialty-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.95rem;
     }
 }
 
