@@ -26,7 +26,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "NODE_OPTIONS='--max-old-space-size=1024' react-scripts build && npm run copy-sw",
-    "build:heroku": "NODE_OPTIONS='--max-old-space-size=460 --optimize-for-size' GENERATE_SOURCEMAP=false CI=false react-scripts build && npm run copy-sw",
+    "build:heroku": "NODE_OPTIONS='--max-old-space-size=400' GENERATE_SOURCEMAP=false CI=false react-scripts build && npm run copy-sw",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm run build:heroku",
