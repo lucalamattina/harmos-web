@@ -18,7 +18,7 @@ const Patients = () => {
     const [doctors, setDoctors] = useState([]);
 
     // Estado para filtros colapsibles
-    const [filtersExpanded, setFiltersExpanded] = useState(false);
+    const [filtersExpanded, setFiltersExpanded] = useState(true);
 
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');

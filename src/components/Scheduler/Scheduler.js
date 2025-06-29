@@ -92,7 +92,7 @@ function Scheduler() {
     const isMobile = width <= 768;
 
     // Estado para filtros colapsibles
-    const [filtersExpanded, setFiltersExpanded] = useState(false);
+    const [filtersExpanded, setFiltersExpanded] = useState(true);
 
     // Estado para navegación de días
     const [currentDay, setCurrentDay] = useState(() => {

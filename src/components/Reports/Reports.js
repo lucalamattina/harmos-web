@@ -83,7 +83,7 @@ const Reports = () => {
     const [isFilterChange, setIsFilterChange] = useState(false);
 
     // Estado para filtros colapsibles
-    const [filtersExpanded, setFiltersExpanded] = useState(false);
+    const [filtersExpanded, setFiltersExpanded] = useState(true);
 
     const fetchReports = useCallback(async (page = 0) => {
         try {
