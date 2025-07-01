@@ -15,15 +15,20 @@ import {
     Pagination,
     Collapse
 } from "react-bootstrap";
-import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
+import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
 import './Reports.css';
+import '../mobile-fix.css';
 
 const Reports = () => {
     const { isAdmin, currentUser: user } = useContext(AuthContext);
+    const isMobile = useMobileDetection();
+    
+
     
     // Estados principales
     const [reports, setReports] = useState([]);
@@ -721,9 +726,9 @@ const Reports = () => {
                                         <td>{report.doctor?.name || 'N/A'}</td>
                                         <td className="date-text">{formatDate(report.date)}</td>
                                         <td>
-                                            <div className="report-actions">
+                                            <div className={`report-actions ${isMobile ? 'mobile-actions' : ''}`}>
                                                 <Button
-                                                    variant="outline-primary"
+                                                    variant="outline-info"
                                                     size="sm"
                                                     onClick={() => openViewModal(report.id)}
                                                     title="Ver detalles"
@@ -782,7 +787,7 @@ const Reports = () => {
                     </Table>
                 </Card.Body>
                 
-                {/* Controles de paginación */}
+                {/* Controles de paginación CUSTOM con flechas para móvil */}
                 {totalPages > 1 && (
                     <Card.Footer>
                         <div className="d-flex justify-content-between align-items-center">
@@ -791,51 +796,35 @@ const Reports = () => {
                                     Mostrando {reports.length} de {totalElements} informes
                                 </span>
                             </div>
-                            <Pagination className="mb-0">
-                                <Pagination.First 
-                                    onClick={() => handlePageChange(0)}
+                            
+                            <div className={`d-flex align-items-center gap-2 ${isMobile ? 'mobile-pagination' : ''}`}>
+                                {/* Botón Anterior */}
+                                <Button
+                                    variant="outline-primary"
+                                    size={isMobile ? "sm" : "md"}
                                     disabled={!hasPrevious}
-                                />
-                                <Pagination.Prev 
                                     onClick={handlePreviousPage}
-                                    disabled={!hasPrevious}
-                                />
-                                
-                                {/* Mostrar páginas alrededor de la actual */}
-                                {[...Array(totalPages)].map((_, index) => {
-                                    // Mostrar solo páginas cercanas a la actual
-                                    if (
-                                        index === 0 || // Primera página
-                                        index === totalPages - 1 || // Última página
-                                        Math.abs(index - currentPage) <= 2 // Páginas cercanas
-                                    ) {
-                                        return (
-                                            <Pagination.Item
-                                                key={index}
-                                                active={index === currentPage}
-                                                onClick={() => handlePageChange(index)}
-                                            >
-                                                {index + 1}
-                                            </Pagination.Item>
-                                        );
-                                    } else if (
-                                        index === currentPage - 3 || 
-                                        index === currentPage + 3
-                                    ) {
-                                        return <Pagination.Ellipsis key={index} disabled />;
-                                    }
-                                    return null;
-                                })}
-                                
-                                <Pagination.Next 
+                                    style={{ minWidth: isMobile ? '40px' : 'auto' }}
+                                >
+                                    {isMobile ? <FaChevronLeft /> : 'Anterior'}
+                                </Button>
+
+                                {/* Indicador de página */}
+                                <span className="text-muted px-2" style={{ fontSize: isMobile ? '0.8rem' : '1rem' }}>
+                                    {currentPage + 1} de {totalPages}
+                                </span>
+
+                                {/* Botón Siguiente */}
+                                <Button
+                                    variant="outline-primary"
+                                    size={isMobile ? "sm" : "md"}
+                                    disabled={!hasNext}
                                     onClick={handleNextPage}
-                                    disabled={!hasNext}
-                                />
-                                <Pagination.Last 
-                                    onClick={() => handlePageChange(totalPages - 1)}
-                                    disabled={!hasNext}
-                                />
-                            </Pagination>
+                                    style={{ minWidth: isMobile ? '40px' : 'auto' }}
+                                >
+                                    {isMobile ? <FaChevronRight /> : 'Siguiente'}
+                                </Button>
+                            </div>
                         </div>
                     </Card.Footer>
                 )}

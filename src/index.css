@@ -316,3 +316,131 @@ html {
     background: white !important;
   }
 }
+
+/* Estilos globales para paginación custom en móvil */
+@media (max-width: 768px) {
+  /* Estructura específica de paginación custom */
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    min-width: 40px;
+    height: 36px;
+    margin: 0 0.1rem;
+  }
+  
+  /* Botones Previous/Next con iconos */
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn-outline-secondary {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.9rem !important;
+    min-width: 40px;
+  }
+  
+  /* Espaciado en paginación custom */
+  .d-flex.justify-content-center.align-items-center.my-4 {
+    gap: 0.4rem !important;
+  }
+  
+  .d-flex.justify-content-center.align-items-center .mx-2 {
+    margin-left: 0.3rem !important;
+    margin-right: 0.3rem !important;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    min-width: 36px;
+    height: 32px;
+  }
+  
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn-outline-secondary {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    min-width: 36px;
+  }
+  
+  .d-flex.justify-content-center.align-items-center .mx-2 {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn {
+    padding: 0.25rem 0.4rem !important;
+    font-size: 0.7rem !important;
+    min-width: 32px;
+    height: 28px;
+  }
+  
+  .d-flex.justify-content-center.align-items-center.my-4.gap-2 .btn-outline-secondary {
+    padding: 0.25rem 0.4rem !important;
+    font-size: 0.75rem !important;
+    min-width: 32px;
+  }
+  
+  .d-flex.justify-content-center.align-items-center .mx-2 {
+    font-size: 0.7rem;
+  }
+}
+
+/* Asegurar que los iconos dentro de botones se vean correctamente */
+@media (max-width: 768px) {
+  .btn svg {
+    vertical-align: middle;
+    display: inline-block;
+  }
+  
+  /* Forzar que los estilos de paginación se apliquen */
+  .d-flex.justify-content-center.align-items-center.my-4 .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* Estilos específicos para paginación móvil con clase directa */
+.mobile-pagination .btn {
+  padding: 0.4rem 0.6rem !important;
+  font-size: 0.8rem !important;
+  min-width: 40px !important;
+  height: 36px !important;
+  margin: 0 0.1rem !important;
+}
+
+.mobile-pagination .btn-outline-secondary {
+  padding: 0.4rem 0.6rem !important;
+  font-size: 0.9rem !important;
+  min-width: 40px !important;
+}
+
+@media (max-width: 576px) {
+  .mobile-pagination .btn {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    min-width: 36px !important;
+    height: 32px !important;
+  }
+  
+  .mobile-pagination .btn-outline-secondary {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    min-width: 36px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-pagination .btn {
+    padding: 0.25rem 0.4rem !important;
+    font-size: 0.7rem !important;
+    min-width: 32px !important;
+    height: 28px !important;
+  }
+  
+  .mobile-pagination .btn-outline-secondary {
+    padding: 0.25rem 0.4rem !important;
+    font-size: 0.75rem !important;
+    min-width: 32px !important;
+  }
+}

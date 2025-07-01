@@ -4,9 +4,11 @@ import { Button, Form, Modal, Container, Card, InputGroup, Spinner, Alert } from
 import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
+import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle } from 'react-icons/fa';
 import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
+import '../mobile-fix.css';
 
 // Componente para popup de imagen
 const ImageModal = ({ show, onHide, image, imageIndex, totalImages, onPrevious, onNext }) => {
@@ -851,6 +853,7 @@ export const AnnouncementModal = ({
 
 const AnnouncementBoard = () => {
     const { isAdmin, currentUser } = useContext(AuthContext);
+    const isMobile = useMobileDetection();
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -1388,13 +1391,13 @@ const AnnouncementBoard = () => {
 
             {/* Controles de paginación */}
             {totalPages > 1 && (
-                <div className="d-flex justify-content-center align-items-center my-4 gap-2">
+                <div className={`d-flex justify-content-center align-items-center my-4 gap-2 ${isMobile ? 'mobile-pagination' : ''}`}>
                     <Button 
                         variant="outline-secondary" 
                         onClick={() => goToPage(currentPage - 1)} 
                         disabled={currentPage === 1}
                     >
-                        Anterior
+                        {isMobile ? <FaChevronLeft /> : 'Anterior'}
                     </Button>
                     
                     {/* Primera página */}
@@ -1465,7 +1468,7 @@ const AnnouncementBoard = () => {
                         onClick={() => goToPage(currentPage + 1)} 
                         disabled={currentPage === totalPages}
                     >
-                        Siguiente
+                        {isMobile ? <FaChevronRight /> : 'Siguiente'}
                     </Button>
                 </div>
             )}

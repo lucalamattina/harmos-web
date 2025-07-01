@@ -14,6 +14,7 @@ import { getSchedules, getUserById, getLocationById, getLocations, getUsers, get
 import { es } from 'date-fns/locale';
 import { AuthContext } from "../../context/AuthContext";
 import { FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useMobileDetection } from '../../hooks/useMobileDetection';
 
 // Custom hook for debouncing a value
 function useDebounce(value, delay) {
@@ -29,67 +30,7 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-// Hook para detectar tamaño de pantalla (removido para evitar warning de unused)
-
-// Hook mejorado para detección móvil más confiable
-function useMobileDetection() {
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        function checkMobile() {
-            // Combinación de diferentes métodos de detección
-            const windowWidth = window.innerWidth;
-            const screenWidth = window.screen.width;
-            const userAgent = navigator.userAgent;
-            
-            // Detección por ancho de pantalla (usa el menor entre window y screen)
-            const effectiveWidth = Math.min(windowWidth, screenWidth);
-            const isMobileWidth = effectiveWidth <= 768;
-            
-            // Detección por user agent (respaldo)
-            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-            
-            // Detección por capacidades touch
-            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            
-            // Es móvil si cumple el ancho Y (tiene touch O es mobile por UA)
-            const mobile = isMobileWidth && (isTouchDevice || isMobileUA);
-            
-            // Debug logging (solo en desarrollo)
-            if (process.env.NODE_ENV === 'development') {
-                console.log('Mobile Detection:', {
-                    windowWidth,
-                    screenWidth,
-                    effectiveWidth,
-                    isMobileWidth,
-                    isMobileUA,
-                    isTouchDevice,
-                    finalResult: mobile
-                });
-            }
-            
-            setIsMobile(mobile);
-        }
-
-        // Llamar inmediatamente
-        checkMobile();
-
-        // Agregar listener para cambios de orientación y resize
-        window.addEventListener('resize', checkMobile);
-        window.addEventListener('orientationchange', checkMobile);
-
-        // Timeout para asegurar que se ejecute después del render inicial
-        const timeoutId = setTimeout(checkMobile, 100);
-
-        return () => {
-            window.removeEventListener('resize', checkMobile);
-            window.removeEventListener('orientationchange', checkMobile);
-            clearTimeout(timeoutId);
-        };
-    }, []);
-
-    return isMobile;
-}
+// Hook removido - ahora usa el hook global
 
 
 const locales = {
@@ -127,7 +68,7 @@ function Scheduler() {
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    // Hook mejorado para detección móvil
+    // Hook para detección móvil
     const isMobile = useMobileDetection();
     
     // Estado para evitar problemas de renderizado antes de la detección inicial
@@ -151,7 +92,6 @@ function Scheduler() {
         const dayOfWeek = today.getDay();
         // Por defecto arrancar en lunes (se ajustará después con useEffect)
         const monday = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
-        console.log('Setting initial currentDay to monday:', monday.toISOString());
         return monday;
     });
 
@@ -173,12 +113,6 @@ function Scheduler() {
             // Móvil: mostrar día actual
             targetDay = today;
         }
-        
-        console.log('Adjusting currentDay based on device:', {
-            isMobile,
-            today: today.toISOString(),
-            targetDay: targetDay.toISOString()
-        });
         
         setCurrentDay(targetDay);
     }, [isMobile, isInitialized]);
@@ -707,6 +641,8 @@ function Scheduler() {
                     <strong>Vista de Administrador:</strong> Como administrador, tiene permisos para ver todos los horarios, crear nuevos y eliminarlos.
                 </Alert>
             )}
+            
+
             {/* Filters Card */}
             <Card className="mb-4">
                 <Card.Body>

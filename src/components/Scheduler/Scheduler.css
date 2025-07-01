@@ -121,8 +121,10 @@
     border-top: 1px solid #f8f9fa;
 }
 
+/* Eliminar marcado del día actual - versión simple */
 .rbc-today {
-    background-color: rgba(0, 154, 158, 0.05);
+    background-color: inherit !important;
+    background: inherit !important;
 }
 
 .rbc-event {
@@ -536,3 +538,5 @@
         font-size: 12px;
     }
 }
+
+

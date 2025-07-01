@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 
@@ -16,13 +16,12 @@ export const AuthProvider = ({ children }) => {
         return user.roles.includes('ADMIN') || user.roles.includes('ADMINISTRATOR');
     };
 
-    const fetchCurrentUser = async () => {
+    const fetchCurrentUser = useCallback(async () => {
         try {
             const response = await api.get('/api/users/me');
             const userData = response.data;
             setCurrentUser(userData);
             setIsAdmin(checkUserRoles(userData));
-
 
             return userData;
         } catch (error) {
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }) => {
             setCurrentUser(null);
             throw error;
         }
-    };
+    }, []);
 
     useEffect(() => {
         const initializeAuth = async () => {
@@ -104,6 +103,8 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated, 
             isAdmin, 
             currentUser,
+            setCurrentUser,
+            setIsAdmin,
             login, 
             logout 
         }}>

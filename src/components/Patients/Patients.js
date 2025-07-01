@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse } from "react-bootstrap";
-import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
+import { useMobileDetection } from '../../hooks/useMobileDetection';
 import './Patients.css';
+import '../mobile-fix.css';
 
 const Patients = () => {
     const { isAdmin } = useContext(AuthContext);
+    const isMobile = useMobileDetection();
+    
+    // Debug log
+    console.log('Patients - isMobile:', isMobile, 'window.innerWidth:', window.innerWidth);
     const [patients, setPatients] = useState([]);
     const [filteredPatients, setFilteredPatients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -602,13 +608,13 @@ const Patients = () => {
 
             {/* Controles de paginación */}
             {totalPages > 1 && (
-                <div className="d-flex justify-content-center align-items-center my-4 gap-2">
+                <div className={`d-flex justify-content-center align-items-center my-4 gap-2 ${isMobile ? 'mobile-pagination' : ''}`}>
                     <Button 
                         variant="outline-secondary" 
                         onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                         disabled={currentPage === 0}
                     >
-                        Anterior
+                        {isMobile ? <FaChevronLeft /> : 'Anterior'}
                     </Button>
                     
                     {/* Primera página */}
@@ -661,7 +667,7 @@ const Patients = () => {
                         onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
                         disabled={currentPage === totalPages - 1}
                     >
-                        Siguiente
+                        {isMobile ? <FaChevronRight /> : 'Siguiente'}
                     </Button>
                 </div>
             )}

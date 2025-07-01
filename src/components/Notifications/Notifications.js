@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dropdown, Badge, Button, Modal, Alert } from 'react-bootstrap';
 import { FaBell } from 'react-icons/fa';
 import { getNotifications, markNotificationAsRead } from '../../api/notifications';
 import api from '../../api/api';
 import { AnnouncementModal } from '../AnnouncementBoard/AnnouncementBoard';
 import { formatNotificationDate } from '../../utils/dateUtils';
+import { usePeriodicSync } from '../../hooks/usePeriodicSync';
 import './Notifications.css';
 
 const Notifications = () => {
@@ -15,12 +16,19 @@ const Notifications = () => {
     const [authorName, setAuthorName] = useState('');
     const [error, setError] = useState('');
 
+    const handleNotificationsUpdate = useCallback((data) => {
+        if (data) {
+            setNotifications(data);
+            setUnreadCount(data.filter(notif => !notif.read).length);
+            setError(''); // Limpiar error si la consulta fue exitosa
+        }
+    }, []);
+
     const fetchNotifications = async () => {
         try {
             setError('');
             const data = await getNotifications();
-            setNotifications(data);
-            setUnreadCount(data.filter(notif => !notif.read).length);
+            handleNotificationsUpdate(data);
         } catch (error) {
             console.error('Error fetching notifications:', error);
             if (error.response?.status === 401) {
@@ -68,15 +76,16 @@ const Notifications = () => {
         }
     };
 
+    // Usar el hook de sincronización periódica para notificaciones y estado del usuario
+    const { syncNow } = usePeriodicSync(
+        handleNotificationsUpdate, // Callback para actualizar notificaciones
+        null, // No necesitamos callback personalizado para usuario (se maneja automáticamente en AuthContext)
+        120000 // 2 minutos
+    );
+
     useEffect(() => {
-        // Initial fetch
+        // Initial fetch solo si no se está sincronizando ya
         fetchNotifications();
-
-        // // Set up polling every 2 minutes
-        // const pollInterval = setInterval(fetchNotifications, 120000);
-
-        // // Cleanup interval on component unmount
-        // return () => clearInterval(pollInterval);
     }, []);
 
     return (
@@ -106,20 +115,8 @@ const Notifications = () => {
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu className="notification-dropdown">
-                    <Dropdown.Header className="d-flex justify-content-between align-items-center">
+                    <Dropdown.Header>
                         <span>Notificaciones</span>
-                        <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                // Aquí podrías agregar la lógica para probar notificaciones
-                                alert('Función de probar notificaciones');
-                            }}
-                            style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
-                        >
-                            Probar
-                        </Button>
                     </Dropdown.Header>
                     {error && (
                         <div className="px-3 py-2">
