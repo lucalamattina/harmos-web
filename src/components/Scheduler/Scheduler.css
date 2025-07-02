@@ -658,7 +658,7 @@
     }
 }
 
-/* **FORZAR VISIBILIDAD DE EVENTOS EN MOBILE - AGRESIVO** */
+/* **SOLUCIÓN DEFINITIVA - EVENTOS COLAPSADOS** */
 @media (max-width: 768px) {
     .rbc-event,
     .rbc-event-content,
@@ -676,10 +676,10 @@
         min-height: 32px !important;
         max-height: none !important;
         width: calc(100% - 4px) !important;
-        height: auto !important;
+        height: 32px !important;
         box-shadow: 0 3px 6px rgba(0,0,0,0.3) !important;
         z-index: 1000 !important;
-        position: relative !important;
+        position: absolute !important;
         align-items: center !important;
         justify-content: center !important;
         text-align: center !important;
@@ -690,6 +690,11 @@
         transform: none !important;
         clip: none !important;
         clip-path: none !important;
+        /* **FORZAR POSICIONAMIENTO** */
+        top: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
     }
 
     /* **CONTENIDO DE EVENTOS FORZADO** */
@@ -724,16 +729,22 @@
         display: flex !important;
         visibility: visible !important;
         opacity: 1 !important;
-        position: relative !important;
+        position: absolute !important;
         z-index: 100 !important;
         background: #007bff !important;
-        border: 1px solid #0056b3 !important;
-        border-radius: 3px !important;
-        font-size: 0.7rem !important;
+        border: 2px solid #0056b3 !important;
+        border-radius: 4px !important;
+        font-size: 0.75rem !important;
         line-height: 1.2 !important;
-        min-height: 28px !important;
-        margin: 1px !important;
-        padding: 3px 4px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        margin: 2px !important;
+        padding: 4px 6px !important;
+        /* **FORZAR POSICIÓN VISIBLE** */
+        top: 2px !important;
+        left: 2px !important;
+        right: 2px !important;
+        width: calc(100% - 8px) !important;
     }
 
     /* **PREVENIR CUALQUIER OCULTAMIENTO** */
@@ -744,13 +755,36 @@
         -webkit-backface-visibility: visible !important;
     }
 
-    /* **SLOTS CONTENEDORES** */
+    /* **SLOTS CONTENEDORES - FORZAR ALTURA** */
     .rbc-day-slot,
     .rbc-time-slot,
     .rbc-timeslot-group {
         position: relative !important;
         overflow: visible !important;
         z-index: 1 !important;
+        min-height: 40px !important;
+        height: auto !important;
+    }
+
+    /* **FORZAR EVENTOS EN TODAS LAS POSICIONES** */
+    .rbc-time-content .rbc-day-slot,
+    .rbc-time-content .rbc-time-slot {
+        position: relative !important;
+        min-height: 40px !important;
+        overflow: visible !important;
+    }
+
+    /* **PREVENIR COLAPSO DE SLOTS** */
+    .rbc-timeslot-group {
+        min-height: 60px !important;
+        position: relative !important;
+    }
+
+    /* **ASEGURAR VISIBILIDAD EN TODOS LOS HORARIOS** */
+    .rbc-time-content {
+        position: relative !important;
+        overflow-y: auto !important;
+        overflow-x: visible !important;
     }
 }
 
