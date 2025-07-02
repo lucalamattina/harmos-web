@@ -1313,18 +1313,53 @@ function Scheduler() {
                     )}
                 </Card.Header>
                 <Card.Body>
+                    {/* **DEBUG: INFORMACIÓN PRE-RENDER DEL CALENDARIO** */}
+                    {isMobile && (
+                        <Card className="mb-2 border-warning">
+                            <Card.Body className="py-2">
+                                <small className="fw-bold d-block">🐛 Debug Calendario</small>
+                                <div className="d-flex gap-2 flex-wrap">
+                                    <span className="badge bg-secondary">Eventos: {allEvents.length}</span>
+                                    <span className="badge bg-secondary">Vista: {isMobile ? 'DAY' : 'WORK_WEEK'}</span>
+                                    <span className="badge bg-secondary">Fecha: {format(currentDay, 'dd/MM')}</span>
+                                    <span className={`badge ${isInitialized ? 'bg-success' : 'bg-warning'}`}>
+                                        Init: {isInitialized ? 'OK' : 'Loading'}
+                                    </span>
+                                </div>
+                                {allEvents.length > 0 && (
+                                    <div className="mt-1">
+                                        <small className="d-block">Primer evento: {format(allEvents[0].start, 'HH:mm dd/MM')}</small>
+                                        <small className="d-block">Último evento: {format(allEvents[allEvents.length-1].start, 'HH:mm dd/MM')}</small>
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    )}
+
                     <div 
                         className="Scheduler"
                         onTouchStart={isMobile ? onTouchStart : undefined}
                         onTouchMove={isMobile ? onTouchMove : undefined}
                         onTouchEnd={isMobile ? onTouchEnd : undefined}
+                        style={{
+                            minHeight: isMobile ? '500px' : '600px',
+                            border: isMobile ? '2px solid #007bff' : 'none', // Debug border en mobile
+                            backgroundColor: isMobile ? '#f8f9fa' : 'transparent' // Debug background en mobile
+                        }}
                     >
-                                                    {/* Rendering Calendar */}
+                        {console.log('🗓️ RENDERIZANDO CALENDARIO:', {
+                            isMobile,
+                            isInitialized,
+                            allEventsCount: allEvents.length,
+                            currentDay: format(currentDay, 'yyyy-MM-dd'),
+                            view: isMobile ? 'DAY' : 'WORK_WEEK'
+                        })}
+                        
                         <Calendar 
-                            key={`calendar-${isMobile ? 'mobile' : 'desktop'}-${isInitialized ? 'ready' : 'loading'}`} // Forzar re-render cuando esté listo
+                            key={`calendar-${isMobile ? 'mobile' : 'desktop'}-${isInitialized ? 'ready' : 'loading'}-${allEvents.length}`} // Incluir count de eventos
                             views={isMobile ? [Views.DAY] : [Views.WORK_WEEK]}
                             defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
-                            view={isMobile ? Views.DAY : Views.WORK_WEEK} // Forzar vista específica
+                            view={isMobile ? Views.DAY : Views.WORK_WEEK}
                             localizer={localizer}
                             events={allEvents}
                             onSelectEvent={handleSelectEvent}
@@ -1334,7 +1369,12 @@ function Scheduler() {
                             scrollToTime={scrollToTime}
                             startAccessor="start" 
                             endAccessor="end"
-                            style={{ height: 600, margin: "0" }}
+                            style={{ 
+                                height: isMobile ? 500 : 600, 
+                                margin: "0",
+                                minHeight: isMobile ? '500px' : '600px',
+                                backgroundColor: 'white' // Asegurar fondo blanco
+                            }}
                             step={15}
                             timeslots={4}
                             min={new Date(2016, 10, 1, 8, 0, 0)}
@@ -1346,9 +1386,100 @@ function Scheduler() {
                             components={components}
                             allDaySlot={false}
                             date={currentDay}
-                            onNavigate={(date) => {}} // Deshabilitar navegación
+                            onNavigate={(date) => {}}
                         />
                     </div>
+                    
+                    {/* **DEBUG: INFORMACIÓN POST-RENDER** */}
+                    {isMobile && (
+                        <Card className="mt-2 border-info">
+                            <Card.Body className="py-2">
+                                <small className="fw-bold d-block">📊 Post-Render Info</small>
+                                <small className="d-block">DOM Elements: {document.querySelectorAll('.rbc-calendar').length} calendarios</small>
+                                <small className="d-block">Eventos renderizados: {document.querySelectorAll('.rbc-event').length} elementos</small>
+                                <small className="d-block">Altura contenedor: {document.querySelector('.Scheduler')?.offsetHeight || 'N/A'}px</small>
+                            </Card.Body>
+                        </Card>
+                    )}
+
+                    {/* **VISTA DE EMERGENCIA - LISTA DE EVENTOS SI EL CALENDARIO NO SE MUESTRA** */}
+                    {isMobile && allEvents.length > 0 && (
+                        <Card className="mt-3 border-success">
+                            <Card.Header className="bg-success text-white">
+                                <h6 className="mb-0">📅 Vista Lista - Eventos de {format(currentDay, 'EEEE dd/MM/yyyy', { locale: es })}</h6>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                <ListGroup variant="flush">
+                                    {allEvents
+                                        .filter(event => {
+                                            const eventDate = format(event.start, 'yyyy-MM-dd');
+                                            const currentDate = format(currentDay, 'yyyy-MM-dd');
+                                            return eventDate === currentDate;
+                                        })
+                                        .sort((a, b) => a.start - b.start)
+                                        .map((event, index) => (
+                                            <ListGroup.Item 
+                                                key={index} 
+                                                action
+                                                onClick={() => handleSelectEvent(event)}
+                                                className="d-flex justify-content-between align-items-center py-3"
+                                            >
+                                                <div>
+                                                    <div className="fw-bold text-primary">{event.title}</div>
+                                                    <small className="text-muted">Paciente: {event.patientName}</small>
+                                                    <br />
+                                                    <small className="text-muted">Ubicación: {event.location}</small>
+                                                </div>
+                                                <div className="text-end">
+                                                    <div className="badge bg-primary">{format(event.start, 'HH:mm')}</div>
+                                                    <div className="badge bg-secondary mt-1">{format(event.end, 'HH:mm')}</div>
+                                                </div>
+                                            </ListGroup.Item>
+                                        ))
+                                    }
+                                    {allEvents.filter(event => {
+                                        const eventDate = format(event.start, 'yyyy-MM-dd');
+                                        const currentDate = format(currentDay, 'yyyy-MM-dd');
+                                        return eventDate === currentDate;
+                                    }).length === 0 && (
+                                        <ListGroup.Item className="text-center py-4 text-muted">
+                                            <div className="mb-2">📅</div>
+                                            <div>No hay eventos programados para hoy</div>
+                                            <small>({format(currentDay, 'EEEE dd/MM/yyyy', { locale: es })})</small>
+                                        </ListGroup.Item>
+                                    )}
+                                </ListGroup>
+                            </Card.Body>
+                        </Card>
+                    )}
+
+                    {/* **BOTÓN DE DIAGNÓSTICO RÁPIDO** */}
+                    {isMobile && (
+                        <div className="mt-3 text-center">
+                            <Button 
+                                variant="outline-info"
+                                size="sm"
+                                onClick={() => {
+                                    const calendarElements = document.querySelectorAll('.rbc-calendar');
+                                    const eventElements = document.querySelectorAll('.rbc-event');
+                                    const schedulerElement = document.querySelector('.Scheduler');
+                                    
+                                    alert(`📊 DIAGNÓSTICO RÁPIDO:
+• Calendarios DOM: ${calendarElements.length}
+• Eventos DOM: ${eventElements.length}  
+• Eventos Datos: ${allEvents.length}
+• Altura Scheduler: ${schedulerElement?.offsetHeight || 'N/A'}px
+• Vista: ${isMobile ? 'DAY' : 'WORK_WEEK'}
+• Inicializado: ${isInitialized}
+• Fecha: ${format(currentDay, 'dd/MM/yyyy')}
+
+${calendarElements.length === 0 ? '⚠️ PROBLEMA: No se encuentra calendario en DOM' : '✅ Calendario presente en DOM'}`);
+                                }}
+                            >
+                                🔍 Diagnóstico Rápido
+                            </Button>
+                        </div>
+                    )}
                 </Card.Body>
             </Card>
 

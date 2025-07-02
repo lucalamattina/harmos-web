@@ -173,14 +173,51 @@
         padding-top: 20px;
     }
     
-    /* Forzar vista de día en móviles - temporalmente comentado para debug */
-    /* .rbc-time-view .rbc-time-header .rbc-header:not(:first-child) {
+    /* **FORZAR DISPLAY DEL CALENDARIO EN MOBILE** */
+    .Scheduler {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 500px !important;
+        overflow: visible !important;
+    }
+    
+    .rbc-calendar {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        min-height: 450px !important;
+    }
+    
+    .rbc-time-view {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 450px !important;
+    }
+    
+    .rbc-time-content {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-height: 400px !important;
+    }
+    
+    .rbc-time-header {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Forzar vista de día en móviles PERO MANTENER VISIBLE */
+    .rbc-time-view .rbc-time-header .rbc-header:not(:first-child) {
         display: none !important;
     }
     
     .rbc-time-view .rbc-time-content .rbc-day-slot:not(:first-child) {
         display: none !important;
-    } */
+    }
     
     /* Asegurar que el encabezado sea visible en móviles */
     .mobile-navigation {
@@ -536,6 +573,66 @@
         margin: 8px 0;
         padding: 6px 8px;
         font-size: 12px;
+    }
+}
+
+/* **ESTILOS ESPECÍFICOS PARA IPHONE/SAFARI** */
+@supports (-webkit-touch-callout: none) {
+    /* Específico para iOS/Safari */
+    .Scheduler {
+        -webkit-transform: translateZ(0) !important;
+        transform: translateZ(0) !important;
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
+    }
+    
+    .rbc-calendar {
+        -webkit-transform: translateZ(0) !important;
+        transform: translateZ(0) !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    .rbc-time-view {
+        -webkit-transform: translateZ(0) !important;
+        transform: translateZ(0) !important;
+    }
+}
+
+/* **DEBUGGING TEMPORAL - BORDES VISIBLES EN MOBILE** */
+@media (max-width: 768px) {
+    .Scheduler {
+        border: 3px solid red !important;
+        background-color: #fffacd !important;
+    }
+    
+    .rbc-calendar {
+        border: 2px solid blue !important;
+        background-color: #f0f8ff !important;
+    }
+    
+    .rbc-time-view {
+        border: 2px solid green !important;
+        background-color: #f0fff0 !important;
+    }
+    
+    .rbc-time-content {
+        border: 1px solid orange !important;
+        background-color: #fff8dc !important;
+    }
+}
+
+/* **FORZAR VISIBILIDAD ABSOLUTA** */
+@media (max-width: 768px) {
+    .Scheduler,
+    .rbc-calendar,
+    .rbc-time-view,
+    .rbc-time-content,
+    .rbc-time-header {
+        position: relative !important;
+        z-index: 1 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 }
 
