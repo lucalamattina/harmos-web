@@ -9,12 +9,20 @@ const useCache = () => {
     });
 
     useEffect(() => {
-        if (cacheStatus.isSupported) {
-            navigator.serviceWorker.ready.then(() => {
-                setCacheStatus(prev => ({ ...prev, isRegistered: true }));
-                updateCacheInfo();
-            });
-        }
+        // Service Worker deshabilitado temporalmente para desarrollo
+        // if (cacheStatus.isSupported) {
+        //     navigator.serviceWorker.ready.then(() => {
+        //         setCacheStatus(prev => ({ ...prev, isRegistered: true }));
+        //         updateCacheInfo();
+        //     });
+        // }
+        
+        // Simular estado sin service worker
+        setCacheStatus(prev => ({ 
+            ...prev, 
+            isSupported: false,
+            isRegistered: false 
+        }));
     }, []);
 
     // Obtener información del caché

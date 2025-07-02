@@ -25,14 +25,14 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "NODE_OPTIONS='--max-old-space-size=1024' react-scripts build && npm run copy-sw",
-    "build:heroku": "NODE_OPTIONS='--max-old-space-size=400' GENERATE_SOURCEMAP=false CI=false react-scripts build && npm run copy-sw",
+    "build": "NODE_OPTIONS='--max-old-space-size=1024' react-scripts build",
+    "build:heroku": "NODE_OPTIONS='--max-old-space-size=400' GENERATE_SOURCEMAP=false CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "heroku-postbuild": "npm run build:heroku",
-    "copy-sw": "cp public/sw.js build/sw.js",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
     "clear-cache": "rmdir /s /q node_modules\\.cache 2>nul & rmdir /s /q build 2>nul",
+    "clear-browser-cache": "echo \"Abre DevTools (F12) > Application > Storage > Clear site data, o ejecuta el archivo public/clear-sw.js en la consola\"",
     "start:production": "serve -s build -l 3000"
   },
   "eslintConfig": {

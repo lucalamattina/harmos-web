@@ -33,6 +33,9 @@ ReactDOM.render(
 
 reportWebVitals();
 
+// Service Worker DESHABILITADO para desarrollo
+// Para evitar problemas de cache durante desarrollo
+/*
 // Registrar Service Worker para cacheo
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -68,4 +71,14 @@ if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
     // Service Worker ha tomado control
   });
+}
+*/
+
+// LIMPIAR SERVICE WORKER EXISTENTE si hay uno registrado
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            registration.unregister();
+        }
+    });
 }
