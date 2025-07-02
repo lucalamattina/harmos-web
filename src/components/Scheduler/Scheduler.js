@@ -30,8 +30,60 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-// Hook removido - ahora usa el hook global
+// **NUEVOS ESTADOS PARA DETECCIÓN DE ERRORES**
+const ERROR_TYPES = {
+    NETWORK: 'NETWORK',
+    API: 'API', 
+    TIMEOUT: 'TIMEOUT',
+    CALENDAR: 'CALENDAR',
+    DATA: 'DATA'
+};
 
+// **FUNCIÓN HELPER PARA LOGGING DETALLADO**
+const logError = (type, operation, error, additionalInfo = {}) => {
+    const timestamp = new Date().toISOString();
+    const errorInfo = {
+        timestamp,
+        type,
+        operation,
+        error: {
+            message: error?.message,
+            status: error?.response?.status,
+            statusText: error?.response?.statusText,
+            data: error?.response?.data
+        },
+        additionalInfo,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+    };
+    
+    console.error(`🚨 [SCHEDULER ERROR] ${type} - ${operation}:`, errorInfo);
+    
+    // Guardar en localStorage para debugging
+    try {
+        const savedErrors = JSON.parse(localStorage.getItem('scheduler_errors') || '[]');
+        savedErrors.push(errorInfo);
+        // Mantener solo los últimos 10 errores
+        if (savedErrors.length > 10) {
+            savedErrors.shift();
+        }
+        localStorage.setItem('scheduler_errors', JSON.stringify(savedErrors));
+    } catch (e) {
+        console.warn('No se pudo guardar error en localStorage:', e);
+    }
+    
+    return errorInfo;
+};
+
+// **FUNCIÓN PARA TIMEOUT CON PROMESAS**
+const withTimeout = (promise, timeoutMs = 10000, operation = 'API Call') => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Timeout: ${operation} tardó más de ${timeoutMs}ms`)), timeoutMs)
+        )
+    ]);
+};
 
 const locales = {
     "es": es,
@@ -74,16 +126,78 @@ function Scheduler() {
     // Estado para evitar problemas de renderizado antes de la detección inicial
     const [isInitialized, setIsInitialized] = useState(false);
     
+    // **NUEVOS ESTADOS PARA DETECCIÓN DE ERRORES**
+    const [errorDetails, setErrorDetails] = useState({
+        hasError: false,
+        type: null,
+        message: '',
+        lastOperation: '',
+        timestamp: null,
+        retryCount: 0,
+        canRetry: false
+    });
+    
+    const [networkStatus, setNetworkStatus] = useState({
+        isOnline: navigator.onLine,
+        lastCheck: new Date(),
+        apiResponsive: true,
+        latency: null
+    });
+    
+    const [loadingStates, setLoadingStates] = useState({
+        schedules: false,
+        locations: false,
+        calendar: false,
+        initializing: true
+    });
+    
+    const [performanceMetrics, setPerformanceMetrics] = useState({
+        schedulesLoadTime: null,
+        locationsLoadTime: null,
+        calendarRenderTime: null,
+        lastUpdate: null
+    });
+    
     useEffect(() => {
         // Pequeño delay para asegurar que la detección móvil esté completa
         const timer = setTimeout(() => {
             setIsInitialized(true);
+            setLoadingStates(prev => ({ ...prev, initializing: false }));
         }, 150);
         
         return () => clearTimeout(timer);
     }, []);
+    
+    // **MONITOR DE CONEXIÓN**
+    useEffect(() => {
+        const handleOnline = () => {
+            setNetworkStatus(prev => ({ 
+                ...prev, 
+                isOnline: true, 
+                lastCheck: new Date() 
+            }));
+            console.log('🌐 Conexión restaurada');
+        };
+        
+        const handleOffline = () => {
+            setNetworkStatus(prev => ({ 
+                ...prev, 
+                isOnline: false, 
+                lastCheck: new Date() 
+            }));
+            logError(ERROR_TYPES.NETWORK, 'Connection Lost', new Error('Usuario offline'));
+        };
+        
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
-    // Estado para filtros colapsibles
+    // Estado para filtros colapsibles - minimizado por defecto en mobile
     const [filtersExpanded, setFiltersExpanded] = useState(true);
 
     // Estado para navegación de días - inicializar con lunes por defecto
@@ -95,7 +209,35 @@ function Scheduler() {
         return monday;
     });
 
-
+    // **FUNCIÓN PARA LIMPIAR ERRORES**
+    const clearError = () => {
+        setErrorDetails({
+            hasError: false,
+            type: null,
+            message: '',
+            lastOperation: '',
+            timestamp: null,
+            retryCount: 0,
+            canRetry: false
+        });
+    };
+    
+    // **FUNCIÓN PARA RETRY OPERATIONS**
+    const retryLastOperation = () => {
+        if (errorDetails.canRetry && errorDetails.retryCount < 3) {
+            console.log(`🔄 Reintentando operación: ${errorDetails.lastOperation}`);
+            clearError();
+            
+            // Trigger re-fetch based on last operation
+            if (errorDetails.lastOperation.includes('schedules')) {
+                // Trigger schedules refetch - se hará automáticamente por el useEffect
+                setSelectedLocation(prev => prev); // Force re-fetch
+            } else if (errorDetails.lastOperation.includes('locations')) {
+                // Retry locations fetch
+                fetchInitialData();
+            }
+        }
+    };
 
     // Ajustar currentDay según el dispositivo cuando esté inicializado
     useEffect(() => {
@@ -115,6 +257,15 @@ function Scheduler() {
         }
         
         setCurrentDay(targetDay);
+    }, [isMobile, isInitialized]);
+
+    // Ajustar filtros según el dispositivo cuando esté inicializado
+    useEffect(() => {
+        if (!isInitialized) return;
+        
+        // En mobile: filtros minimizados por defecto
+        // En desktop: filtros expandidos por defecto
+        setFiltersExpanded(!isMobile);
     }, [isMobile, isInitialized]);
 
     const [seeEvent, setSeeEvent] = useState({
@@ -176,6 +327,52 @@ function Scheduler() {
     const debouncedDoctorFilterTerm = useDebounce(doctorFilterTerm, 500);
     const debouncedPatientFilterTerm = useDebounce(patientFilterTerm, 500);
 
+    // **FUNCIÓN MEJORADA PARA FETCH INITIAL DATA**
+    const fetchInitialData = async () => {
+        const startTime = performance.now();
+        setLoadingStates(prev => ({ ...prev, locations: true }));
+        
+        try {
+            console.log('📍 Iniciando carga de ubicaciones...');
+            const locs = await withTimeout(getLocations(), 8000, 'getLocations');
+            
+            if (!locs || !Array.isArray(locs)) {
+                throw new Error('Respuesta inválida de ubicaciones: no es un array');
+            }
+            
+            setLocations(locs);
+            const loadTime = performance.now() - startTime;
+            setPerformanceMetrics(prev => ({ 
+                ...prev, 
+                locationsLoadTime: loadTime,
+                lastUpdate: new Date() 
+            }));
+            
+            console.log(`✅ Ubicaciones cargadas: ${locs.length} items en ${loadTime.toFixed(2)}ms`);
+            clearError();
+            
+        } catch (err) {
+            const errorInfo = logError(ERROR_TYPES.API, 'fetchInitialData - getLocations', err, {
+                operation: 'Initial locations fetch',
+                retryable: true
+            });
+            
+            setErrorDetails({
+                hasError: true,
+                type: ERROR_TYPES.API,
+                message: 'Error al cargar las ubicaciones para los filtros.',
+                lastOperation: 'fetchInitialData - locations',
+                timestamp: new Date(),
+                retryCount: errorDetails.retryCount + 1,
+                canRetry: errorDetails.retryCount < 2
+            });
+            
+            setError('Error al cargar las ubicaciones para los filtros.');
+        } finally {
+            setLoadingStates(prev => ({ ...prev, locations: false }));
+        }
+    };
+
     // Funciones de navegación - navegación libre
     const navigateToPreviousDay = () => {
         setCurrentDay(current => subDays(current, 1));
@@ -217,37 +414,38 @@ function Scheduler() {
         }
     };
 
-
-
-
-
     useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const locs = await getLocations();
-                setLocations(locs || []);
-            } catch (err) {
-                console.error("Error fetching locations:", err);
-                setError('Error al cargar las ubicaciones para los filtros.');
-            }
-        };
         fetchInitialData();
     }, []);
 
     useEffect(() => {
         const fetchSchedules = async () => {
-            // Fetching schedules
-            
+            const startTime = performance.now();
+            setLoadingStates(prev => ({ ...prev, schedules: true }));
             setError(null);
+            
             try {
+                console.log('📅 Iniciando carga de horarios...');
+                
                 const params = {};
                 if (selectedLocation) params.locationId = selectedLocation;
                 if (selectedDoctorFilter) params.doctorId = selectedDoctorFilter.id;
                 if (selectedPatientFilter) params.patientId = selectedPatientFilter.id;
 
-                        // Loading schedules
-        const schedules = await getSchedules(params);
-        // Loaded schedules
+                console.log('📅 Parámetros de búsqueda:', params);
+                
+                // Verificar conectividad antes de hacer la llamada
+                if (!networkStatus.isOnline) {
+                    throw new Error('Sin conexión a internet');
+                }
+
+                const schedules = await withTimeout(getSchedules(params), 15000, 'getSchedules');
+                console.log(`📅 Horarios obtenidos: ${schedules?.length || 0} items`);
+                
+                if (!schedules || !Array.isArray(schedules)) {
+                    throw new Error('Respuesta inválida de horarios: no es un array');
+                }
+                
                 const dayMap = {
                     MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
                     FRIDAY: 5, SATURDAY: 6, SUNDAY: 0,
@@ -261,99 +459,171 @@ function Scheduler() {
                 const now = new Date();
                 const weekStart = startOfWeek(now, { weekStartsOn: 1 });
 
-                const eventPromises = schedules.map(async (sch) => {
-                    if (!sch || !sch.dayOfWeek) return null;
-
-                    let doctorName = `Doctor ID: ${sch.doctorUserId}`;
-                    let locationName = `Ubicación ID: ${sch.locationId}`;
-                    let patientName = `Paciente ID: ${sch.patientId}`;
-
+                console.log('🔄 Procesando eventos del calendario...');
+                
+                const eventPromises = schedules.map(async (sch, index) => {
                     try {
-                        if (sch.doctorUserId) {
-                            if (doctorCache.has(sch.doctorUserId)) {
-                                doctorName = doctorCache.get(sch.doctorUserId);
-                            } else {
-                                const doctor = await getUserById(sch.doctorUserId);
-                                if (doctor) {
-                                    doctorName = `${doctor.name || doctor.firstName}`;
-                                    doctorCache.set(sch.doctorUserId, doctorName);
+                        if (!sch || !sch.dayOfWeek) {
+                            console.warn(`⚠️ Horario ${index} inválido:`, sch);
+                            return null;
+                        }
+
+                        let doctorName = `Doctor ID: ${sch.doctorUserId}`;
+                        let locationName = `Ubicación ID: ${sch.locationId}`;
+                        let patientName = `Paciente ID: ${sch.patientId}`;
+
+                        // **FETCH DOCTOR CON MEJOR MANEJO DE ERRORES**
+                        try {
+                            if (sch.doctorUserId) {
+                                if (doctorCache.has(sch.doctorUserId)) {
+                                    doctorName = doctorCache.get(sch.doctorUserId);
+                                } else {
+                                    const doctor = await withTimeout(
+                                        getUserById(sch.doctorUserId), 
+                                        5000, 
+                                        `getUserById(${sch.doctorUserId})`
+                                    );
+                                    if (doctor) {
+                                        doctorName = `${doctor.name || doctor.firstName}`;
+                                        doctorCache.set(sch.doctorUserId, doctorName);
+                                    }
                                 }
                             }
+                        } catch (docError) {
+                            logError(ERROR_TYPES.API, `getUserById(${sch.doctorUserId})`, docError, {
+                                scheduleId: sch.id,
+                                doctorUserId: sch.doctorUserId
+                            });
                         }
-                    } catch (docError) {
-                        console.error(`Error fetching doctor ${sch.doctorUserId}:`, docError);
-                    }
 
-                    try {
-                        if (sch.locationId) {
-                            if (locationCache.has(sch.locationId)) {
-                                locationName = locationCache.get(sch.locationId);
-                            } else {
-                                const location = await getLocationById(sch.locationId);
-                                if (location) {
-                                    locationName = location.name;
-                                    locationCache.set(sch.locationId, locationName);
+                        // **FETCH LOCATION CON MEJOR MANEJO DE ERRORES**
+                        try {
+                            if (sch.locationId) {
+                                if (locationCache.has(sch.locationId)) {
+                                    locationName = locationCache.get(sch.locationId);
+                                } else {
+                                    const location = await withTimeout(
+                                        getLocationById(sch.locationId), 
+                                        5000, 
+                                        `getLocationById(${sch.locationId})`
+                                    );
+                                    if (location) {
+                                        locationName = location.name;
+                                        locationCache.set(sch.locationId, locationName);
+                                    }
                                 }
                             }
+                        } catch (locError) {
+                            logError(ERROR_TYPES.API, `getLocationById(${sch.locationId})`, locError, {
+                                scheduleId: sch.id,
+                                locationId: sch.locationId
+                            });
                         }
-                    } catch (locError) {
-                        console.error(`Error fetching location ${sch.locationId}:`, locError);
-                    }
 
-                    try {
-                        if (sch.patientId) {
-                            if (patientCache.has(sch.patientId)) {
-                                patientName = patientCache.get(sch.patientId);
-                            } else {
-                                const patient = await getPatientById(sch.patientId);
-                                if (patient) {
-                                    patientName = patient.name;
-                                    patientCache.set(sch.patientId, patientName);
+                        // **FETCH PATIENT CON MEJOR MANEJO DE ERRORES**
+                        try {
+                            if (sch.patientId) {
+                                if (patientCache.has(sch.patientId)) {
+                                    patientName = patientCache.get(sch.patientId);
+                                } else {
+                                    const patient = await withTimeout(
+                                        getPatientById(sch.patientId), 
+                                        5000, 
+                                        `getPatientById(${sch.patientId})`
+                                    );
+                                    if (patient) {
+                                        patientName = patient.name;
+                                        patientCache.set(sch.patientId, patientName);
+                                    }
                                 }
                             }
+                        } catch (patError) {
+                            logError(ERROR_TYPES.API, `getPatientById(${sch.patientId})`, patError, {
+                                scheduleId: sch.id,
+                                patientId: sch.patientId
+                            });
                         }
-                    } catch (patError) {
-                        console.error(`Error fetching patient ${sch.patientId}:`, patError);
+
+                        let dayOffset = dayMap[sch.dayOfWeek];
+                        if (dayOffset === undefined) {
+                            console.warn(`⚠️ dayOfWeek inválido: ${sch.dayOfWeek}`);
+                            return null;
+                        }
+
+                        if (dayOffset === 0) dayOffset = 7;
+                        const date = new Date(weekStart);
+                        date.setDate(weekStart.getDate() + (dayOffset - 1));
+                        
+                        const start = new Date(date);
+                        start.setHours(sch.hourFrom, sch.minuteFrom, 0, 0);
+                        
+                        const end = new Date(date);
+                        end.setHours(sch.hourTo, sch.minuteTo, 0, 0);
+
+                        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                            console.warn(`⚠️ Fechas inválidas para horario ${sch.id}:`, {
+                                hourFrom: sch.hourFrom,
+                                minuteFrom: sch.minuteFrom,
+                                hourTo: sch.hourTo,
+                                minuteTo: sch.minuteTo
+                            });
+                            return null;
+                        }
+
+                        return {
+                            title: doctorName,
+                            start,
+                            end,
+                            id: sch.id,
+                            location: locationName,
+                            patientName: patientName,
+                            scheduleTime: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
+                        };
+                    } catch (eventError) {
+                        logError(ERROR_TYPES.DATA, `processScheduleEvent(${sch?.id})`, eventError, {
+                            schedule: sch,
+                            index
+                        });
+                        return null;
                     }
-
-                    let dayOffset = dayMap[sch.dayOfWeek];
-                    if (dayOffset === undefined) return null;
-
-                    if (dayOffset === 0) dayOffset = 7;
-                    const date = new Date(weekStart);
-                    date.setDate(weekStart.getDate() + (dayOffset - 1));
-                    
-                    const start = new Date(date);
-                    start.setHours(sch.hourFrom, sch.minuteFrom, 0, 0);
-                    
-                    const end = new Date(date);
-                    end.setHours(sch.hourTo, sch.minuteTo, 0, 0);
-
-                    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
-
-                    return {
-                        title: doctorName,
-                        start,
-                        end,
-                        id: sch.id,
-                        location: locationName,
-                        patientName: patientName,
-                        scheduleTime: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
-                    };
                 });
 
                 const mappedEvents = (await Promise.all(eventPromises)).filter(Boolean);
-                // Final mapped events for calendar
-                
-                // Debug: mostrar las fechas de los primeros eventos
-                if (mappedEvents.length > 0) {
-                            // Sample event dates check
-                }
+                console.log(`✅ Eventos procesados: ${mappedEvents.length}/${schedules.length}`);
                 
                 setAllEvents(mappedEvents);
+                
+                const loadTime = performance.now() - startTime;
+                setPerformanceMetrics(prev => ({ 
+                    ...prev, 
+                    schedulesLoadTime: loadTime,
+                    lastUpdate: new Date() 
+                }));
+                
+                console.log(`✅ Horarios cargados exitosamente en ${loadTime.toFixed(2)}ms`);
+                clearError();
+                
             } catch (err) {
+                const errorInfo = logError(ERROR_TYPES.API, 'fetchSchedules', err, {
+                    params: { selectedLocation, selectedDoctorFilter, selectedPatientFilter },
+                    networkStatus: networkStatus.isOnline
+                });
+                
+                setErrorDetails({
+                    hasError: true,
+                    type: err.message.includes('Timeout') ? ERROR_TYPES.TIMEOUT : ERROR_TYPES.API,
+                    message: err.message.includes('Timeout') 
+                        ? 'La carga de horarios está tardando demasiado. Verifique su conexión.' 
+                        : 'Error al cargar los horarios.',
+                    lastOperation: 'fetchSchedules',
+                    timestamp: new Date(),
+                    retryCount: errorDetails.retryCount + 1,
+                    canRetry: errorDetails.retryCount < 2
+                });
+                
                 setError('Error al cargar los horarios.');
-                console.error(err);
+            } finally {
+                setLoadingStates(prev => ({ ...prev, schedules: false }));
             }
         };
 
@@ -611,6 +881,70 @@ function Scheduler() {
 
     
 
+    // **PANEL DE ERROR DETALLADO**
+    if (errorDetails.hasError) {
+        return (
+            <Container className="d-flex flex-column justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                <Alert variant="danger" className="text-center w-100">
+                    <Alert.Heading>🚨 Error Detectado</Alert.Heading>
+                    <p><strong>Tipo:</strong> {errorDetails.type}</p>
+                    <p><strong>Mensaje:</strong> {errorDetails.message}</p>
+                    <p><strong>Operación:</strong> {errorDetails.lastOperation}</p>
+                    <p><strong>Timestamp:</strong> {errorDetails.timestamp?.toLocaleString()}</p>
+                    <p><strong>Intentos:</strong> {errorDetails.retryCount}/3</p>
+                    <hr />
+                    <div className="d-flex gap-2 justify-content-center">
+                        {errorDetails.canRetry && (
+                            <Button variant="warning" onClick={retryLastOperation}>
+                                🔄 Reintentar ({3 - errorDetails.retryCount} intentos restantes)
+                            </Button>
+                        )}
+                        <Button variant="outline-secondary" onClick={clearError}>
+                            Cerrar Error
+                        </Button>
+                        <Button 
+                            variant="outline-info" 
+                            onClick={() => {
+                                const errors = JSON.parse(localStorage.getItem('scheduler_errors') || '[]');
+                                console.table(errors);
+                                alert('Errores guardados en consola. Presiona F12 para ver la tabla.');
+                            }}
+                        >
+                            📋 Ver Logs
+                        </Button>
+                    </div>
+                </Alert>
+                
+                {/* Panel de diagnóstico */}
+                <Card className="w-100 mt-3">
+                    <Card.Header>🔧 Diagnóstico del Sistema</Card.Header>
+                    <Card.Body>
+                        <Row>
+                            <Col md={6}>
+                                <h6>Estado de Red</h6>
+                                <div className={`badge ${networkStatus.isOnline ? 'bg-success' : 'bg-danger'}`}>
+                                    {networkStatus.isOnline ? '🌐 Online' : '❌ Offline'}
+                                </div>
+                                <small className="d-block text-muted">
+                                    Último check: {networkStatus.lastCheck.toLocaleTimeString()}
+                                </small>
+                            </Col>
+                            <Col md={6}>
+                                <h6>Performance</h6>
+                                <small className="d-block">
+                                    Horarios: {performanceMetrics.schedulesLoadTime?.toFixed(0)}ms
+                                </small>
+                                <small className="d-block">
+                                    Ubicaciones: {performanceMetrics.locationsLoadTime?.toFixed(0)}ms
+                                </small>
+                            </Col>
+                        </Row>
+                    </Card.Body>
+                </Card>
+            </Container>
+        );
+    }
+
     if (error) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
             <Alert variant="danger" className="text-center">{error}</Alert>
@@ -750,6 +1084,184 @@ function Scheduler() {
                     </Row>
                         </div>
                     </Collapse>
+                </Card.Body>
+            </Card>
+
+            {/* Panel de Debug Mejorado - Detección de Errores */}
+            <Card className="mb-3 border-info">
+                <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0">
+                        🔍 Monitor del Sistema {isMobile ? '(Mobile)' : '(Desktop)'}
+                    </h6>
+                    <Button 
+                        variant="light" 
+                        size="sm" 
+                        onClick={() => {
+                            const errors = JSON.parse(localStorage.getItem('scheduler_errors') || '[]');
+                            console.clear();
+                            console.log('🔧 SCHEDULER DEBUG INFO:');
+                            console.log('Error Details:', errorDetails);
+                            console.log('Network Status:', networkStatus);
+                            console.log('Loading States:', loadingStates);
+                            console.log('Performance Metrics:', performanceMetrics);
+                            console.log('All Events:', allEvents.length);
+                            console.log('Saved Errors:', errors);
+                        }}
+                    >
+                        📊 Dump Info
+                    </Button>
+                </Card.Header>
+                <Card.Body>
+                    <Row className="g-3">
+                        <Col md={3} sm={6}>
+                            <div className="border p-2 rounded bg-light">
+                                <small className="fw-bold d-block">🌐 Conexión</small>
+                                <div className={`badge ${networkStatus.isOnline ? 'bg-success' : 'bg-danger'}`}>
+                                    {networkStatus.isOnline ? '✅ Online' : '❌ Offline'}
+                                </div>
+                                <small className="d-block text-muted">
+                                    {networkStatus.lastCheck.toLocaleTimeString()}
+                                </small>
+                            </div>
+                        </Col>
+                        <Col md={3} sm={6}>
+                            <div className="border p-2 rounded bg-light">
+                                <small className="fw-bold d-block">⚙️ Estados de Carga</small>
+                                <div className="d-flex gap-1 flex-wrap">
+                                    <span className={`badge ${loadingStates.schedules ? 'bg-warning' : 'bg-success'}`}>
+                                        H: {loadingStates.schedules ? '⏳' : '✅'}
+                                    </span>
+                                    <span className={`badge ${loadingStates.locations ? 'bg-warning' : 'bg-success'}`}>
+                                        L: {loadingStates.locations ? '⏳' : '✅'}
+                                    </span>
+                                    <span className={`badge ${loadingStates.initializing ? 'bg-warning' : 'bg-success'}`}>
+                                        I: {loadingStates.initializing ? '⏳' : '✅'}
+                                    </span>
+                                </div>
+                            </div>
+                        </Col>
+                        <Col md={3} sm={6}>
+                            <div className="border p-2 rounded bg-light">
+                                <small className="fw-bold d-block">📊 Performance</small>
+                                <small className="d-block">
+                                    Horarios: {performanceMetrics.schedulesLoadTime 
+                                        ? `${performanceMetrics.schedulesLoadTime.toFixed(0)}ms` 
+                                        : 'N/A'}
+                                </small>
+                                <small className="d-block">
+                                    Ubicaciones: {performanceMetrics.locationsLoadTime 
+                                        ? `${performanceMetrics.locationsLoadTime.toFixed(0)}ms` 
+                                        : 'N/A'}
+                                </small>
+                            </div>
+                        </Col>
+                        <Col md={3} sm={6}>
+                            <div className="border p-2 rounded bg-light">
+                                <small className="fw-bold d-block">📅 Datos</small>
+                                <small className="d-block">
+                                    Eventos: {allEvents.length}
+                                </small>
+                                <small className="d-block">
+                                    Ubicaciones: {locations.length}
+                                </small>
+                                <small className="d-block">
+                                    Errores: {JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length}
+                                </small>
+                            </div>
+                        </Col>
+                        
+                        {/* Solo en mobile: información adicional */}
+                        {isMobile && (
+                            <>
+                                <Col sm={6}>
+                                    <div className="border p-2 rounded bg-light">
+                                        <small className="fw-bold d-block">📱 Dispositivo</small>
+                                        <small className="d-block">
+                                            {window.innerWidth}x{window.innerHeight}
+                                        </small>
+                                        <small className="d-block">
+                                            {navigator.userAgent.includes('iPhone') ? '📱 iPhone' : 
+                                             navigator.userAgent.includes('Android') ? '🤖 Android' : '📱 Mobile'}
+                                        </small>
+                                    </div>
+                                </Col>
+                                <Col sm={6}>
+                                    <div className="border p-2 rounded bg-light">
+                                        <small className="fw-bold d-block">📆 Vista Actual</small>
+                                        <small className="d-block">
+                                            {format(currentDay, 'EEEE', { locale: es })}
+                                        </small>
+                                        <small className="d-block">
+                                            {format(currentDay, 'dd/MM/yyyy')}
+                                        </small>
+                                    </div>
+                                </Col>
+                            </>
+                        )}
+                        
+                        {/* Eventos de hoy */}
+                        {allEvents.length > 0 && (
+                            <Col xs={12}>
+                                <div className="border p-2 rounded bg-light">
+                                    <small className="fw-bold d-block">📋 Eventos de Hoy</small>
+                                    <div className="mt-1">
+                                        {allEvents
+                                            .filter(event => {
+                                                const eventDate = format(event.start, 'yyyy-MM-dd');
+                                                const currentDate = format(currentDay, 'yyyy-MM-dd');
+                                                return eventDate === currentDate;
+                                            })
+                                            .slice(0, 4)
+                                            .map((event, index) => (
+                                                <small key={index} className="d-block text-primary">
+                                                    {format(event.start, 'HH:mm')} - {event.title} ({event.patientName})
+                                                </small>
+                                            ))
+                                        }
+                                        {allEvents.filter(event => {
+                                            const eventDate = format(event.start, 'yyyy-MM-dd');
+                                            const currentDate = format(currentDay, 'yyyy-MM-dd');
+                                            return eventDate === currentDate;
+                                        }).length === 0 && (
+                                            <small className="text-muted">
+                                                No hay eventos para hoy
+                                            </small>
+                                        )}
+                                    </div>
+                                </div>
+                            </Col>
+                        )}
+                        
+                        {/* Estado de errores */}
+                        {(errorDetails.hasError || JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length > 0) && (
+                            <Col xs={12}>
+                                <div className="border p-2 rounded bg-warning">
+                                    <small className="fw-bold d-block">⚠️ Información de Errores</small>
+                                    {errorDetails.hasError && (
+                                        <small className="d-block text-danger">
+                                            Último error: {errorDetails.type} - {errorDetails.message}
+                                        </small>
+                                    )}
+                                    <small className="d-block">
+                                        Errores guardados: {JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length}
+                                    </small>
+                                    <div className="mt-1">
+                                        <Button 
+                                            variant="outline-danger" 
+                                            size="sm" 
+                                            onClick={() => {
+                                                localStorage.removeItem('scheduler_errors');
+                                                clearError();
+                                                alert('Errores limpiados');
+                                            }}
+                                        >
+                                            🗑️ Limpiar Errores
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Col>
+                        )}
+                    </Row>
                 </Card.Body>
             </Card>
 
