@@ -277,39 +277,6 @@ function Scheduler() {
         }
     }, [allEvents, currentDay, isMobile, isInitialized]);
 
-    // **FORZAR RE-RENDER DE EVENTOS EN SAFARI**
-    useEffect(() => {
-        if (!isMobile || !isInitialized) return;
-        
-        // Forzar re-render después de 500ms para Safari
-        const forceRender = setTimeout(() => {
-            const events = document.querySelectorAll('.rbc-event');
-            console.log(`🔧 Safari force render: ${events.length} eventos encontrados`);
-            
-            // Forzar estilos en eventos que no están visibles
-            events.forEach((event, index) => {
-                if (event.offsetHeight === 0 || window.getComputedStyle(event).visibility === 'hidden') {
-                    console.log(`⚠️ Evento ${index} invisible, forzando estilos`);
-                    event.style.display = 'block';
-                    event.style.visibility = 'visible';
-                    event.style.opacity = '1';
-                    event.style.height = '28px';
-                    event.style.minHeight = '28px';
-                    event.style.background = '#007bff';
-                    event.style.color = '#ffffff';
-                    event.style.padding = '3px 5px';
-                    event.style.margin = '1px 0';
-                    event.style.border = '1px solid #0056b3';
-                    event.style.borderRadius = '3px';
-                    event.style.position = 'relative';
-                    event.style.zIndex = '100';
-                }
-            });
-        }, 500);
-        
-        return () => clearTimeout(forceRender);
-    }, [allEvents, currentDay, isMobile, isInitialized]);
-
     // Ajustar filtros según el dispositivo cuando esté inicializado
     useEffect(() => {
         if (!isInitialized) return;
@@ -1466,13 +1433,11 @@ function Scheduler() {
                             startAccessor="start" 
                             endAccessor="end"
                             style={{ 
-                                height: isMobile ? 480 : 600, 
+                                height: isMobile ? 500 : 600, 
                                 margin: "0",
-                                minHeight: isMobile ? '480px' : '600px',
-                                backgroundColor: 'white',
-                                width: '100%',
-                                WebkitTransform: 'translateZ(0)',
-                                transform: 'translateZ(0)'
+                                minHeight: isMobile ? '500px' : '600px',
+                                backgroundColor: 'white', // Asegurar fondo blanco
+                                width: '100%'
                             }}
                             step={15}
                             timeslots={4}
@@ -1484,68 +1449,56 @@ function Scheduler() {
                             messages={messages}
                             components={{
                                 ...components,
-                                event: ({ event }) => {
-                                    // FORZAR ESTILOS INLINE PARA SAFARI
-                                    const forceStyle = {
-                                        fontSize: '14px',
-                                        fontWeight: '700',
-                                        color: '#ffffff',
-                                        textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-                                        padding: '6px 8px',
-                                        width: 'calc(100% - 6px)',
-                                        height: '30px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'flex-start',
-                                        background: '#007bff',
-                                        borderRadius: '4px',
-                                        border: '2px solid #0056b3',
-                                        minHeight: '30px',
-                                        maxHeight: '30px',
-                                        overflow: 'hidden',
-                                        position: 'relative',
-                                        zIndex: 1000,
-                                        boxShadow: '0 3px 6px rgba(0,0,0,0.4)',
-                                        margin: '2px 0',
-                                        WebkitTransform: 'translateZ(0)',
-                                        transform: 'translateZ(0)',
-                                        WebkitBackfaceVisibility: 'hidden',
-                                        backfaceVisibility: 'hidden',
-                                        visibility: 'visible',
-                                        opacity: 1
-                                    };
-                                    
-                                    return (
-                                        <div 
-                                            style={forceStyle}
-                                            className="force-visible-event"
-                                            onClick={() => handleSelectEvent(event)}
-                                        >
-                                            🩺 {event.title}
-                                        </div>
-                                    );
-                                }
+                                event: ({ event }) => (
+                                    <div 
+                                        style={{ 
+                                            fontSize: '0.75rem', 
+                                            fontWeight: 'bold',
+                                            color: 'white',
+                                            textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
+                                            padding: '4px 6px',
+                                            width: '100%',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: '#007bff',
+                                            borderRadius: '4px',
+                                            border: '2px solid #0056b3',
+                                            minHeight: '32px',
+                                            maxHeight: '32px',
+                                            overflow: 'hidden',
+                                            position: 'absolute',
+                                            zIndex: 1000,
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                                            top: '2px',
+                                            left: '2px',
+                                            right: '2px'
+                                        }}
+                                        onClick={() => handleSelectEvent(event)}
+                                    >
+                                        🩺 {event.title}
+                                    </div>
+                                )
                             }}
                             eventPropGetter={(event) => ({
-                                className: 'force-visible-event',
                                 style: {
                                     backgroundColor: '#007bff',
-                                    color: '#ffffff',
-                                    border: '1px solid #0056b3',
-                                    borderRadius: '3px',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
+                                    background: 'linear-gradient(45deg, #007bff, #0056b3)',
+                                    borderRadius: '4px',
+                                    border: '2px solid #0056b3',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
                                     padding: '3px 5px',
-                                    minHeight: '28px',
-                                    height: '28px',
-                                    display: 'block',
-                                    visibility: 'visible',
-                                    opacity: 1,
-                                    position: 'relative',
+                                    minHeight: '30px',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     zIndex: 100,
-                                    margin: '1px 0',
-                                    WebkitTransform: 'translateZ(0)',
-                                    transform: 'translateZ(0)'
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                    opacity: 1,
+                                    visibility: 'visible',
+                                    position: 'relative'
                                 }
                             })}
                             allDaySlot={false}
