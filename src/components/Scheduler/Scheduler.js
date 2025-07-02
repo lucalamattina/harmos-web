@@ -1331,43 +1331,14 @@ function Scheduler() {
                     )}
                 </Card.Header>
                 <Card.Body>
-                    {/* **DEBUG ESPECÍFICO PARA EVENTOS NO VISIBLES** */}
-                    {isMobile && (
-                        <Card className="mb-2 border-warning">
+                    {/* Información de debug simplificada solo en desarrollo */}
+                    {isMobile && window.location.hostname === 'localhost' && (
+                        <Card className="mb-2 border-info">
                             <Card.Body className="py-2">
-                                <small className="fw-bold d-block">🔍 Debug Eventos en Calendario</small>
-                                <div className="d-flex gap-2 flex-wrap mb-2">
-                                    <span className="badge bg-secondary">Total Eventos: {allEvents.length}</span>
-                                    <span className="badge bg-primary">Fecha: {format(currentDay, 'dd/MM/yyyy')}</span>
-                                    <span className="badge bg-info">
-                                        Eventos Hoy: {allEvents.filter(event => {
-                                            const eventDate = format(event.start, 'yyyy-MM-dd');
-                                            const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                            return eventDate === currentDate;
-                                        }).length}
-                                    </span>
-                                </div>
-                                {allEvents.length > 0 && (
-                                    <div className="mt-1">
-                                        <small className="fw-bold d-block">Primer Evento Raw:</small>
-                                        <small className="d-block text-primary">
-                                            Start: {allEvents[0].start?.toString()} 
-                                        </small>
-                                        <small className="d-block text-primary">
-                                            End: {allEvents[0].end?.toString()}
-                                        </small>
-                                        <small className="d-block text-success">
-                                            Válido: {allEvents[0].start instanceof Date ? '✅' : '❌'} / {allEvents[0].end instanceof Date ? '✅' : '❌'}
-                                        </small>
-                                        <small className="d-block text-info">
-                                            Mismo día: {format(allEvents[0].start, 'yyyy-MM-dd') === format(currentDay, 'yyyy-MM-dd') ? '✅' : '❌'}
-                                        </small>
-                                    </div>
-                                )}
-                                <div className="mt-2">
-                                    <small className="fw-bold d-block">Configuración Calendario:</small>
-                                    <small className="d-block">Min: 08:00, Max: 20:00</small>
-                                    <small className="d-block">Current Date: {currentDay.toString()}</small>
+                                <small className="fw-bold d-block">📊 Debug Info</small>
+                                <div className="d-flex gap-2 flex-wrap">
+                                    <span className="badge bg-secondary">Eventos: {allEvents.length}</span>
+                                    <span className="badge bg-secondary">Fecha: {format(currentDay, 'dd/MM')}</span>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -1390,13 +1361,7 @@ function Scheduler() {
                             defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
                             view={isMobile ? Views.DAY : Views.WORK_WEEK}
                             localizer={localizer}
-                            events={allEvents.map(event => ({
-                                ...event,
-                                start: new Date(event.start),
-                                end: new Date(event.end),
-                                id: event.id || Math.random().toString(),
-                                resource: event
-                            }))}
+                            events={allEvents}
                             onSelectEvent={handleSelectEvent}
                             onSelectSlot={handleSelectSlot}
                             selectable={isAdmin}
@@ -1408,130 +1373,22 @@ function Scheduler() {
                                 height: isMobile ? 500 : 600, 
                                 margin: "0",
                                 minHeight: isMobile ? '500px' : '600px',
-                                backgroundColor: 'white', // Asegurar fondo blanco
-                                width: '100%'
+                                backgroundColor: 'white' // Asegurar fondo blanco
                             }}
                             step={15}
                             timeslots={4}
-                            min={new Date(1970, 0, 1, 8, 0, 0)}
-                            max={new Date(1970, 0, 1, 20, 0, 0)}
+                            min={new Date(2016, 10, 1, 8, 0, 0)}
+                            max={new Date(2016, 10, 1, 20, 0, 0)}
                             toolbar={false}
                             formats={formats}
                             culture='es'
                             messages={messages}
-                            components={{
-                                ...components,
-                                event: ({ event }) => (
-                                    <div style={{ 
-                                        fontSize: '0.7rem', 
-                                        fontWeight: 'bold',
-                                        color: 'white',
-                                        textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
-                                        padding: '2px 4px',
-                                        width: '100%',
-                                        height: '100%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: 'linear-gradient(45deg, #007bff, #0056b3)',
-                                        borderRadius: '3px',
-                                        border: '1px solid #0056b3',
-                                        minHeight: '25px',
-                                        overflow: 'hidden',
-                                        position: 'relative',
-                                        zIndex: 10
-                                    }}>
-                                        🩺 {event.title}
-                                    </div>
-                                )
-                            }}
-                            eventPropGetter={(event) => ({
-                                style: {
-                                    backgroundColor: '#007bff',
-                                    background: 'linear-gradient(45deg, #007bff, #0056b3)',
-                                    borderRadius: '4px',
-                                    border: '2px solid #0056b3',
-                                    color: 'white',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 'bold',
-                                    padding: '3px 5px',
-                                    minHeight: '30px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    zIndex: 100,
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                    opacity: 1,
-                                    visibility: 'visible',
-                                    position: 'relative'
-                                }
-                            })}
+                            components={components}
                             allDaySlot={false}
                             date={currentDay}
                             onNavigate={(date) => {}}
                         />
                     </div>
-                    
-                    {/* **DEBUG POST-RENDER - VERIFICAR DOM** */}
-                    {isMobile && (
-                        <Card className="mt-2 border-danger">
-                            <Card.Body className="py-2">
-                                <small className="fw-bold d-block">🚨 Debug DOM Calendar</small>
-                                <div className="d-flex gap-2 flex-wrap">
-                                    <span className="badge bg-primary">
-                                        RBC Calendar: {document.querySelectorAll('.rbc-calendar').length}
-                                    </span>
-                                    <span className="badge bg-success">
-                                        RBC Events: {document.querySelectorAll('.rbc-event').length}
-                                    </span>
-                                    <span className="badge bg-warning">
-                                        RBC Slots: {document.querySelectorAll('.rbc-time-slot').length}
-                                    </span>
-                                    <span className="badge bg-info">
-                                        RBC Content: {document.querySelectorAll('.rbc-time-content').length}
-                                    </span>
-                                </div>
-                                <div className="mt-1">
-                                    <Button 
-                                        variant="outline-danger" 
-                                        size="sm"
-                                        onClick={() => {
-                                            const calendar = document.querySelector('.rbc-calendar');
-                                            const timeContent = document.querySelector('.rbc-time-content');
-                                            const events = document.querySelectorAll('.rbc-event');
-                                            
-                                            let debugInfo = `🔍 DIAGNÓSTICO DETALLADO:\n\n`;
-                                            debugInfo += `📊 DOM Elements:\n`;
-                                            debugInfo += `• Calendarios: ${document.querySelectorAll('.rbc-calendar').length}\n`;
-                                            debugInfo += `• Eventos DOM: ${events.length}\n`;
-                                            debugInfo += `• Time Slots: ${document.querySelectorAll('.rbc-time-slot').length}\n\n`;
-                                            
-                                            debugInfo += `📅 Calendar Info:\n`;
-                                            debugInfo += `• Calendar visible: ${calendar ? (calendar.offsetHeight > 0 ? 'SÍ' : 'NO') : 'NO EXISTE'}\n`;
-                                            debugInfo += `• Calendar height: ${calendar?.offsetHeight || 'N/A'}px\n`;
-                                            debugInfo += `• Time content: ${timeContent ? (timeContent.offsetHeight > 0 ? 'SÍ' : 'NO') : 'NO EXISTE'}\n\n`;
-                                            
-                                            debugInfo += `🎯 Eventos Data vs DOM:\n`;
-                                            debugInfo += `• Eventos en datos: ${allEvents.length}\n`;
-                                            debugInfo += `• Eventos en DOM: ${events.length}\n`;
-                                            debugInfo += `• Match: ${allEvents.length === events.length ? '✅' : '❌'}\n\n`;
-                                            
-                                            if (events.length > 0) {
-                                                debugInfo += `📍 Primer evento DOM:\n`;
-                                                debugInfo += `• Texto: ${events[0].textContent}\n`;
-                                                debugInfo += `• Visible: ${events[0].offsetHeight > 0 ? 'SÍ' : 'NO'}\n`;
-                                                debugInfo += `• Posición: ${events[0].offsetTop}px\n`;
-                                            }
-                                            
-                                            console.log(debugInfo);
-                                            alert(debugInfo);
-                                        }}
-                                    >
-                                        🔍 Diagnóstico Completo
-                                    </Button>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    )}
                     
                     {/* Vista complementaria de eventos del día - Solo en mobile */}
                     {isMobile && allEvents.length > 0 && (
