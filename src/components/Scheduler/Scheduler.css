@@ -276,28 +276,13 @@
     }
     
     .rbc-event {
-        font-size: 0.75rem !important;
-        padding: 0.3rem 0.4rem !important;
-        border-radius: 4px !important;
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-        color: white !important;
-        border: 1px solid white !important;
-        font-weight: 600 !important;
-        box-shadow: 0 2px 4px rgba(0,123,255,0.3) !important;
-        min-height: 28px !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-    
-    .rbc-event:hover {
-        background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 3px 6px rgba(0,123,255,0.4) !important;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.25rem;
+        border-radius: 3px;
     }
     
     .rbc-time-slot {
-        height: 40px !important;
-        border-bottom: 1px solid #f0f0f0 !important;
+        height: 30px !important;
     }
     
     .rbc-timeslot-group {
@@ -613,33 +598,26 @@
     }
 }
 
-/* **ESTILOS MEJORADOS PARA MOBILE SIN DEBUG** */
+/* **DEBUGGING TEMPORAL - BORDES VISIBLES EN MOBILE** */
 @media (max-width: 768px) {
     .Scheduler {
-        border: 1px solid #dee2e6 !important;
-        background-color: white !important;
-        border-radius: 8px !important;
+        border: 3px solid red !important;
+        background-color: #fffacd !important;
     }
     
     .rbc-calendar {
-        border: none !important;
-        background-color: white !important;
-        overflow: hidden !important;
+        border: 2px solid blue !important;
+        background-color: #f0f8ff !important;
     }
     
     .rbc-time-view {
-        border: 1px solid #dee2e6 !important;
-        background-color: white !important;
-        border-radius: 6px !important;
-        overflow: auto !important;
+        border: 2px solid green !important;
+        background-color: #f0fff0 !important;
     }
     
     .rbc-time-content {
-        border: none !important;
-        background-color: white !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        height: 450px !important;
+        border: 1px solid orange !important;
+        background-color: #fff8dc !important;
     }
 }
 
