@@ -1087,7 +1087,8 @@ function Scheduler() {
                 </Card.Body>
             </Card>
 
-            {/* Panel de Debug Mejorado - Detección de Errores */}
+            {/* Panel de Debug Mejorado - Solo visible en móvil para debugging */}
+            {isMobile && (
             <Card className="mb-3 border-info">
                 <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
                     <h6 className="mb-0">
@@ -1264,6 +1265,7 @@ function Scheduler() {
                     </Row>
                 </Card.Body>
             </Card>
+            )}
 
             <Card>
                 <Card.Header>
@@ -1347,7 +1349,7 @@ function Scheduler() {
                             backgroundColor: isMobile ? '#f8f9fa' : 'transparent' // Debug background en mobile
                         }}
                     >
-                        {console.log('🗓️ RENDERIZANDO CALENDARIO:', {
+                        {isMobile && console.log('🗓️ RENDERIZANDO CALENDARIO:', {
                             isMobile,
                             isInitialized,
                             allEventsCount: allEvents.length,
