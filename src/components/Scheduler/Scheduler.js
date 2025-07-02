@@ -236,7 +236,7 @@ function Scheduler() {
 
     useEffect(() => {
         const fetchSchedules = async () => {
-            console.log('Fetching schedules...');
+            // Fetching schedules
             
             setError(null);
             try {
@@ -245,9 +245,9 @@ function Scheduler() {
                 if (selectedDoctorFilter) params.doctorId = selectedDoctorFilter.id;
                 if (selectedPatientFilter) params.patientId = selectedPatientFilter.id;
 
-                console.log('Loading schedules with params:', params);
-                const schedules = await getSchedules(params);
-                console.log('Loaded schedules:', schedules.length);
+                        // Loading schedules
+        const schedules = await getSchedules(params);
+        // Loaded schedules
                 const dayMap = {
                     MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
                     FRIDAY: 5, SATURDAY: 6, SUNDAY: 0,
@@ -343,14 +343,11 @@ function Scheduler() {
                 });
 
                 const mappedEvents = (await Promise.all(eventPromises)).filter(Boolean);
-                console.log('Final mapped events for calendar:', mappedEvents.length, mappedEvents);
+                // Final mapped events for calendar
                 
                 // Debug: mostrar las fechas de los primeros eventos
                 if (mappedEvents.length > 0) {
-                    console.log('Sample event dates:');
-                    mappedEvents.slice(0, 3).forEach((event, i) => {
-                        console.log(`Event ${i + 1}: ${event.title} - Start: ${event.start.toISOString()} - End: ${event.end.toISOString()}`);
-                    });
+                            // Sample event dates check
                 }
                 
                 setAllEvents(mappedEvents);
@@ -372,9 +369,9 @@ function Scheduler() {
     };
 
     const handleSelectSlot = useCallback(({ start, end }) => {
-        console.log('handleSelectSlot called:', { start, end, isAdmin });
+        // handleSelectSlot called
         if (!isAdmin) {
-            console.log('User is not admin, cannot create events');
+            // User is not admin, cannot create events
             return;
         }
         handleShowNew();
@@ -810,18 +807,7 @@ function Scheduler() {
                         onTouchMove={isMobile ? onTouchMove : undefined}
                         onTouchEnd={isMobile ? onTouchEnd : undefined}
                     >
-                        {console.log('Rendering Calendar with:', { 
-                            allEventsLength: allEvents.length, 
-                            isMobile, 
-                            isAdmin, 
-                            isInitialized,
-                            currentDay: currentDay.toISOString(),
-                            eventsForToday: allEvents.filter(event => {
-                                const eventDate = event.start.toDateString();
-                                const currentDate = currentDay.toDateString();
-                                return eventDate === currentDate;
-                            }).length
-                        })}
+                                                    {/* Rendering Calendar */}
                         <Calendar 
                             key={`calendar-${isMobile ? 'mobile' : 'desktop'}-${isInitialized ? 'ready' : 'loading'}`} // Forzar re-render cuando esté listo
                             views={isMobile ? [Views.DAY] : [Views.WORK_WEEK]}
@@ -832,7 +818,7 @@ function Scheduler() {
                             onSelectEvent={handleSelectEvent}
                             onSelectSlot={handleSelectSlot}
                             selectable={isAdmin}
-                            onView={() => console.log('Calendar view changed')}
+                            onView={() => {}}
                             scrollToTime={scrollToTime}
                             startAccessor="start" 
                             endAccessor="end"
@@ -848,7 +834,7 @@ function Scheduler() {
                             components={components}
                             allDaySlot={false}
                             date={currentDay}
-                            onNavigate={(date) => console.log('Calendar navigate to:', date)} // Debug + deshabilitar navegación
+                            onNavigate={(date) => {}} // Deshabilitar navegación
                         />
                     </div>
                 </Card.Body>

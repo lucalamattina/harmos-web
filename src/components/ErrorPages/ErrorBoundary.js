@@ -50,7 +50,7 @@ class ErrorBoundary extends React.Component {
         };
 
         // Aquí podrías enviar el reporte a tu sistema de monitoreo
-        console.log('Reporte de error:', errorReport);
+        // Reporte de error
         
         // Por ahora, copiamos al clipboard
         navigator.clipboard.writeText(JSON.stringify(errorReport, null, 2))

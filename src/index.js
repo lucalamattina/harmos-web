@@ -38,17 +38,17 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-                console.log('[SW] Service Worker registrado:', registration);
+                // Service Worker registrado
 
                 // Escuchar por actualizaciones
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
-                    console.log('[SW] Nueva versión del SW disponible');
+                    // Nueva versión del SW disponible
 
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                             // Nueva versión disponible
-                            console.log('[SW] Nueva versión lista, reinicia la app para aplicar cambios');
+                            // Nueva versión lista, reinicia la app para aplicar cambios
 
                             // Opcional: mostrar notificación al usuario
                             if (window.confirm('Nueva versión disponible. ¿Recargar la página?')) {
@@ -59,13 +59,13 @@ if ('serviceWorker' in navigator) {
                     });
                 });
             })
-            .catch((error) => {
-                console.error('[SW] Error al registrar Service Worker:', error);
-            });
+                  .catch((error) => {
+        // Error al registrar Service Worker
+      });
     });
 
     // Escuchar cuando el SW toma control
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[SW] Service Worker ha tomado control');
-    });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Service Worker ha tomado control
+  });
 }

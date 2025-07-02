@@ -64,28 +64,14 @@ export const logoutUser = () => {
 // Password reset request function
 export const requestPasswordReset = async (email) => {
   try {
-    const response = await api.post(`/api/users/forgot-password?email=${encodeURIComponent(email)}`);
+    const response = await api.post('/api/users/forgot-password', { email });
     return response.data;
   } catch (error) {
     throw error;
   }
 };
 
-export const checkUserExists = async (email) => {
-  try {
-    const response = await api.get(`/api/users?email=${encodeURIComponent(email)}`);
-    // Si la respuesta tiene usuarios, existe
-    if (Array.isArray(response.data.content)) {
-      return response.data.content.length > 0;
-    }
-    if (Array.isArray(response.data)) {
-      return response.data.length > 0;
-    }
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
+
 
 // Obtener schedules con filtros opcionales
 export const getSchedules = async (params = {}) => {

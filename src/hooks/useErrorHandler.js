@@ -15,7 +15,7 @@ const useErrorHandler = () => {
                 case 404:
                     // Para errores 404, no redirigir inmediatamente
                     // Dejar que el componente maneje el error localmente
-                    console.log('Recurso no encontrado (404)');
+                    // Recurso no encontrado (404)
                     break;
                     
                 case 500:
@@ -34,28 +34,28 @@ const useErrorHandler = () => {
                     
                 case 403:
                     // Prohibido - usuario autenticado pero sin permisos
-                    console.log('Acceso prohibido (403)');
+                    // Acceso prohibido (403)
                     // Podríamos mostrar un mensaje o redirigir
                     break;
                     
                 case 429:
                     // Demasiadas peticiones
-                    console.log('Demasiadas peticiones (429)');
+                    // Demasiadas peticiones (429)
                     // Podríamos mostrar un mensaje de rate limiting
                     break;
                     
                 default:
                     // Para otros errores HTTP, log pero no redirigir automáticamente
-                    console.log(`Error HTTP ${status}: ${error.response.statusText}`);
+                    // Error HTTP
                     break;
             }
         } else if (error.request) {
             // Error de red (sin respuesta del servidor)
-            console.log('Error de conexión - sin respuesta del servidor');
+            // Error de conexión - sin respuesta del servidor
             navigate('/error/503', { replace: true, state: { error } });
         } else {
             // Error en la configuración de la petición
-            console.log('Error en la configuración de la petición:', error.message);
+            console.error('Error en la configuración de la petición:', error.message);
         }
         
         return error;

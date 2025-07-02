@@ -137,7 +137,7 @@ const CacheManager = () => {
                         clearedItems.push('Service Worker cache');
                     }
                 } catch (swError) {
-                    console.warn('Error limpiando Service Worker cache:', swError);
+                    // Error limpiando Service Worker cache
                 }
             }
 
@@ -150,7 +150,7 @@ const CacheManager = () => {
                         clearedItems.push(`Browser caches (${cacheNames.length} caches)`);
                     }
                 } catch (cacheError) {
-                    console.warn('Error limpiando browser caches:', cacheError);
+                    // Error limpiando browser caches
                 }
             }
 

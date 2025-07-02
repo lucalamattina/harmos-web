@@ -65,7 +65,7 @@ const useCache = () => {
                 lastUpdate: new Date()
             }));
 
-            console.log('Caché limpiado exitosamente');
+            // Caché limpiado exitosamente
             return true;
         } catch (error) {
             console.error('Error al limpiar caché:', error);
@@ -81,7 +81,7 @@ const useCache = () => {
             const deleted = await caches.delete(cacheName);
             if (deleted) {
                 updateCacheInfo();
-                console.log(`Caché ${cacheName} eliminado`);
+                // Caché eliminado
             }
             return deleted;
         } catch (error) {
@@ -98,7 +98,6 @@ const useCache = () => {
             const cache = await caches.open('harmos-preload-cache');
             await cache.addAll(urls);
             updateCacheInfo();
-            console.log('Recursos precargados:', urls);
             return true;
         } catch (error) {
             console.error('Error al precargar recursos:', error);
@@ -138,7 +137,7 @@ const useCache = () => {
 
             return stats;
         } catch (error) {
-            console.error('Error al obtener estadísticas:', error);
+            // Error al obtener estadísticas
             return null;
         }
     }, [cacheStatus.isSupported]);

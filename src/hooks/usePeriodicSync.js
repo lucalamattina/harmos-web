@@ -65,7 +65,7 @@ export const usePeriodicSync = (onNotificationsUpdate, onUserUpdate = null, inte
                 }
             }
         } catch (error) {
-            console.error('Error during periodic sync:', error);
+            // Error during periodic sync
         }
     }, [isAuthenticated, onNotificationsUpdate, onUserUpdate, currentUser, setCurrentUser, setIsAdmin]);
 

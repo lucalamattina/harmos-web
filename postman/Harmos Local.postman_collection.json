@@ -104,17 +104,20 @@
 					"name": "Request Password Reset",
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@ejemplo.com\"\n}"
+						},
 						"url": {
-							"raw": "{{base_url}}/users/forgot-password?email=doctor@example.com",
+							"raw": "{{base_url}}/users/forgot-password",
 							"host": ["{{base_url}}"],
-							"path": ["users", "forgot-password"],
-							"query": [
-								{
-									"key": "email",
-									"value": "doctor@example.com"
-								}
-							]
+							"path": ["users", "forgot-password"]
 						}
 					}
 				},

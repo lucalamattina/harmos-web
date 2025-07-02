@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { requestPasswordReset, checkUserExists } from '../../api/api';
+import { requestPasswordReset } from '../../api/api';
 import './ForgotPassword.css';
 import { Link } from 'react-router-dom';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
@@ -18,21 +18,32 @@ const ForgotPassword = () => {
         setError('');
         setMessage('');
 
-        // Verificar si el usuario existe antes de enviar el mail
-        const exists = await checkUserExists(email);
-        if (!exists) {
-            setError('No existe un usuario registrado con ese correo electrónico.');
-            setIsLoading(false);
-            return;
-        }
-
         try {
-            await requestPasswordReset(email);
-            setMessage('Se ha enviado un correo electrónico con instrucciones para restablecer tu contraseña. Por favor, revisa tu bandeja de entrada.');
-            setEmail('');
+            const response = await requestPasswordReset(email);
+            
+            // Manejar respuesta según el nuevo formato
+            if (response.success) {
+                setMessage(response.message);
+                setEmail('');
+            } else {
+                setError(response.error || 'Error al procesar la solicitud.');
+            }
         } catch (err) {
-            setError('Error al enviar el correo. Por favor, verifica tu dirección de correo electrónico.');
-            setMessage(null);
+            // Manejar errores de red o del servidor
+            if (err.response?.data) {
+                const errorData = err.response.data;
+                
+                if (errorData.success === false) {
+                    setError(errorData.error || 'Error al procesar la solicitud.');
+                } else if (err.response.status === 400) {
+                    // Error de validación - puede que errorData sea un string
+                    setError(typeof errorData === 'string' ? errorData : (errorData.error || 'Datos inválidos. Verifica el formato del email.'));
+                } else {
+                    setError('Error al enviar el correo. Por favor, verifica tu dirección de correo electrónico.');
+                }
+            } else {
+                setError('Error de conexión. Por favor, intenta nuevamente.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -41,8 +52,8 @@ const ForgotPassword = () => {
     const handleEmailChange = (e) => {
         const value = e.target.value;
         setEmail(value);
-        // Validación simple de email
-        setEmailValid(/^\S+@\S+\.\S+$/.test(value));
+        // Validación de email que coincide con el backend
+        setEmailValid(/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value));
     };
 
     return (

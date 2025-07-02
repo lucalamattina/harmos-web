@@ -175,7 +175,6 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
             const response = await api.get(`/api/announcements/${id}/files`);
             setAnnouncementFiles(response.data);
         } catch (err) {
-            console.error('Error al cargar archivos del anuncio:', err);
             setAnnouncementFiles({ images: [], files: [], total: 0 });
         }
     };
@@ -527,7 +526,6 @@ export const AnnouncementModal = ({
             const response = await api.get(`/api/announcements/${announcement.id}/files`);
             setAnnouncementFiles(response.data);
         } catch (err) {
-            console.error('Error al cargar archivos del anuncio:', err);
             setAnnouncementFiles({ images: [], files: [], total: 0 });
         }
     };
@@ -753,13 +751,7 @@ export const AnnouncementModal = ({
                                     file.filename || `Archivo ${index + 1}` : 
                                     file.split('/').pop() || `Archivo ${index + 1}`;
                                 
-                                // Debug para verificar URLs
-                                console.log(`📄 Archivo "${fileName}":`, {
-                                    viewUrl: viewUrl,
-                                    downloadUrl: downloadUrl,
-                                    hasDownloadUrl: typeof file === 'object' && !!file.download_url,
-                                    sameUrl: viewUrl === downloadUrl
-                                });
+                                // Verificar URLs
                                 
                                 const handleDownload = (e) => {
                                     e.preventDefault();
@@ -910,41 +902,13 @@ const AnnouncementBoard = () => {
                 url += `&specialties=${encodeURIComponent(specialtiesParam)}`;
             }
 
-            console.log('🔍 Obteniendo anuncios desde:', url);
             const response = await api.get(url);
             const announcements = response.data.content || [];
-            
-            // Log detallado de los anuncios y sus archivos
-            console.log(`📋 ${announcements.length} anuncios obtenidos`);
-            announcements.forEach((announcement, index) => {
-                const imagesCount = Array.isArray(announcement.images) ? announcement.images.length : 0;
-                const filesCount = Array.isArray(announcement.files) ? announcement.files.length : 0;
-                if (imagesCount > 0 || filesCount > 0) {
-                    console.log(`📄 Anuncio ${index + 1} "${announcement.title}": ${imagesCount} imágenes, ${filesCount} archivos`);
-                    if (imagesCount > 0) {
-                        console.log('  📸 Imágenes:', announcement.images);
-                    }
-                    if (filesCount > 0) {
-                        console.log('  📎 Archivos:', announcement.files);
-                        // Log adicional para mostrar la estructura de archivos
-                        announcement.files.forEach((file, fileIndex) => {
-                            if (typeof file === 'object') {
-                                console.log(`    📄 Archivo ${fileIndex + 1}:`, {
-                                    filename: file.filename,
-                                    hasDownloadUrl: !!file.download_url,
-                                    url: file.url
-                                });
-                            }
-                        });
-                    }
-                }
-            });
             
             setAnnouncements(announcements);
             setTotalPages(response.data.totalPages || 1);
             setLoading(false);
         } catch (err) {
-            console.error('❌ Error al cargar anuncios:', err);
             setError('Error al cargar los anuncios');
             setLoading(false);
         }
@@ -1010,15 +974,7 @@ const AnnouncementBoard = () => {
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
-        console.log('📎 Archivos seleccionados:', files);
-        console.log('📎 Cantidad de archivos:', files.length);
-        files.forEach((file, index) => {
-            console.log(`📄 Archivo ${index + 1}:`, {
-                name: file.name,
-                size: file.size,
-                type: file.type
-            });
-        });
+        // Archivos seleccionados
         setNewAnnouncement(prev => ({
             ...prev,
             files: files
@@ -1186,13 +1142,7 @@ const AnnouncementBoard = () => {
             }
 
             // FLUJO 2: Subir archivos si existen
-            console.log('🔍 Estado antes de subir archivos:', {
-                announcementId,
-                imagesCount: newAnnouncement.images.length,
-                filesCount: newAnnouncement.files.length,
-                images: newAnnouncement.images,
-                files: newAnnouncement.files
-            });
+            // Estado antes de subir archivos
             
             if (announcementId && (newAnnouncement.images.length > 0 || newAnnouncement.files.length > 0)) {
                 const formData = new FormData();
@@ -1200,9 +1150,8 @@ const AnnouncementBoard = () => {
                 
                 // Agregar imágenes SOLO si hay imágenes
                 if (newAnnouncement.images.length > 0) {
-                    console.log('📸 Agregando imágenes al FormData:', newAnnouncement.images.length);
+                    // Agregando imágenes al FormData
                     newAnnouncement.images.forEach(image => {
-                        console.log('📸 Agregando imagen:', image.name);
                         formData.append('images', image);
                         hasFilesToUpload = true;
                     });
@@ -1210,25 +1159,18 @@ const AnnouncementBoard = () => {
                 
                 // Agregar archivos SOLO si hay archivos
                 if (newAnnouncement.files.length > 0) {
-                    console.log('📎 Agregando archivos al FormData:', newAnnouncement.files.length);
+                    // Agregando archivos al FormData
                     newAnnouncement.files.forEach(file => {
-                        console.log('📎 Agregando archivo:', file.name);
                         formData.append('files', file);
                         hasFilesToUpload = true;
                     });
                 }
                 
-                console.log('🔍 hasFilesToUpload:', hasFilesToUpload);
+                // hasFilesToUpload check
                 
                 // Solo hacer la petición si realmente hay archivos que subir
                 if (hasFilesToUpload) {
-                    // Debug: verificar contenido del FormData
-                    console.log('📤 Enviando FormData con archivos...');
-                    for (let [key, value] of formData.entries()) {
-                        console.log(`📤 ${key}:`, value instanceof File ? value.name : value);
-                    }
-                    
-                    console.log('🔗 URL del endpoint:', `/api/announcements/${announcementId}/files`);
+                    // Verificar contenido del FormData
                     
                     // Eliminar el Content-Type por defecto para que axios maneje FormData automáticamente
                     const uploadResponse = await api.post(`/api/announcements/${announcementId}/files`, formData, {
@@ -1238,30 +1180,17 @@ const AnnouncementBoard = () => {
                     });
                     
                     // Debug completo de la respuesta del backend
-                    console.log('🔍 Respuesta completa del backend:', uploadResponse);
-                    console.log('🔍 Datos de respuesta:', uploadResponse.data);
-                    console.log('🔍 Status de respuesta:', uploadResponse.status);
+                                // Respuesta del backend
                     
                     // Manejar respuesta del backend con información detallada
                     if (uploadResponse.data) {
                         const { images: uploadedImages, files: uploadedFiles, uploaded, errors } = uploadResponse.data;
                         
-                        console.log(`✅ Archivos subidos exitosamente: ${uploaded} de ${newAnnouncement.images.length + newAnnouncement.files.length}`);
-                        
-                        if (uploadedImages) {
-                            console.log(`📸 Imágenes subidas: ${uploadedImages.length}`);
-                            console.log('📸 Detalles de imágenes:', uploadedImages);
-                        }
-                        
-                        if (uploadedFiles) {
-                            console.log(`📎 Archivos subidos: ${uploadedFiles.length}`);
-                            console.log('📎 Detalles de archivos:', uploadedFiles);
-                        }
+                        // Archivos subidos exitosamente
                         
                         // Si hay errores parciales, mostrarlos como warning pero no fallar completamente
                         if (errors && errors.length > 0) {
-                            console.warn('⚠️ Algunos archivos tuvieron problemas:', errors);
-                            console.warn('⚠️ Detalles de errores:', JSON.stringify(errors, null, 2));
+                            // Algunos archivos tuvieron problemas
                             const warningMessage = `Anuncio guardado correctamente, pero hubo problemas con algunos archivos:\n${errors.join('\n')}`;
                             setFormError(warningMessage);
                             // No hacer throw para que el anuncio se guarde
@@ -1269,18 +1198,14 @@ const AnnouncementBoard = () => {
                         
                         // Si no se subió ningún archivo, mostrar información adicional
                         if (uploaded === 0) {
-                            console.error('❌ No se subió ningún archivo. Posibles causas:');
-                            console.error('- El backend no está procesando los archivos correctamente');
-                            console.error('- Problema con el formato del FormData');
-                            console.error('- Error en la validación del backend');
-                            console.error('- Problema con el servicio de almacenamiento (Cloudinary)');
+                            console.error('❌ No se subió ningún archivo');
                         }
                     }
                 }
             }
 
             await fetchAnnouncements();
-            console.log('🔄 Anuncios recargados después de subir archivos');
+            // Anuncios recargados después de subir archivos
             setShowNew(false);
             setEditAnnouncement(null);
             setNewAnnouncement({ title: "", content: "", date: new Date().toISOString(), specialties: undefined, images: [], files: [] });

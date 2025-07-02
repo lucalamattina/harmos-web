@@ -10,11 +10,7 @@ export const useMobileDetection = () => {
             const windowWidth = window.innerWidth;
             const isMobileWidth = windowWidth <= 768;
             
-            console.log('🔍 Mobile Detection:', {
-                windowWidth: windowWidth,
-                isMobileWidth: isMobileWidth,
-                userAgent: navigator.userAgent.toLowerCase()
-            });
+            // Mobile Detection check
             
             setIsMobile(isMobileWidth);
         }

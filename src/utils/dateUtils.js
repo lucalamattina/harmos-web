@@ -52,7 +52,7 @@ export const formatDate = (dateString, options = {}) => {
         // Usar toLocaleString para mejor manejo de horas
         return date.toLocaleString('es-AR', formatOptions);
     } catch (err) {
-        console.error('Error al formatear fecha:', err);
+        // Error al formatear fecha
         return 'Fecha no válida';
     }
 };
@@ -120,7 +120,7 @@ export const formatNotificationDate = (dateString) => {
             return formatDate(dateString, { hour12: false });
         }
     } catch (err) {
-        console.error('Error al formatear fecha de notificación:', err);
+        // Error al formatear fecha de notificación
         return 'Fecha no válida';
     }
 };

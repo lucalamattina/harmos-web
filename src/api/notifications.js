@@ -18,10 +18,7 @@ export const markNotificationAsRead = async (notificationId) => {
         console.error('Error marking notification as read:', error.response?.status, error.response?.data);
         // Log additional debugging info
         const token = localStorage.getItem('token');
-        console.log('Token exists:', !!token);
-        if (token) {
-            console.log('Token length:', token.length);
-        }
+            // Token check
         throw error;
     }
 }; 

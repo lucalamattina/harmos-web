@@ -35,19 +35,17 @@ function shouldCache(url) {
 
 // Instalar Service Worker
 self.addEventListener('install', (event) => {
-  console.log('[SW] Instalando Service Worker v2...');
 
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
-        console.log('[SW] Cacheando recursos críticos...');
         return cache.addAll(STATIC_RESOURCES.filter(resource => {
           // Solo cachear recursos que realmente existen
           return resource === '/' || resource.includes('/static/') || resource.includes('.ico') || resource.includes('manifest');
         }));
       })
       .catch((error) => {
-        console.error('[SW] Error al cachear recursos:', error);
+        // Error al cachear recursos
       })
   );
 
@@ -57,7 +55,6 @@ self.addEventListener('install', (event) => {
 
 // Activar Service Worker y limpiar cachés viejos
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activando Service Worker v2...');
 
   event.waitUntil(
     Promise.all([
@@ -66,7 +63,6 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE_NAME) {
-              console.log('[SW] Eliminando caché viejo:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -98,7 +94,6 @@ self.addEventListener('fetch', (event) => {
       .then((cachedResponse) => {
         // Para recursos estáticos críticos, usar caché si existe
         if (cachedResponse && isStaticResource(request.url)) {
-          console.log('[SW] Sirviendo desde caché:', request.url);
           return cachedResponse;
         }
 
@@ -116,7 +111,7 @@ self.addEventListener('fetch', (event) => {
                 .then((cache) => {
                   cache.put(request, responseClone);
                 })
-                .catch(error => console.error('[SW] Error cacheando:', error));
+                .catch(error => {});
             }
 
             return response;
@@ -124,7 +119,6 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // Solo usar caché como fallback para recursos estáticos
             if (cachedResponse && isStaticResource(request.url)) {
-              console.log('[SW] Fallback a caché:', request.url);
               return cachedResponse;
             }
             
@@ -150,12 +144,11 @@ function isStaticResource(url) {
 // Manejar mensajes para control manual del caché
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CLEAR_CACHE') {
-    console.log('[SW] Limpiando todos los cachés...');
     event.waitUntil(
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            console.log('[SW] Eliminando caché:', cacheName);
+            // Eliminando caché
             return caches.delete(cacheName);
           })
         );
@@ -171,4 +164,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] Service Worker v2 cargado - Cacheo optimizado'); 
+// Service Worker v2 cargado - Cacheo optimizado 

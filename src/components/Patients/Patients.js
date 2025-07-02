@@ -12,7 +12,7 @@ const Patients = () => {
     const isMobile = useMobileDetection();
     
     // Debug log
-    console.log('Patients - isMobile:', isMobile, 'window.innerWidth:', window.innerWidth);
+    // Patients - isMobile detection
     const [patients, setPatients] = useState([]);
     const [filteredPatients, setFilteredPatients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
