@@ -1369,27 +1369,6 @@ function Scheduler() {
                                     <small className="d-block">Min: 08:00, Max: 20:00</small>
                                     <small className="d-block">Current Date: {currentDay.toString()}</small>
                                 </div>
-                                <div className="mt-2">
-                                    <small className="fw-bold d-block text-warning">Eventos Filtrados para Calendar:</small>
-                                    <small className="d-block">
-                                        Total filtrados: {allEvents
-                                            .filter(event => {
-                                                const eventDate = format(event.start, 'yyyy-MM-dd');
-                                                const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                                return eventDate === currentDate;
-                                            }).length}
-                                    </small>
-                                    <small className="d-block">
-                                        IDs: {allEvents
-                                            .filter(event => {
-                                                const eventDate = format(event.start, 'yyyy-MM-dd');
-                                                const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                                return eventDate === currentDate;
-                                            })
-                                            .map(e => e.title)
-                                            .join(', ')}
-                                    </small>
-                                </div>
                             </Card.Body>
                         </Card>
                     )}
@@ -1411,20 +1390,13 @@ function Scheduler() {
                             defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
                             view={isMobile ? Views.DAY : Views.WORK_WEEK}
                             localizer={localizer}
-                            events={allEvents
-                                .filter(event => {
-                                    const eventDate = format(event.start, 'yyyy-MM-dd');
-                                    const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                    return eventDate === currentDate;
-                                })
-                                .map((event, index) => ({
-                                    ...event,
-                                    start: new Date(event.start),
-                                    end: new Date(event.end),
-                                    id: event.id || `event-${index}-${Date.now()}`,
-                                    resource: event,
-                                    allDay: false
-                                }))}
+                            events={allEvents.map(event => ({
+                                ...event,
+                                start: new Date(event.start),
+                                end: new Date(event.end),
+                                id: event.id || Math.random().toString(),
+                                resource: event
+                            }))}
                             onSelectEvent={handleSelectEvent}
                             onSelectSlot={handleSelectSlot}
                             selectable={isAdmin}
@@ -1450,33 +1422,25 @@ function Scheduler() {
                             components={{
                                 ...components,
                                 event: ({ event }) => (
-                                    <div 
-                                        style={{ 
-                                            fontSize: '0.75rem', 
-                                            fontWeight: 'bold',
-                                            color: 'white',
-                                            textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
-                                            padding: '4px 6px',
-                                            width: '100%',
-                                            height: '32px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: '#007bff',
-                                            borderRadius: '4px',
-                                            border: '2px solid #0056b3',
-                                            minHeight: '32px',
-                                            maxHeight: '32px',
-                                            overflow: 'hidden',
-                                            position: 'absolute',
-                                            zIndex: 1000,
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                                            top: '2px',
-                                            left: '2px',
-                                            right: '2px'
-                                        }}
-                                        onClick={() => handleSelectEvent(event)}
-                                    >
+                                    <div style={{ 
+                                        fontSize: '0.7rem', 
+                                        fontWeight: 'bold',
+                                        color: 'white',
+                                        textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
+                                        padding: '2px 4px',
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'linear-gradient(45deg, #007bff, #0056b3)',
+                                        borderRadius: '3px',
+                                        border: '1px solid #0056b3',
+                                        minHeight: '25px',
+                                        overflow: 'hidden',
+                                        position: 'relative',
+                                        zIndex: 10
+                                    }}>
                                         🩺 {event.title}
                                     </div>
                                 )
