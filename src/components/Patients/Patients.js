@@ -23,8 +23,8 @@ const Patients = () => {
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [doctors, setDoctors] = useState([]);
 
-    // Estado para filtros colapsibles
-    const [filtersExpanded, setFiltersExpanded] = useState(true);
+    // Estado para filtros colapsibles - inicializar como false y luego ajustar
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
     const [doctorSpecialty, setDoctorSpecialty] = useState('');
@@ -196,6 +196,12 @@ const Patients = () => {
         }, 300);
         return () => clearTimeout(timeoutId);
     }, [searchTerm, debouncedSearch]);
+
+    // Configurar filtros según el dispositivo
+    useEffect(() => {
+        // En PC: expandidos, en móvil: minimizados
+        setFiltersExpanded(!isMobile);
+    }, [isMobile]);
 
     const handleCloseNew = () => {
         setShowNew(false);

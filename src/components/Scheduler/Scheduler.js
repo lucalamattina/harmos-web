@@ -4,7 +4,6 @@ import getDay from "date-fns/getDay";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
 import addDays from "date-fns/addDays";
-import subDays from "date-fns/subDays";
 import { Calendar, Views, dateFnsLocalizer } from "react-big-calendar";
 import React, {useCallback, useMemo, useState, useEffect, useContext} from "react";
 import "react-datepicker/dist/react-datepicker.css";
@@ -13,7 +12,7 @@ import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup, C
 import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule, deleteSchedule, getPatientById } from "../../api/api";
 import { es } from 'date-fns/locale';
 import { AuthContext } from "../../context/AuthContext";
-import { FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
 
 // Custom hook for debouncing a value
@@ -197,16 +196,14 @@ function Scheduler() {
         };
     }, []);
 
-    // Estado para filtros colapsibles - minimizado por defecto en mobile
-    const [filtersExpanded, setFiltersExpanded] = useState(true);
+    // Estado para filtros colapsibles - inicializar como false y luego ajustar
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     // Estado para navegación de días - inicializar con lunes por defecto
     const [currentDay, setCurrentDay] = useState(() => {
         const today = new Date();
-        const dayOfWeek = today.getDay();
-        // Por defecto arrancar en lunes (se ajustará después con useEffect)
-        const monday = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
-        return monday;
+        // Usar startOfWeek para obtener el lunes de la semana actual
+        return startOfWeek(today, { weekStartsOn: 1 });
     });
 
     // **FUNCIÓN PARA LIMPIAR ERRORES**
@@ -239,34 +236,26 @@ function Scheduler() {
         }
     };
 
-    // Ajustar currentDay según el dispositivo cuando esté inicializado
+    // Ajustar currentDay para que siempre inicie en lunes de la semana actual
     useEffect(() => {
         if (!isInitialized) return;
         
         const today = new Date();
-        const dayOfWeek = today.getDay();
-        
-        let targetDay;
-        
-        if (!isMobile) {
-            // Desktop: siempre lunes de la semana actual
-            targetDay = dayOfWeek === 0 ? subDays(today, 6) : subDays(today, dayOfWeek - 1);
-        } else {
-            // Móvil: mostrar día actual
-            targetDay = today;
-        }
+        // Tanto móvil como desktop: siempre lunes de la semana actual
+        const targetDay = startOfWeek(today, { weekStartsOn: 1 });
         
         setCurrentDay(targetDay);
-    }, [isMobile, isInitialized]);
+    }, [isInitialized]);
 
-    // Ajustar filtros según el dispositivo cuando esté inicializado
+    // Configurar filtros según el dispositivo cuando la detección móvil esté lista
     useEffect(() => {
         if (!isInitialized) return;
         
-        // En mobile: filtros minimizados por defecto
-        // En desktop: filtros expandidos por defecto
+        // En PC: expandidos, en móvil: minimizados
         setFiltersExpanded(!isMobile);
     }, [isMobile, isInitialized]);
+
+
 
     const [seeEvent, setSeeEvent] = useState({
         title: "",
@@ -373,46 +362,7 @@ function Scheduler() {
         }
     };
 
-    // Funciones de navegación - navegación libre
-    const navigateToPreviousDay = () => {
-        setCurrentDay(current => subDays(current, 1));
-    };
 
-    const navigateToNextDay = () => {
-        setCurrentDay(current => addDays(current, 1));
-    };
-
-    // navigateToToday removido para evitar warning de unused
-
-    // Estados para swipe en móviles
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
-
-    // Distancia mínima para considerar un swipe
-    const minSwipeDistance = 50;
-
-    const onTouchStart = (e) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const onTouchMove = (e) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
-
-        if (isLeftSwipe) {
-            navigateToNextDay();
-        } else if (isRightSwipe) {
-            navigateToPreviousDay();
-        }
-    };
 
     useEffect(() => {
         fetchInitialData();
@@ -456,10 +406,12 @@ function Scheduler() {
                 const locationCache = new Map();
                 const patientCache = new Map();
 
-                const now = new Date();
-                const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+                // Usar la semana del currentDay en lugar de la semana actual
+                const weekStart = startOfWeek(currentDay, { weekStartsOn: 1 });
 
                 console.log('🔄 Procesando eventos del calendario...');
+                console.log('📅 Semana objetivo:', format(weekStart, 'dd/MM/yyyy'), '-', format(addDays(weekStart, 6), 'dd/MM/yyyy'));
+                console.log('🎯 CurrentDay:', format(currentDay, 'dd/MM/yyyy'));
                 
                 const eventPromises = schedules.map(async (sch, index) => {
                     try {
@@ -560,6 +512,18 @@ function Scheduler() {
                         const end = new Date(date);
                         end.setHours(sch.hourTo, sch.minuteTo, 0, 0);
 
+                        // DEBUG: Log detallado de la conversión de fechas
+                        console.log(`🔍 Evento ${index + 1}:`, {
+                            dayOfWeek: sch.dayOfWeek,
+                            dayOffset,
+                            weekStart: format(weekStart, 'dd/MM/yyyy'),
+                            calculatedDate: format(date, 'dd/MM/yyyy (eeee)', { locale: es }),
+                            start: format(start, 'dd/MM/yyyy HH:mm (eeee)', { locale: es }),
+                            end: format(end, 'dd/MM/yyyy HH:mm (eeee)', { locale: es }),
+                            doctorName,
+                            patientName
+                        });
+
                         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
                             console.warn(`⚠️ Fechas inválidas para horario ${sch.id}:`, {
                                 hourFrom: sch.hourFrom,
@@ -628,7 +592,7 @@ function Scheduler() {
         };
 
         fetchSchedules();
-    }, [selectedLocation, selectedDoctorFilter, selectedPatientFilter]);
+    }, [selectedLocation, selectedDoctorFilter, selectedPatientFilter, currentDay]);
 
     const handleClearFilters = () => {
         setSelectedLocation('');
@@ -902,45 +866,10 @@ function Scheduler() {
                         <Button variant="outline-secondary" onClick={clearError}>
                             Cerrar Error
                         </Button>
-                        <Button 
-                            variant="outline-info" 
-                            onClick={() => {
-                                const errors = JSON.parse(localStorage.getItem('scheduler_errors') || '[]');
-                                console.table(errors);
-                                alert('Errores guardados en consola. Presiona F12 para ver la tabla.');
-                            }}
-                        >
-                            📋 Ver Logs
-                        </Button>
+
                     </div>
                 </Alert>
-                
-                {/* Panel de diagnóstico */}
-                <Card className="w-100 mt-3">
-                    <Card.Header>🔧 Diagnóstico del Sistema</Card.Header>
-                    <Card.Body>
-                        <Row>
-                            <Col md={6}>
-                                <h6>Estado de Red</h6>
-                                <div className={`badge ${networkStatus.isOnline ? 'bg-success' : 'bg-danger'}`}>
-                                    {networkStatus.isOnline ? '🌐 Online' : '❌ Offline'}
-                                </div>
-                                <small className="d-block text-muted">
-                                    Último check: {networkStatus.lastCheck.toLocaleTimeString()}
-                                </small>
-                            </Col>
-                            <Col md={6}>
-                                <h6>Performance</h6>
-                                <small className="d-block">
-                                    Horarios: {performanceMetrics.schedulesLoadTime?.toFixed(0)}ms
-                                </small>
-                                <small className="d-block">
-                                    Ubicaciones: {performanceMetrics.locationsLoadTime?.toFixed(0)}ms
-                                </small>
-                            </Col>
-                        </Row>
-                    </Card.Body>
-                </Card>
+
             </Container>
         );
     }
@@ -1087,185 +1016,7 @@ function Scheduler() {
                 </Card.Body>
             </Card>
 
-            {/* Panel de Debug Mejorado - Solo visible en móvil para debugging */}
-            {isMobile && (
-            <Card className="mb-3 border-info">
-                <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0">
-                        🔍 Monitor del Sistema {isMobile ? '(Mobile)' : '(Desktop)'}
-                    </h6>
-                    <Button 
-                        variant="light" 
-                        size="sm" 
-                        onClick={() => {
-                            const errors = JSON.parse(localStorage.getItem('scheduler_errors') || '[]');
-                            console.clear();
-                            console.log('🔧 SCHEDULER DEBUG INFO:');
-                            console.log('Error Details:', errorDetails);
-                            console.log('Network Status:', networkStatus);
-                            console.log('Loading States:', loadingStates);
-                            console.log('Performance Metrics:', performanceMetrics);
-                            console.log('All Events:', allEvents.length);
-                            console.log('Saved Errors:', errors);
-                        }}
-                    >
-                        📊 Dump Info
-                    </Button>
-                </Card.Header>
-                <Card.Body>
-                    <Row className="g-3">
-                        <Col md={3} sm={6}>
-                            <div className="border p-2 rounded bg-light">
-                                <small className="fw-bold d-block">🌐 Conexión</small>
-                                <div className={`badge ${networkStatus.isOnline ? 'bg-success' : 'bg-danger'}`}>
-                                    {networkStatus.isOnline ? '✅ Online' : '❌ Offline'}
-                                </div>
-                                <small className="d-block text-muted">
-                                    {networkStatus.lastCheck.toLocaleTimeString()}
-                                </small>
-                            </div>
-                        </Col>
-                        <Col md={3} sm={6}>
-                            <div className="border p-2 rounded bg-light">
-                                <small className="fw-bold d-block">⚙️ Estados de Carga</small>
-                                <div className="d-flex gap-1 flex-wrap">
-                                    <span className={`badge ${loadingStates.schedules ? 'bg-warning' : 'bg-success'}`}>
-                                        H: {loadingStates.schedules ? '⏳' : '✅'}
-                                    </span>
-                                    <span className={`badge ${loadingStates.locations ? 'bg-warning' : 'bg-success'}`}>
-                                        L: {loadingStates.locations ? '⏳' : '✅'}
-                                    </span>
-                                    <span className={`badge ${loadingStates.initializing ? 'bg-warning' : 'bg-success'}`}>
-                                        I: {loadingStates.initializing ? '⏳' : '✅'}
-                                    </span>
-                                </div>
-                            </div>
-                        </Col>
-                        <Col md={3} sm={6}>
-                            <div className="border p-2 rounded bg-light">
-                                <small className="fw-bold d-block">📊 Performance</small>
-                                <small className="d-block">
-                                    Horarios: {performanceMetrics.schedulesLoadTime 
-                                        ? `${performanceMetrics.schedulesLoadTime.toFixed(0)}ms` 
-                                        : 'N/A'}
-                                </small>
-                                <small className="d-block">
-                                    Ubicaciones: {performanceMetrics.locationsLoadTime 
-                                        ? `${performanceMetrics.locationsLoadTime.toFixed(0)}ms` 
-                                        : 'N/A'}
-                                </small>
-                            </div>
-                        </Col>
-                        <Col md={3} sm={6}>
-                            <div className="border p-2 rounded bg-light">
-                                <small className="fw-bold d-block">📅 Datos</small>
-                                <small className="d-block">
-                                    Eventos: {allEvents.length}
-                                </small>
-                                <small className="d-block">
-                                    Ubicaciones: {locations.length}
-                                </small>
-                                <small className="d-block">
-                                    Errores: {JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length}
-                                </small>
-                            </div>
-                        </Col>
-                        
-                        {/* Solo en mobile: información adicional */}
-                        {isMobile && (
-                            <>
-                                <Col sm={6}>
-                                    <div className="border p-2 rounded bg-light">
-                                        <small className="fw-bold d-block">📱 Dispositivo</small>
-                                        <small className="d-block">
-                                            {window.innerWidth}x{window.innerHeight}
-                                        </small>
-                                        <small className="d-block">
-                                            {navigator.userAgent.includes('iPhone') ? '📱 iPhone' : 
-                                             navigator.userAgent.includes('Android') ? '🤖 Android' : '📱 Mobile'}
-                                        </small>
-                                    </div>
-                                </Col>
-                                <Col sm={6}>
-                                    <div className="border p-2 rounded bg-light">
-                                        <small className="fw-bold d-block">📆 Vista Actual</small>
-                                        <small className="d-block">
-                                            {format(currentDay, 'EEEE', { locale: es })}
-                                        </small>
-                                        <small className="d-block">
-                                            {format(currentDay, 'dd/MM/yyyy')}
-                                        </small>
-                                    </div>
-                                </Col>
-                            </>
-                        )}
-                        
-                        {/* Eventos de hoy */}
-                        {allEvents.length > 0 && (
-                            <Col xs={12}>
-                                <div className="border p-2 rounded bg-light">
-                                    <small className="fw-bold d-block">📋 Eventos de Hoy</small>
-                                    <div className="mt-1">
-                                        {allEvents
-                                            .filter(event => {
-                                                const eventDate = format(event.start, 'yyyy-MM-dd');
-                                                const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                                return eventDate === currentDate;
-                                            })
-                                            .slice(0, 4)
-                                            .map((event, index) => (
-                                                <small key={index} className="d-block text-primary">
-                                                    {format(event.start, 'HH:mm')} - {event.title} ({event.patientName})
-                                                </small>
-                                            ))
-                                        }
-                                        {allEvents.filter(event => {
-                                            const eventDate = format(event.start, 'yyyy-MM-dd');
-                                            const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                            return eventDate === currentDate;
-                                        }).length === 0 && (
-                                            <small className="text-muted">
-                                                No hay eventos para hoy
-                                            </small>
-                                        )}
-                                    </div>
-                                </div>
-                            </Col>
-                        )}
-                        
-                        {/* Estado de errores */}
-                        {(errorDetails.hasError || JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length > 0) && (
-                            <Col xs={12}>
-                                <div className="border p-2 rounded bg-warning">
-                                    <small className="fw-bold d-block">⚠️ Información de Errores</small>
-                                    {errorDetails.hasError && (
-                                        <small className="d-block text-danger">
-                                            Último error: {errorDetails.type} - {errorDetails.message}
-                                        </small>
-                                    )}
-                                    <small className="d-block">
-                                        Errores guardados: {JSON.parse(localStorage.getItem('scheduler_errors') || '[]').length}
-                                    </small>
-                                    <div className="mt-1">
-                                        <Button 
-                                            variant="outline-danger" 
-                                            size="sm" 
-                                            onClick={() => {
-                                                localStorage.removeItem('scheduler_errors');
-                                                clearError();
-                                                alert('Errores limpiados');
-                                            }}
-                                        >
-                                            🗑️ Limpiar Errores
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Col>
-                        )}
-                    </Row>
-                </Card.Body>
-            </Card>
-            )}
+
 
             <Card>
                 <Card.Header>
@@ -1276,92 +1027,23 @@ function Scheduler() {
                         </Badge>
                     </div>
 
-                    {/* Controles de navegación personalizados - Solo en móviles */}
-                    {isMobile && (
-                        <div 
-                            className="d-flex justify-content-between align-items-center mt-3 p-2 bg-light rounded mobile-navigation"
-                            onTouchStart={onTouchStart}
-                            onTouchMove={onTouchMove}
-                            onTouchEnd={onTouchEnd}
-                        >
-                            <Button 
-                                variant="outline-primary" 
-                                size="sm"
-                                onClick={navigateToPreviousDay}
-                                className="mobile-nav-btn"
-                            >
-                                <FaChevronLeft />
-                                <span className="nav-btn-text">Anterior</span>
-                            </Button>
-                            
-                            <div className="d-flex align-items-center">
-                                <h6 className="mb-0 text-center">
-                                    <span className="badge bg-primary mobile-day-badge">
-                                        {format(currentDay, 'EEEE', { locale: es })}
-                                    </span>
-                                </h6>
-                            </div>
-                            
-                            <Button 
-                                variant="outline-primary" 
-                                size="sm"
-                                onClick={navigateToNextDay}
-                                className="mobile-nav-btn"
-                            >
-                                <span className="nav-btn-text">Siguiente</span>
-                                <FaChevronRight />
-                            </Button>
-                        </div>
-                    )}
+
                 </Card.Header>
                 <Card.Body>
-                    {/* **DEBUG: INFORMACIÓN PRE-RENDER DEL CALENDARIO** */}
-                    {isMobile && (
-                        <Card className="mb-2 border-warning">
-                            <Card.Body className="py-2">
-                                <small className="fw-bold d-block">🐛 Debug Calendario</small>
-                                <div className="d-flex gap-2 flex-wrap">
-                                    <span className="badge bg-secondary">Eventos: {allEvents.length}</span>
-                                    <span className="badge bg-secondary">Vista: {isMobile ? 'DAY' : 'WORK_WEEK'}</span>
-                                    <span className="badge bg-secondary">Fecha: {format(currentDay, 'dd/MM')}</span>
-                                    <span className={`badge ${isInitialized ? 'bg-success' : 'bg-warning'}`}>
-                                        Init: {isInitialized ? 'OK' : 'Loading'}
-                                    </span>
-                                </div>
-                                {allEvents.length > 0 && (
-                                    <div className="mt-1">
-                                        <small className="d-block">Primer evento: {format(allEvents[0].start, 'HH:mm dd/MM')}</small>
-                                        <small className="d-block">Último evento: {format(allEvents[allEvents.length-1].start, 'HH:mm dd/MM')}</small>
-                                    </div>
-                                )}
-                            </Card.Body>
-                        </Card>
-                    )}
+
 
                     <div 
                         className="Scheduler"
-                        onTouchStart={isMobile ? onTouchStart : undefined}
-                        onTouchMove={isMobile ? onTouchMove : undefined}
-                        onTouchEnd={isMobile ? onTouchEnd : undefined}
                         style={{
-                            minHeight: isMobile ? '500px' : '600px',
-                            border: isMobile ? '2px solid #007bff' : 'none', // Debug border en mobile
-                            backgroundColor: isMobile ? '#f8f9fa' : 'transparent' // Debug background en mobile
+                            minHeight: isMobile ? '500px' : '600px'
                         }}
                     >
-                        {isMobile && console.log('🗓️ RENDERIZANDO CALENDARIO:', {
-                            isMobile,
-                            isInitialized,
-                            allEventsCount: allEvents.length,
-                            currentDay: format(currentDay, 'yyyy-MM-dd'),
-                            view: isMobile ? 'DAY' : 'WORK_WEEK'
-                        })}
                         
                         <Calendar 
                             key={`calendar-${isMobile ? 'mobile' : 'desktop'}-${isInitialized ? 'ready' : 'loading'}-${allEvents.length}`} // Incluir count de eventos
-                            views={isMobile ? [Views.DAY] : [Views.WORK_WEEK]}
-                            defaultView={isMobile ? Views.DAY : Views.WORK_WEEK}
-                            view={isMobile ? Views.DAY : Views.WORK_WEEK}
+                                                    views={[Views.WORK_WEEK]}
+                        defaultView={Views.WORK_WEEK}
+                        view={Views.WORK_WEEK}
                             localizer={localizer}
                             events={allEvents}
                             onSelectEvent={handleSelectEvent}
@@ -1392,96 +1074,7 @@ function Scheduler() {
                         />
                     </div>
                     
-                    {/* **DEBUG: INFORMACIÓN POST-RENDER** */}
-                    {isMobile && (
-                        <Card className="mt-2 border-info">
-                            <Card.Body className="py-2">
-                                <small className="fw-bold d-block">📊 Post-Render Info</small>
-                                <small className="d-block">DOM Elements: {document.querySelectorAll('.rbc-calendar').length} calendarios</small>
-                                <small className="d-block">Eventos renderizados: {document.querySelectorAll('.rbc-event').length} elementos</small>
-                                <small className="d-block">Altura contenedor: {document.querySelector('.Scheduler')?.offsetHeight || 'N/A'}px</small>
-                            </Card.Body>
-                        </Card>
-                    )}
-
-                    {/* **VISTA DE EMERGENCIA - LISTA DE EVENTOS SI EL CALENDARIO NO SE MUESTRA** */}
-                    {isMobile && allEvents.length > 0 && (
-                        <Card className="mt-3 border-success">
-                            <Card.Header className="bg-success text-white">
-                                <h6 className="mb-0">📅 Vista Lista - Eventos de {format(currentDay, 'EEEE dd/MM/yyyy', { locale: es })}</h6>
-                            </Card.Header>
-                            <Card.Body className="p-0">
-                                <ListGroup variant="flush">
-                                    {allEvents
-                                        .filter(event => {
-                                            const eventDate = format(event.start, 'yyyy-MM-dd');
-                                            const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                            return eventDate === currentDate;
-                                        })
-                                        .sort((a, b) => a.start - b.start)
-                                        .map((event, index) => (
-                                            <ListGroup.Item 
-                                                key={index} 
-                                                action
-                                                onClick={() => handleSelectEvent(event)}
-                                                className="d-flex justify-content-between align-items-center py-3"
-                                            >
-                                                <div>
-                                                    <div className="fw-bold text-primary">{event.title}</div>
-                                                    <small className="text-muted">Paciente: {event.patientName}</small>
-                                                    <br />
-                                                    <small className="text-muted">Ubicación: {event.location}</small>
-                                                </div>
-                                                <div className="text-end">
-                                                    <div className="badge bg-primary">{format(event.start, 'HH:mm')}</div>
-                                                    <div className="badge bg-secondary mt-1">{format(event.end, 'HH:mm')}</div>
-                                                </div>
-                                            </ListGroup.Item>
-                                        ))
-                                    }
-                                    {allEvents.filter(event => {
-                                        const eventDate = format(event.start, 'yyyy-MM-dd');
-                                        const currentDate = format(currentDay, 'yyyy-MM-dd');
-                                        return eventDate === currentDate;
-                                    }).length === 0 && (
-                                        <ListGroup.Item className="text-center py-4 text-muted">
-                                            <div className="mb-2">📅</div>
-                                            <div>No hay eventos programados para hoy</div>
-                                            <small>({format(currentDay, 'EEEE dd/MM/yyyy', { locale: es })})</small>
-                                        </ListGroup.Item>
-                                    )}
-                                </ListGroup>
-                            </Card.Body>
-                        </Card>
-                    )}
-
-                    {/* **BOTÓN DE DIAGNÓSTICO RÁPIDO** */}
-                    {isMobile && (
-                        <div className="mt-3 text-center">
-                            <Button 
-                                variant="outline-info"
-                                size="sm"
-                                onClick={() => {
-                                    const calendarElements = document.querySelectorAll('.rbc-calendar');
-                                    const eventElements = document.querySelectorAll('.rbc-event');
-                                    const schedulerElement = document.querySelector('.Scheduler');
-                                    
-                                    alert(`📊 DIAGNÓSTICO RÁPIDO:
-• Calendarios DOM: ${calendarElements.length}
-• Eventos DOM: ${eventElements.length}  
-• Eventos Datos: ${allEvents.length}
-• Altura Scheduler: ${schedulerElement?.offsetHeight || 'N/A'}px
-• Vista: ${isMobile ? 'DAY' : 'WORK_WEEK'}
-• Inicializado: ${isInitialized}
-• Fecha: ${format(currentDay, 'dd/MM/yyyy')}
-
-${calendarElements.length === 0 ? '⚠️ PROBLEMA: No se encuentra calendario en DOM' : '✅ Calendario presente en DOM'}`);
-                                }}
-                            >
-                                🔍 Diagnóstico Rápido
-                            </Button>
-                        </div>
-                    )}
+                    
                 </Card.Body>
             </Card>
 

@@ -87,8 +87,8 @@ const Reports = () => {
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
 
-    // Estado para filtros colapsibles
-    const [filtersExpanded, setFiltersExpanded] = useState(true);
+    // Estado para filtros colapsibles - inicializar como false y luego ajustar
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
 
     const fetchReports = useCallback(async (page = 0) => {
         try {
@@ -171,6 +171,12 @@ const Reports = () => {
             fetchReports(currentPage);
         }
     }, [currentPage, fetchReports, isFilterChange]);
+
+    // Configurar filtros según el dispositivo
+    useEffect(() => {
+        // En PC: expandidos, en móvil: minimizados
+        setFiltersExpanded(!isMobile);
+    }, [isMobile]);
 
     const fetchPatients = async () => {
         try {

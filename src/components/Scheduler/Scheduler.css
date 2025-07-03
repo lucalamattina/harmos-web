@@ -166,62 +166,68 @@
     }
 }
 
-/* Mobile responsive - Forzar vista de día en móviles */
+/* Mobile responsive - Vista semanal compacta para móviles */
 @media (max-width: 768px) {
     .scheduler{
         width: 100%;
         padding-top: 20px;
     }
     
-    /* **FORZAR DISPLAY DEL CALENDARIO EN MOBILE** */
     .Scheduler {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 500px !important;
-        overflow: visible !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        min-height: 500px;
     }
     
     .rbc-calendar {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        width: 100% !important;
-        min-height: 450px !important;
+        min-width: 100%;
+        min-height: 450px;
+        font-size: 0.75rem;
     }
     
     .rbc-time-view {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 450px !important;
+        min-height: 450px;
+        min-width: 100%;
     }
     
     .rbc-time-content {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        min-height: 400px !important;
+        min-height: 400px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     
     .rbc-time-header {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+        background: linear-gradient(135deg, #009A9E 0%, #007A7D 100%);
+        min-width: 700px; /* Ancho mínimo para mostrar toda la semana */
     }
     
-    /* Forzar vista de día en móviles PERO MANTENER VISIBLE */
-    .rbc-time-view .rbc-time-header .rbc-header:not(:first-child) {
-        display: none !important;
+    /* Vista de semana en móviles con scroll horizontal */
+    .rbc-time-view {
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+        min-width: 700px; /* Mismo ancho mínimo */
     }
     
-    .rbc-time-view .rbc-time-content .rbc-day-slot:not(:first-child) {
-        display: none !important;
+    /* Mejorar visualización de días en móvil */
+    .rbc-time-header .rbc-header {
+        min-width: 85px; /* Ancho compacto por día */
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: white;
+        padding: 0.4rem 0.2rem;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
     }
     
-    /* Asegurar que el encabezado sea visible en móviles */
-    .mobile-navigation {
-        display: flex !important;
+    .rbc-time-content .rbc-day-slot {
+        min-width: 85px; /* Mismo ancho que el header */
+        border-right: 1px solid #eee;
+    }
+    
+    .rbc-time-gutter {
+        min-width: 45px;
+        font-size: 0.65rem;
     }
     
     .scheduler-title{
@@ -231,67 +237,45 @@
         margin-bottom: 1rem;
     }
     
-    .three-day-navigation {
-        padding: 0.8rem;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .three-day-navigation .d-flex {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: center;
-    }
-    
-    .three-day-navigation .btn {
-        min-width: 120px;
-    }
-    
-    .day-badge {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
-        margin: 0.05rem;
-        display: block;
-        text-align: center;
-        width: auto;
-    }
-    
     .rbc-calendar {
         font-size: 0.75rem;
-        height: auto !important;
+        height: auto;
     }
     
     .rbc-time-view {
-        height: 500px !important;
-    }
-    
-    .rbc-time-header .rbc-header {
-        padding: 0.5rem 0.2rem;
-        font-size: 0.7rem;
-        text-align: center;
+        height: 450px;
+        border-radius: 8px;
+        overflow: hidden;
     }
     
     .rbc-time-content {
-        height: 450px !important;
+        height: 400px;
+        min-width: 700px; /* Consistente con el header */
     }
     
     .rbc-event {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.25rem;
+        font-size: 0.65rem;
+        padding: 0.1rem 0.2rem;
         border-radius: 3px;
+        line-height: 1.2;
+        background: linear-gradient(135deg, #009A9E 0%, #007A7D 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
     .rbc-time-slot {
-        height: 30px !important;
+        height: 25px;
+        border-top: 1px solid #f8f9fa;
     }
     
     .rbc-timeslot-group {
-        min-height: 60px !important;
+        min-height: 50px;
+        border-bottom: 1px solid #eee;
     }
     
-    /* Ocultar algunos elementos en móviles para mejor visualización */
     .rbc-time-gutter .rbc-timeslot-group {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
     }
     
     .search-results-dropdown {
@@ -306,67 +290,78 @@
         padding: 0.8rem;
     }
     
-    .three-day-navigation {
-        padding: 0.6rem;
-    }
-    
-    .three-day-navigation .btn {
-        min-width: 100px;
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
-    }
-    
-    .day-badge {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-    
     .rbc-time-view {
-        height: 400px !important;
+        height: 380px;
+        min-width: 600px; /* Más compacto */
     }
     
     .rbc-time-content {
-        height: 350px !important;
+        height: 330px;
+        min-width: 600px;
+    }
+    
+    .rbc-time-header {
+        min-width: 600px;
     }
     
     .rbc-time-header .rbc-header {
-        padding: 0.4rem 0.1rem;
+        min-width: 70px; /* Más compacto */
         font-size: 0.65rem;
+        padding: 0.3rem 0.1rem;
+    }
+    
+    .rbc-time-content .rbc-day-slot {
+        min-width: 70px;
     }
     
     .rbc-event {
         font-size: 0.6rem;
-        padding: 0.1rem 0.2rem;
+        padding: 0.05rem 0.15rem;
     }
     
     .rbc-time-slot {
-        height: 25px !important;
+        height: 22px;
     }
     
     .rbc-timeslot-group {
-        min-height: 50px !important;
+        min-height: 44px;
+    }
+    
+    .rbc-time-gutter {
+        min-width: 35px;
+        font-size: 0.55rem;
     }
 }
 
 /* Extra small mobile */
 @media (max-width: 400px) {
-    .three-day-navigation .btn {
-        min-width: 80px;
-        font-size: 0.8rem;
-        padding: 0.3rem 0.6rem;
-    }
-    
-    .day-badge {
-        font-size: 0.6rem;
-        padding: 0.15rem 0.3rem;
-    }
-    
     .rbc-time-view {
-        height: 350px !important;
+        height: 350px;
+        min-width: 550px;
     }
     
     .rbc-time-content {
-        height: 300px !important;
+        height: 300px;
+        min-width: 550px;
+    }
+    
+    .rbc-time-header {
+        min-width: 550px;
+    }
+    
+    .rbc-time-header .rbc-header {
+        min-width: 65px;
+        font-size: 0.6rem;
+        padding: 0.25rem 0.05rem;
+    }
+    
+    .rbc-time-content .rbc-day-slot {
+        min-width: 65px;
+    }
+    
+    .rbc-time-gutter {
+        min-width: 30px;
+        font-size: 0.5rem;
     }
 }
 
@@ -438,101 +433,7 @@
     }
 }
 
-/* Estilos de navegación móvil */
-@media (max-width: 768px) {
-    .mobile-navigation {
-        padding: 0.5rem !important;
-    }
-    
-    .mobile-nav-btn {
-        font-size: 0.65rem !important;
-        padding: 0.2rem 0.3rem !important;
-        min-width: auto !important;
-        width: 60px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .mobile-nav-btn svg {
-        font-size: 0.6rem !important;
-        width: 8px !important;
-        height: 8px !important;
-    }
-    
-    .mobile-nav-btn .nav-btn-text {
-        font-size: 0.6rem;
-        margin: 0 0.2rem;
-    }
-    
-    .mobile-day-badge {
-        font-size: 0.85rem !important;
-        padding: 0.4rem 0.8rem !important;
-        flex: 1;
-        text-align: center;
-        max-width: 120px;
-    }
-    
-    /* Hacer el contenedor swipeable */
-    .mobile-navigation {
-        position: relative;
-        touch-action: pan-x;
-    }
-}
 
-/* Hacer botones aún más pequeños en pantallas muy pequeñas */
-@media (max-width: 576px) {
-    .mobile-nav-btn {
-        font-size: 0.6rem !important;
-        padding: 0.15rem 0.3rem !important;
-        width: 45px;
-        height: 28px;
-    }
-    
-    .mobile-nav-btn svg {
-        font-size: 0.5rem !important;
-        width: 6px !important;
-        height: 6px !important;
-    }
-    
-    .mobile-nav-btn .nav-btn-text {
-        display: none; /* Ocultar texto en pantallas muy pequeñas */
-    }
-    
-    .mobile-day-badge {
-        font-size: 0.75rem !important;
-        padding: 0.3rem 0.6rem !important;
-    }
-    
-    .mobile-navigation {
-        padding: 0.3rem !important;
-        margin-top: 0.8rem !important;
-    }
-}
-
-/* Indicador visual para swipe */
-@media (max-width: 768px) {
-    .mobile-navigation::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 30px;
-        height: 2px;
-        background: #ccc;
-        border-radius: 1px;
-        opacity: 0.5;
-    }
-    
-    .Scheduler {
-        position: relative;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: pan-y;
-    }
-}
 
 /* Week indicator styling */
 .scheduler-week-indicator {
@@ -543,29 +444,7 @@
     text-align: center;
 }
 
-/* Mobile navigation improvements */
-.mobile-nav-btn:disabled {
-    opacity: 0.4 !important;
-    cursor: not-allowed;
-    background-color: transparent !important;
-    border-color: #6c757d !important;
-    color: #6c757d !important;
-}
 
-.mobile-nav-btn:disabled:hover {
-    background-color: transparent !important;
-    border-color: #6c757d !important;
-    color: #6c757d !important;
-    transform: none !important;
-}
-
-.mobile-nav-btn:disabled svg {
-    opacity: 0.5;
-}
-
-.mobile-nav-btn:disabled .nav-btn-text {
-    opacity: 0.5;
-}
 
 /* Enhanced week indicator for mobile */
 @media (max-width: 768px) {
@@ -598,42 +477,6 @@
     }
 }
 
-/* **DEBUGGING TEMPORAL - BORDES VISIBLES EN MOBILE** */
-@media (max-width: 768px) {
-    .Scheduler {
-        border: 3px solid red !important;
-        background-color: #fffacd !important;
-    }
-    
-    .rbc-calendar {
-        border: 2px solid blue !important;
-        background-color: #f0f8ff !important;
-    }
-    
-    .rbc-time-view {
-        border: 2px solid green !important;
-        background-color: #f0fff0 !important;
-    }
-    
-    .rbc-time-content {
-        border: 1px solid orange !important;
-        background-color: #fff8dc !important;
-    }
-}
 
-/* **FORZAR VISIBILIDAD ABSOLUTA** */
-@media (max-width: 768px) {
-    .Scheduler,
-    .rbc-calendar,
-    .rbc-time-view,
-    .rbc-time-content,
-    .rbc-time-header {
-        position: relative !important;
-        z-index: 1 !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-}
 
 
