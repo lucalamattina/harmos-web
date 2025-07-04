@@ -655,12 +655,12 @@ const Reports = () => {
                         </Col>
                         <Col md={3}>
                             <Form.Group>
-                                <Form.Label>Doctor</Form.Label>
+                                <Form.Label>Terapeuta</Form.Label>
                                 <Form.Select
                                     value={selectedDoctor}
                                     onChange={(e) => setSelectedDoctor(e.target.value)}
                                 >
-                                    <option value="">Todos los doctores</option>
+                                    <option value="">Todos los terapeutas</option>
                                     {doctors.map(doctor => (
                                         <option key={doctor.id} value={doctor.id}>
                                             {doctor.name}
@@ -711,7 +711,7 @@ const Reports = () => {
                                 <th>Título</th>
                                 <th>Paciente</th>
                                 <th>Especialidad</th>
-                                <th>Doctor</th>
+                                <th>Terapeuta</th>
                                 <th>Fecha</th>
                                 <th>Acciones</th>
                             </tr>
@@ -999,7 +999,7 @@ const Reports = () => {
                                 <p><strong>Especialidad:</strong> {selectedReport.specialty?.name || 'N/A'}</p>
                             </Col>
                             <Col md={6}>
-                                <p><strong>Doctor:</strong> {selectedReport.doctor?.name || 'N/A'}</p>
+                                <p><strong>Terapeuta:</strong> {selectedReport.doctor?.name || 'N/A'}</p>
                                 <p><strong>Fecha de creación:</strong> {formatDate(selectedReport.date)}</p>
                             </Col>
                             <Col md={12} className="mt-3">

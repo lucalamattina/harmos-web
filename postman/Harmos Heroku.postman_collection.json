@@ -254,7 +254,7 @@
 					}
 				},
 				{
-					"name": "Add Doctor to Patient",
+					"name": "Add Therapist to Patient",
 					"request": {
 						"method": "POST",
 						"header": [],

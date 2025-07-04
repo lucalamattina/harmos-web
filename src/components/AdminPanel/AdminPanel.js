@@ -1225,7 +1225,7 @@ const AdminPanel = () => {
                                 value={formData.roles[0]}
                                 onChange={(e) => setFormData({...formData, roles: [e.target.value]})}
                             >
-                                <option value="DOCTOR">Doctor</option>
+                                <option value="DOCTOR">Terapeuta</option>
                                 <option value="ADMINISTRATOR">Administrador</option>
                             </Form.Select>
                         </Form.Group>

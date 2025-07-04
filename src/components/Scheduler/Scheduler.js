@@ -649,7 +649,7 @@ function Scheduler() {
     const handleSaveNewEvent = async () => {
         setSaveError('');
         if (!newEvent.selectedDoctor || !newEvent.selectedPatient || !newEvent.selectedLocation || !newEvent.start || !newEvent.end) {
-            setSaveError("Por favor, completa todos los campos: Doctor, Paciente, Ubicación y horario.");
+            setSaveError("Por favor, completa todos los campos: Terapeuta, Paciente, Ubicación y horario.");
             return;
         }
 
@@ -963,14 +963,14 @@ function Scheduler() {
                         </Col>
                         <Col md={4}>
                             <Form.Group>
-                                <Form.Label>Doctor</Form.Label>
+                                <Form.Label>Terapeuta</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
                                         <i className="bi bi-person"></i>
                                     </InputGroup.Text>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Buscar por nombre de doctor..."
+                                        placeholder="Buscar por nombre de terapeuta..."
                                         value={doctorFilterTerm}
                                         onChange={e => {
                                             setDoctorFilterTerm(e.target.value);
@@ -1108,11 +1108,11 @@ function Scheduler() {
                     <Form>
                         {saveError && <Alert variant="danger">{saveError}</Alert>}
                         <Form.Group className="mb-3">
-                            <Form.Label>Doctor</Form.Label>
+                            <Form.Label>Terapeuta</Form.Label>
                             <InputGroup>
                                 <Form.Control
                                     type="text"
-                                    placeholder="Buscar doctor por nombre..."
+                                    placeholder="Buscar terapeuta por nombre..."
                                     value={doctorSearchTerm}
                                     onChange={e => {
                                         setDoctorSearchTerm(e.target.value);

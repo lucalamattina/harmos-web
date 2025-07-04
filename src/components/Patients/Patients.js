@@ -468,14 +468,14 @@ const Patients = () => {
                         </Col>
                         <Col md={3}>
                             <Form.Group>
-                                <Form.Label>Doctor</Form.Label>
+                                <Form.Label>Terapeuta</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
                                         <i className="bi bi-person"></i>
                                     </InputGroup.Text>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Filtrar por nombre de doctor..."
+                                        placeholder="Filtrar por nombre de terapeuta..."
                                         value={doctorFilterTerm}
                                         onChange={handleDoctorFilterChange}
                                     />
@@ -702,18 +702,18 @@ const Patients = () => {
 
                             <div className="doctors-section">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 className="mb-0">Doctores Asignados</h5>
+                                    <h5 className="mb-0">Terapeutas Asignados</h5>
                                     {isAdmin && (
                                         <Button 
                                             variant="outline-primary" 
                                             size="sm"
                                             onClick={() => {
                                                 setShowAddDoctor(true);
-                                                fetchDoctors(); // Asegurarnos de cargar los doctores al abrir el modal
+                                                fetchDoctors();
                                             }}
                                         >
                                             <i className="bi bi-plus-circle me-1"></i>
-                                            Agregar Doctor
+                                            Agregar Terapeuta
                                         </Button>
                                     )}
                                 </div>
@@ -738,7 +738,7 @@ const Patients = () => {
                                     </div>
                                 ) : (
                                     <div className="text-muted">
-                                        No hay doctores asignados
+                                        No hay terapeutas asignados
                                     </div>
                                 )}
                             </div>
@@ -752,10 +752,10 @@ const Patients = () => {
                 </Modal.Footer>
             </Modal>
 
-            {/* Modal para Agregar Doctores */}
+            {/* Modal para Agregar Terapeutas */}
             <Modal show={showAddDoctor} onHide={() => setShowAddDoctor(false)} size="lg">
                 <Modal.Header closeButton>
-                    <Modal.Title>Agregar Doctores</Modal.Title>
+                    <Modal.Title>Agregar Terapeutas</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
@@ -767,7 +767,7 @@ const Patients = () => {
                                     </InputGroup.Text>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Buscar doctor por nombre..."
+                                        placeholder="Buscar terapeuta por nombre..."
                                         value={doctorSearchTerm}
                                         onChange={e => setDoctorSearchTerm(e.target.value)}
                                     />
@@ -830,7 +830,7 @@ const Patients = () => {
                         Cancelar
                     </Button>
                     <Button variant="primary" onClick={handleAddDoctors}>
-                        Agregar Doctores Seleccionados
+                        Agregar Terapeutas Seleccionados
                     </Button>
                 </Modal.Footer>
             </Modal>
@@ -901,7 +901,7 @@ const Patients = () => {
                         </Row>
 
                         <Form.Group>
-                            <Form.Label data-optional>Seleccionar Doctor</Form.Label>
+                            <Form.Label data-optional>Seleccionar Terapeuta</Form.Label>
                             <Row className="mb-2">
                                 <Col md={6}>
                                     <InputGroup>
@@ -910,7 +910,7 @@ const Patients = () => {
                                         </InputGroup.Text>
                                         <Form.Control
                                             type="text"
-                                            placeholder="Buscar doctor por nombre..."
+                                            placeholder="Buscar terapeuta por nombre..."
                                             value={doctorSearchTerm}
                                             onChange={e => setDoctorSearchTerm(e.target.value)}
                                         />
