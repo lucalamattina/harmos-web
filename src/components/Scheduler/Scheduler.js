@@ -368,6 +368,56 @@ function Scheduler() {
         fetchInitialData();
     }, []);
 
+    // Cache maps moved to component level for persistence between renders
+    const [doctorCache] = useState(() => new Map());
+    const [locationCache] = useState(() => new Map());
+    const [patientCache] = useState(() => new Map());
+
+    // Load a single user if not in cache
+    const loadUserIfNeeded = async (userId) => {
+        if (!userId || doctorCache.has(userId)) return doctorCache.get(userId);
+        try {
+            const user = await getUserById(userId);
+            if (user) {
+                doctorCache.set(userId, user.name || user.firstName);
+                return user.name || user.firstName;
+            }
+        } catch (error) {
+            logError(ERROR_TYPES.API, 'loadUserIfNeeded', error);
+        }
+        return `Doctor ID: ${userId}`;
+    };
+
+    // Load a single location if not in cache
+    const loadLocationIfNeeded = async (locationId) => {
+        if (!locationId || locationCache.has(locationId)) return locationCache.get(locationId);
+        try {
+            const location = await getLocationById(locationId);
+            if (location) {
+                locationCache.set(locationId, location.name);
+                return location.name;
+            }
+        } catch (error) {
+            logError(ERROR_TYPES.API, 'loadLocationIfNeeded', error);
+        }
+        return `Ubicación ID: ${locationId}`;
+    };
+
+    // Load a single patient if not in cache
+    const loadPatientIfNeeded = async (patientId) => {
+        if (!patientId || patientCache.has(patientId)) return patientCache.get(patientId);
+        try {
+            const patient = await getPatientById(patientId);
+            if (patient) {
+                patientCache.set(patientId, patient.name);
+                return patient.name;
+            }
+        } catch (error) {
+            logError(ERROR_TYPES.API, 'loadPatientIfNeeded', error);
+        }
+        return `Paciente ID: ${patientId}`;
+    };
+
     useEffect(() => {
         const fetchSchedules = async () => {
             const startTime = performance.now();
@@ -395,16 +445,11 @@ function Scheduler() {
                 if (!schedules || !Array.isArray(schedules)) {
                     throw new Error('Respuesta inválida de horarios: no es un array');
                 }
-                
+
                 const dayMap = {
                     MONDAY: 1, TUESDAY: 2, WEDNESDAY: 3, THURSDAY: 4,
                     FRIDAY: 5, SATURDAY: 6, SUNDAY: 0,
                 };
-
-                // Cache to avoid re-fetching the same doctor/location/patient
-                const doctorCache = new Map();
-                const locationCache = new Map();
-                const patientCache = new Map();
 
                 // Usar la semana del currentDay en lugar de la semana actual
                 const weekStart = startOfWeek(currentDay, { weekStartsOn: 1 });
@@ -412,89 +457,19 @@ function Scheduler() {
                 console.log('🔄 Procesando eventos del calendario...');
                 console.log('📅 Semana objetivo:', format(weekStart, 'dd/MM/yyyy'), '-', format(addDays(weekStart, 6), 'dd/MM/yyyy'));
                 console.log('🎯 CurrentDay:', format(currentDay, 'dd/MM/yyyy'));
-                
-                const eventPromises = schedules.map(async (sch, index) => {
-                    try {
-                        if (!sch || !sch.dayOfWeek) {
-                            console.warn(`⚠️ Horario ${index} inválido:`, sch);
-                            return null;
-                        }
 
-                        let doctorName = `Doctor ID: ${sch.doctorUserId}`;
-                        let locationName = `Ubicación ID: ${sch.locationId}`;
-                        let patientName = `Paciente ID: ${sch.patientId}`;
+                // Process schedules in chunks to avoid overwhelming the browser
+                const CHUNK_SIZE = 10;
+                const events = [];
 
-                        // **FETCH DOCTOR CON MEJOR MANEJO DE ERRORES**
-                        try {
-                            if (sch.doctorUserId) {
-                                if (doctorCache.has(sch.doctorUserId)) {
-                                    doctorName = doctorCache.get(sch.doctorUserId);
-                                } else {
-                                    const doctor = await withTimeout(
-                                        getUserById(sch.doctorUserId), 
-                                        5000, 
-                                        `getUserById(${sch.doctorUserId})`
-                                    );
-                                    if (doctor) {
-                                        doctorName = `${doctor.name || doctor.firstName}`;
-                                        doctorCache.set(sch.doctorUserId, doctorName);
-                                    }
-                                }
-                            }
-                        } catch (docError) {
-                            logError(ERROR_TYPES.API, `getUserById(${sch.doctorUserId})`, docError, {
-                                scheduleId: sch.id,
-                                doctorUserId: sch.doctorUserId
-                            });
-                        }
-
-                        // **FETCH LOCATION CON MEJOR MANEJO DE ERRORES**
-                        try {
-                            if (sch.locationId) {
-                                if (locationCache.has(sch.locationId)) {
-                                    locationName = locationCache.get(sch.locationId);
-                                } else {
-                                    const location = await withTimeout(
-                                        getLocationById(sch.locationId), 
-                                        5000, 
-                                        `getLocationById(${sch.locationId})`
-                                    );
-                                    if (location) {
-                                        locationName = location.name;
-                                        locationCache.set(sch.locationId, locationName);
-                                    }
-                                }
-                            }
-                        } catch (locError) {
-                            logError(ERROR_TYPES.API, `getLocationById(${sch.locationId})`, locError, {
-                                scheduleId: sch.id,
-                                locationId: sch.locationId
-                            });
-                        }
-
-                        // **FETCH PATIENT CON MEJOR MANEJO DE ERRORES**
-                        try {
-                            if (sch.patientId) {
-                                if (patientCache.has(sch.patientId)) {
-                                    patientName = patientCache.get(sch.patientId);
-                                } else {
-                                    const patient = await withTimeout(
-                                        getPatientById(sch.patientId), 
-                                        5000, 
-                                        `getPatientById(${sch.patientId})`
-                                    );
-                                    if (patient) {
-                                        patientName = patient.name;
-                                        patientCache.set(sch.patientId, patientName);
-                                    }
-                                }
-                            }
-                        } catch (patError) {
-                            logError(ERROR_TYPES.API, `getPatientById(${sch.patientId})`, patError, {
-                                scheduleId: sch.id,
-                                patientId: sch.patientId
-                            });
-                        }
+                for (let i = 0; i < schedules.length; i += CHUNK_SIZE) {
+                    const chunk = schedules.slice(i, i + CHUNK_SIZE);
+                    const processedChunk = await Promise.all(chunk.map(async (sch) => {
+                        const [doctorName, locationName, patientName] = await Promise.all([
+                            loadUserIfNeeded(sch.doctorUserId),
+                            loadLocationIfNeeded(sch.locationId),
+                            loadPatientIfNeeded(sch.patientId)
+                        ]);
 
                         let dayOffset = dayMap[sch.dayOfWeek];
                         if (dayOffset === undefined) {
@@ -511,18 +486,6 @@ function Scheduler() {
                         
                         const end = new Date(date);
                         end.setHours(sch.hourTo, sch.minuteTo, 0, 0);
-
-                        // DEBUG: Log detallado de la conversión de fechas
-                        console.log(`🔍 Evento ${index + 1}:`, {
-                            dayOfWeek: sch.dayOfWeek,
-                            dayOffset,
-                            weekStart: format(weekStart, 'dd/MM/yyyy'),
-                            calculatedDate: format(date, 'dd/MM/yyyy (eeee)', { locale: es }),
-                            start: format(start, 'dd/MM/yyyy HH:mm (eeee)', { locale: es }),
-                            end: format(end, 'dd/MM/yyyy HH:mm (eeee)', { locale: es }),
-                            doctorName,
-                            patientName
-                        });
 
                         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
                             console.warn(`⚠️ Fechas inválidas para horario ${sch.id}:`, {
@@ -543,20 +506,12 @@ function Scheduler() {
                             patientName: patientName,
                             scheduleTime: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
                         };
-                    } catch (eventError) {
-                        logError(ERROR_TYPES.DATA, `processScheduleEvent(${sch?.id})`, eventError, {
-                            schedule: sch,
-                            index
-                        });
-                        return null;
-                    }
-                });
+                    }));
 
-                const mappedEvents = (await Promise.all(eventPromises)).filter(Boolean);
-                console.log(`✅ Eventos procesados: ${mappedEvents.length}/${schedules.length}`);
-                
-                setAllEvents(mappedEvents);
-                
+                    events.push(...processedChunk.filter(Boolean));
+                }
+
+                setAllEvents(events);
                 const loadTime = performance.now() - startTime;
                 setPerformanceMetrics(prev => ({ 
                     ...prev, 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import api from '../../api/api';
 import './ForgotPassword.css';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
-import { FaExclamationCircle, FaCheckCircle, FaRegCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaExclamationCircle, FaCheckCircle, FaRegCircle, FaTimesCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -13,6 +13,8 @@ const ResetPassword = () => {
 
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -178,26 +180,44 @@ const ResetPassword = () => {
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Nueva Contraseña</Form.Label>
-                        <Form.Control
-                            type="password"
-                            value={newPassword}
-                            onChange={handlePasswordChange}
-                            style={{ fontSize: '1.1rem', padding: '12px', paddingRight: 40 }}
-                            autoComplete="new-password"
-                            spellCheck={false}
-                        />
+                        <InputGroup>
+                            <Form.Control
+                                type={showPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={handlePasswordChange}
+                                style={{ fontSize: '1.1rem', padding: '12px' }}
+                                autoComplete="new-password"
+                                spellCheck={false}
+                            />
+                            <Button 
+                                variant="outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ padding: '0 15px' }}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </Button>
+                        </InputGroup>
                     </Form.Group>
                     <Form.Group className="mb-3" style={{ position: 'relative' }}>
                         <Form.Label>Confirmar Contraseña</Form.Label>
-                        <Form.Control
-                            type="password"
-                            value={confirmPassword}
-                            onChange={handleConfirmChange}
-                            onBlur={handleConfirmBlur}
-                            style={{ fontSize: '1.1rem', padding: '12px', paddingRight: 40 }}
-                            autoComplete="new-password"
-                            spellCheck={false}
-                        />
+                        <InputGroup>
+                            <Form.Control
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={handleConfirmChange}
+                                onBlur={handleConfirmBlur}
+                                style={{ fontSize: '1.1rem', padding: '12px' }}
+                                autoComplete="new-password"
+                                spellCheck={false}
+                            />
+                            <Button 
+                                variant="outline-secondary"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                style={{ padding: '0 15px' }}
+                            >
+                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                            </Button>
+                        </InputGroup>
                         {submitted && confirmError && (
                             <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
                                 <FaExclamationCircle className="me-1" /> {confirmError}
