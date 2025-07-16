@@ -27,7 +27,7 @@ const AdminPanel = () => {
     });
     const [specialtyFormData, setSpecialtyFormData] = useState({
         name: '',
-        description: ''
+        data: ''
     });
     // Estado para la paginación
     const [pagination, setPagination] = useState({
@@ -68,11 +68,11 @@ const AdminPanel = () => {
     // Estados de validación de formulario para especialidades
     const [specialtyFormErrors, setSpecialtyFormErrors] = useState({
         name: '',
-        description: ''
+        data: ''
     });
     const [specialtyFieldsTouched, setSpecialtyFieldsTouched] = useState({
         name: false,
-        description: false
+        data: false
     });
     const [specialtyFormError, setSpecialtyFormError] = useState('');
 
@@ -222,13 +222,13 @@ const AdminPanel = () => {
         // Marcar todos los campos como touched
         setSpecialtyFieldsTouched({
             name: true,
-            description: true
+            data: true
         });
         
         // Validar todos los campos
         const errors = {};
         errors.name = validateSpecialtyName(specialtyFormData.name);
-        errors.description = validateSpecialtyDescription(specialtyFormData.description);
+        errors.data = validateSpecialtyData(specialtyFormData.data);
         
         setSpecialtyFormErrors(errors);
         
@@ -241,13 +241,16 @@ const AdminPanel = () => {
 
         try {
             if (selectedSpecialty) {
-                // Aquí podrías implementar la edición de especialidad si tu backend lo permite
-                // await api.put(`/api/specialties/${selectedSpecialty.id}`, { name: specialtyFormData.name, data: specialtyFormData.description });
+                // Editar especialidad existente
+                await api.put(`/api/specialties/${selectedSpecialty.id}`, { 
+                    name: specialtyFormData.name, 
+                    data: specialtyFormData.data 
+                });
             } else {
                 // Crear especialidad
                 await api.post('/api/specialties', {
                     name: specialtyFormData.name,
-                    data: specialtyFormData.description
+                    data: specialtyFormData.data
                 });
             }
             setShowSpecialtyModal(false);
@@ -360,7 +363,7 @@ const AdminPanel = () => {
     const resetSpecialtyForm = () => {
         setSpecialtyFormData({
             name: '',
-            description: ''
+            data: ''
         });
         setSelectedSpecialty(null);
         clearSpecialtyFormErrors();
@@ -474,7 +477,7 @@ const AdminPanel = () => {
         return '';
     };
 
-    const validateSpecialtyDescription = (value) => {
+    const validateSpecialtyData = (value) => {
         if (value && value.length > 500) {
             return 'La descripción no puede exceder 500 caracteres.';
         }
@@ -563,8 +566,8 @@ const AdminPanel = () => {
                 case 'name':
                     error = validateSpecialtyName(value);
                     break;
-                case 'description':
-                    error = validateSpecialtyDescription(value);
+                case 'data':
+                    error = validateSpecialtyData(value);
                     break;
                 default:
                     break;
@@ -585,8 +588,8 @@ const AdminPanel = () => {
             case 'name':
                 error = validateSpecialtyName(value);
                 break;
-            case 'description':
-                error = validateSpecialtyDescription(value);
+            case 'data':
+                error = validateSpecialtyData(value);
                 break;
             default:
                 break;
@@ -616,11 +619,11 @@ const AdminPanel = () => {
     const clearSpecialtyFormErrors = () => {
         setSpecialtyFormErrors({
             name: '',
-            description: ''
+            data: ''
         });
         setSpecialtyFieldsTouched({
             name: false,
-            description: false
+            data: false
         });
         setSpecialtyFormError('');
     };
@@ -933,7 +936,7 @@ const AdminPanel = () => {
                                                     setSelectedSpecialty(specialty);
                                                     setSpecialtyFormData({
                                                         name: specialty.name,
-                                                        description: specialty.data || ''
+                                                        data: specialty.data || ''
                                                     });
                                                     setShowSpecialtyModal(true);
                                                 }}
@@ -1298,26 +1301,26 @@ const AdminPanel = () => {
                                 as="textarea"
                                 rows={3}
                                 placeholder="Descripción de la especialidad (opcional)"
-                                value={specialtyFormData.description}
+                                value={specialtyFormData.data}
                                 maxLength={500}
-                                onChange={(e) => handleSpecialtyFieldChange('description', e.target.value)}
-                                onBlur={(e) => handleSpecialtyFieldBlur('description')}
-                                style={specialtyFieldsTouched.description && specialtyFormErrors.description ? { 
+                                onChange={(e) => handleSpecialtyFieldChange('data', e.target.value)}
+                                onBlur={(e) => handleSpecialtyFieldBlur('data')}
+                                style={specialtyFieldsTouched.data && specialtyFormErrors.data ? { 
                                     border: '2px solid #d00', 
                                     background: '#fff6f6' 
                                 } : {}}
-                                className={specialtyFieldsTouched.description && specialtyFormErrors.description ? 'error-input' : ''}
+                                className={specialtyFieldsTouched.data && specialtyFormErrors.data ? 'error-input' : ''}
                             />
                             <div className="d-flex justify-content-between">
                                 <div>
-                                    {specialtyFieldsTouched.description && specialtyFormErrors.description && (
+                                    {specialtyFieldsTouched.data && specialtyFormErrors.data && (
                                         <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
-                                            <FaExclamationCircle className="me-1" /> {specialtyFormErrors.description}
+                                            <FaExclamationCircle className="me-1" /> {specialtyFormErrors.data}
                                         </div>
                                     )}
                                 </div>
                                 <Form.Text className="text-muted">
-                                    {specialtyFormData.description.length}/500 caracteres
+                                    {specialtyFormData.data.length}/500 caracteres
                                 </Form.Text>
                             </div>
                         </Form.Group>

@@ -15,7 +15,7 @@ import {
     Pagination,
     Collapse
 } from "react-bootstrap";
-import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaEdit } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
@@ -47,6 +47,7 @@ const Reports = () => {
     
     // Estados para modales
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
@@ -73,6 +74,15 @@ const Reports = () => {
         file: null
     });
 
+    // Estados para formulario de edición
+    const [editReport, setEditReport] = useState({
+        id: null,
+        title: '',
+        patientId: '',
+        specialtyId: '',
+        file: null
+    });
+
     // Estados de validación de formulario
     const [titleError, setTitleError] = useState('');
     const [patientError, setPatientError] = useState('');
@@ -83,6 +93,17 @@ const Reports = () => {
     const [specialtyTouched, setSpecialtyTouched] = useState(false);
     const [fileTouched, setFileTouched] = useState(false);
     const [formError, setFormError] = useState('');
+
+    // Estados de validación para formulario de edición
+    const [editTitleError, setEditTitleError] = useState('');
+    const [editPatientError, setEditPatientError] = useState('');
+    const [editSpecialtyError, setEditSpecialtyError] = useState('');
+    const [editFileError, setEditFileError] = useState('');
+    const [editTitleTouched, setEditTitleTouched] = useState(false);
+    const [editPatientTouched, setEditPatientTouched] = useState(false);
+    const [editSpecialtyTouched, setEditSpecialtyTouched] = useState(false);
+    const [editFileTouched, setEditFileTouched] = useState(false);
+    const [editFormError, setEditFormError] = useState('');
 
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
@@ -525,6 +546,178 @@ const Reports = () => {
         setShowDeleteModal(true);
     };
 
+    // Funciones para editar reportes
+    const openEditModal = (report) => {
+        setSelectedReport(report);
+        setEditReport({
+            id: report.id,
+            title: report.title || '',
+            patientId: report.patient?.id || '',
+            specialtyId: report.specialty?.id || '',
+            file: null // El archivo se maneja por separado
+        });
+        clearEditFormErrors();
+        setShowEditModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false);
+        setEditReport({ id: null, title: '', patientId: '', specialtyId: '', file: null });
+        clearEditFormErrors();
+    };
+
+    // Funciones de validación para edición (reutilizamos las existentes)
+    const validateEditTitle = (value) => validateTitle(value);
+    const validateEditPatient = (value) => validatePatient(value);
+    const validateEditSpecialty = (value) => validateSpecialty(value);
+    const validateEditFile = (file) => {
+        // Para edición, el archivo es opcional
+        if (!file) return '';
+        return validateFile(file);
+    };
+
+    // Manejadores de cambio para formulario de edición
+    const handleEditTitleChange = (e) => {
+        const value = e.target.value;
+        setEditReport(prev => ({ ...prev, title: value }));
+        if (editTitleTouched) {
+            setEditTitleError(validateEditTitle(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditPatientChange = (e) => {
+        const value = e.target.value;
+        setEditReport(prev => ({ ...prev, patientId: value }));
+        if (editPatientTouched) {
+            setEditPatientError(validateEditPatient(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditSpecialtyChange = (e) => {
+        const value = e.target.value;
+        setEditReport(prev => ({ ...prev, specialtyId: value }));
+        if (editSpecialtyTouched) {
+            setEditSpecialtyError(validateEditSpecialty(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditFileChange = (e) => {
+        const file = e.target.files[0];
+        setEditReport(prev => ({ ...prev, file }));
+        if (editFileTouched) {
+            setEditFileError(validateEditFile(file));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    // Manejadores de blur para formulario de edición
+    const handleEditTitleBlur = () => {
+        setEditTitleTouched(true);
+        setEditTitleError(validateEditTitle(editReport.title));
+    };
+
+    const handleEditPatientBlur = () => {
+        setEditPatientTouched(true);
+        setEditPatientError(validateEditPatient(editReport.patientId));
+    };
+
+    const handleEditSpecialtyBlur = () => {
+        setEditSpecialtyTouched(true);
+        setEditSpecialtyError(validateEditSpecialty(editReport.specialtyId));
+    };
+
+    const handleEditFileBlur = () => {
+        setEditFileTouched(true);
+        setEditFileError(validateEditFile(editReport.file));
+    };
+
+    // Función para limpiar errores de edición
+    const clearEditFormErrors = () => {
+        setEditTitleError('');
+        setEditPatientError('');
+        setEditSpecialtyError('');
+        setEditFileError('');
+        setEditFormError('');
+        setEditTitleTouched(false);
+        setEditPatientTouched(false);
+        setEditSpecialtyTouched(false);
+        setEditFileTouched(false);
+    };
+
+    // Función para manejar la actualización del reporte
+    const handleUpdateReport = async (e) => {
+        e.preventDefault();
+        
+        // Limpiar errores previos
+        setEditFormError('');
+        
+        // Marcar todos los campos como touched
+        setEditTitleTouched(true);
+        setEditPatientTouched(true);
+        setEditSpecialtyTouched(true);
+        setEditFileTouched(true);
+        
+        // Validar todos los campos
+        const titleError = validateEditTitle(editReport.title);
+        const patientError = validateEditPatient(editReport.patientId);
+        const specialtyError = validateEditSpecialty(editReport.specialtyId);
+        const fileError = validateEditFile(editReport.file);
+        
+        setEditTitleError(titleError);
+        setEditPatientError(patientError);
+        setEditSpecialtyError(specialtyError);
+        setEditFileError(fileError);
+        
+        // Verificar si hay errores
+        if (titleError || patientError || specialtyError || fileError) {
+            setEditFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            
+            // Solo agregar campos que han cambiado
+            if (editReport.title !== selectedReport.title) {
+                formData.append('title', editReport.title);
+            }
+            if (editReport.patientId !== selectedReport.patient?.id) {
+                formData.append('patientId', editReport.patientId);
+            }
+            if (editReport.specialtyId !== selectedReport.specialty?.id) {
+                formData.append('specialtyId', editReport.specialtyId);
+            }
+            if (editReport.file) {
+                formData.append('file', editReport.file);
+            }
+
+            // Verificar que al menos un campo ha cambiado
+            if (formData.entries().next().done) {
+                setEditFormError('Debe modificar al menos un campo para actualizar el reporte.');
+                return;
+            }
+
+            await api.put(`/api/reports/${editReport.id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setShowEditModal(false);
+            setEditReport({ id: null, title: '', patientId: '', specialtyId: '', file: null });
+            clearEditFormErrors();
+            fetchReports(currentPage); // Mantener la página actual después de editar
+            setError(null);
+        } catch (error) {
+            console.error('Error al actualizar reporte:', error);
+            const errorMessage = error.response?.data?.error || 'Error al actualizar el reporte';
+            setEditFormError(errorMessage);
+        }
+    };
+
     // La función formatDate ahora viene del utils/dateUtils.js
 
     // Función optimizada para limpiar filtros
@@ -758,6 +951,25 @@ const Reports = () => {
                                                     <FaDownload />
                                                 </Button>
                                                 {(() => {
+                                                    // Verificar si el usuario puede editar este reporte
+                                                    const canEdit = isAdmin || (
+                                                        report.doctor?.id && 
+                                                        user?.id && 
+                                                        Number(report.doctor.id) === Number(user.id)
+                                                    );
+                                                    
+                                                    return canEdit ? (
+                                                        <Button
+                                                            variant="outline-warning"
+                                                            size="sm"
+                                                            onClick={() => openEditModal(report)}
+                                                            title="Editar reporte"
+                                                        >
+                                                            <FaEdit />
+                                                        </Button>
+                                                    ) : null;
+                                                })()}
+                                                {(() => {
                                                     // Verificar si el usuario puede eliminar este reporte
                                                     const canDelete = isAdmin || (
                                                         report.doctor?.id && 
@@ -978,6 +1190,156 @@ const Reports = () => {
                                      (specialtyTouched && specialtyError) || (fileTouched && fileError)}
                         >
                             Crear Informe
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
+
+            {/* Modal Editar Reporte */}
+            <Modal show={showEditModal} onHide={handleCloseEditModal} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Editar Informe</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleUpdateReport}>
+                    <Modal.Body>
+                        <Row>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Título</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Título del informe"
+                                        value={editReport.title}
+                                        maxLength={255}
+                                        onChange={handleEditTitleChange}
+                                        onBlur={handleEditTitleBlur}
+                                        style={editTitleTouched && editTitleError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={editTitleTouched && editTitleError ? 'error-input' : ''}
+                                    />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {editTitleTouched && editTitleError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {editTitleError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {editReport.title.length}/255 caracteres
+                                        </Form.Text>
+                                    </div>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Paciente</Form.Label>
+                                    <Form.Select
+                                        value={editReport.patientId}
+                                        onChange={handleEditPatientChange}
+                                        onBlur={handleEditPatientBlur}
+                                        style={editPatientTouched && editPatientError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={editPatientTouched && editPatientError ? 'error-input' : ''}
+                                    >
+                                        <option value="">Seleccionar paciente</option>
+                                        {patients.map(patient => (
+                                            <option key={patient.id} value={patient.id}>
+                                                {patient.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                    {editPatientTouched && editPatientError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {editPatientError}
+                                        </div>
+                                    )}
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Especialidad</Form.Label>
+                                    <Form.Select
+                                        value={editReport.specialtyId}
+                                        onChange={handleEditSpecialtyChange}
+                                        onBlur={handleEditSpecialtyBlur}
+                                        style={editSpecialtyTouched && editSpecialtyError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={editSpecialtyTouched && editSpecialtyError ? 'error-input' : ''}
+                                    >
+                                        <option value="">Seleccionar especialidad</option>
+                                        {specialties.map(specialty => (
+                                            <option key={specialty.id} value={specialty.id}>
+                                                {specialty.name}
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                    {editSpecialtyTouched && editSpecialtyError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {editSpecialtyError}
+                                        </div>
+                                    )}
+                                </Form.Group>
+                            </Col>
+                            <Col md={12}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Archivo (opcional)</Form.Label>
+                                    <Form.Control
+                                        type="file"
+                                        onChange={handleEditFileChange}
+                                        onBlur={handleEditFileBlur}
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                        style={editFileTouched && editFileError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={editFileTouched && editFileError ? 'error-input' : ''}
+                                    />
+                                    <div>
+                                        {editFileTouched && editFileError && (
+                                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                <FaExclamationCircle className="me-1" /> {editFileError}
+                                            </div>
+                                        )}
+                                        <Form.Text className="text-muted">
+                                            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo 25MB.
+                                            {editReport.file && (
+                                                <><br/>Archivo seleccionado: {editReport.file.name} ({(editReport.file.size / 1024 / 1024).toFixed(2)} MB)</>
+                                            )}
+                                            {selectedReport && selectedReport.file && !editReport.file && (
+                                                <><br/>Archivo actual: {selectedReport.file.filename}</>
+                                            )}
+                                        </Form.Text>
+                                    </div>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        
+                        {/* Mensaje de error general */}
+                        {editFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{editFormError}</div>
+                            </Alert>
+                        )}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={handleCloseEditModal}>
+                            Cancelar
+                        </Button>
+                        <Button 
+                            variant="primary" 
+                            type="submit"
+                            disabled={(editTitleTouched && editTitleError) || (editPatientTouched && editPatientError) || 
+                                     (editSpecialtyTouched && editSpecialtyError) || (editFileTouched && editFileError)}
+                        >
+                            Actualizar Informe
                         </Button>
                     </Modal.Footer>
                 </Form>
