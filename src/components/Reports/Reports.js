@@ -19,6 +19,7 @@ import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCirc
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
+import { usePeriodicSync } from '../../hooks/usePeriodicSync'; // Importar el hook
 import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
 import './Reports.css';
@@ -28,6 +29,8 @@ const Reports = () => {
     const { isAdmin, currentUser: user } = useContext(AuthContext);
     const isMobile = useMobileDetection();
     
+    // Hook para sincronización manual
+    const { syncNow } = usePeriodicSync(() => {}); // El callback es opcional si solo queremos syncNow
 
     
     // Estados principales
@@ -508,6 +511,7 @@ const Reports = () => {
             setNewReport({ title: '', patientId: '', specialtyId: '', file: null });
             clearFormErrors();
             fetchReports(0); // Volver a la primera página después de crear
+            syncNow(); // Forzar actualización de notificaciones
             setCurrentPage(0);
             setError(null);
         } catch (error) {
@@ -710,6 +714,7 @@ const Reports = () => {
             setEditReport({ id: null, title: '', patientId: '', specialtyId: '', file: null });
             clearEditFormErrors();
             fetchReports(currentPage); // Mantener la página actual después de editar
+            syncNow(); // Forzar actualización de notificaciones
             setError(null);
         } catch (error) {
             console.error('Error al actualizar reporte:', error);
