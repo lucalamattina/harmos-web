@@ -38,7 +38,7 @@ const Patients = () => {
         lastName: "",
         phone: "",
         status: "ACTIVE",
-        doctors: [],
+        doctorIds: [],
         doctorSpecialties: []
     });
     const [showAddDoctor, setShowAddDoctor] = useState(false);
@@ -213,8 +213,8 @@ const Patients = () => {
             firstName: "",
             lastName: "",
             phone: "",
-            status: "unknown",
-            doctors: [],
+            status: "ACTIVE",
+            doctorIds: [],
             doctorSpecialties: []
         });
         setDoctorSearchTerm('');
@@ -254,8 +254,8 @@ const Patients = () => {
                 firstName: "",
                 lastName: "",
                 phone: "",
-                status: "unknown",
-                doctors: [],
+                status: "ACTIVE",
+                doctorIds: [],
                 doctorSpecialties: []
             });
             clearFormErrors();
@@ -1010,17 +1010,17 @@ const Patients = () => {
                                     <tbody>
                                         {doctors.map(doctor => (
                                             <tr key={doctor.id} 
-                                                className={newPatient.doctors.includes(doctor.id) ? 'table-primary' : ''}
+                                                className={newPatient.doctorIds.includes(doctor.id) ? 'table-primary' : ''}
                                                 onClick={() => {
-                                                    if (newPatient.doctors.includes(doctor.id)) {
+                                                    if (newPatient.doctorIds.includes(doctor.id)) {
                                                         setNewPatient(prev => ({
                                                             ...prev,
-                                                            doctors: prev.doctors.filter((id) => id !== doctor.id)
+                                                            doctorIds: prev.doctorIds.filter((id) => id !== doctor.id)
                                                         }));
                                                     } else {
                                                         setNewPatient(prev => ({
                                                             ...prev,
-                                                            doctors: [...prev.doctors, doctor.id]
+                                                            doctorIds: [...prev.doctorIds, doctor.id]
                                                         }));
                                                     }
                                                 }}
@@ -1028,7 +1028,7 @@ const Patients = () => {
                                                 <td>
                                                     <Form.Check
                                                         type="checkbox"
-                                                        checked={newPatient.doctors.includes(doctor.id)}
+                                                        checked={newPatient.doctorIds.includes(doctor.id)}
                                                         onChange={() => {}}
                                                     />
                                                 </td>
