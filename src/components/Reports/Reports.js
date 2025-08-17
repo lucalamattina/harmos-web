@@ -829,7 +829,7 @@ const Reports = () => {
                                     <option value="">Todos los pacientes</option>
                                     {patients.map(patient => (
                                         <option key={patient.id} value={patient.id}>
-                                            {patient.name}
+                                            {`${patient.firstName} ${patient.lastName}`}
                                         </option>
                                     ))}
                                 </Form.Select>
@@ -921,7 +921,7 @@ const Reports = () => {
                                         <td>
                                             <strong className="report-title">{report.title}</strong>
                                         </td>
-                                        <td>{report.patient?.name || 'N/A'}</td>
+                                        <td>{`${report.patient?.firstName} ${report.patient?.lastName}` || 'N/A'}</td>
                                         <td>
                                             <Badge bg="info" className="specialty-badge">
                                                 {report.specialty?.name || 'N/A'}
@@ -1107,7 +1107,7 @@ const Reports = () => {
                                         <option value="">Seleccionar paciente</option>
                                         {patients.map(patient => (
                                             <option key={patient.id} value={patient.id}>
-                                                {patient.name}
+                                                {`${patient.firstName} ${patient.lastName}`}
                                             </option>
                                         ))}
                                     </Form.Select>
@@ -1254,7 +1254,7 @@ const Reports = () => {
                                         <option value="">Seleccionar paciente</option>
                                         {patients.map(patient => (
                                             <option key={patient.id} value={patient.id}>
-                                                {patient.name}
+                                                {`${patient.firstName} ${patient.lastName}`}
                                             </option>
                                         ))}
                                     </Form.Select>
@@ -1362,7 +1362,7 @@ const Reports = () => {
                                 <h4 className="text-primary">{selectedReport.title}</h4>
                             </Col>
                             <Col md={6}>
-                                <p><strong>Paciente:</strong> {selectedReport.patient?.name || 'N/A'}</p>
+                                <p><strong>Paciente:</strong> {`${selectedReport.patient?.firstName} ${selectedReport.patient?.lastName}` || 'N/A'}</p>
                                 <p><strong>Especialidad:</strong> {selectedReport.specialty?.name || 'N/A'}</p>
                             </Col>
                             <Col md={6}>
@@ -1425,4 +1425,4 @@ const Reports = () => {
     );
 };
 
-export default Reports; 
+export default Reports;
