@@ -34,10 +34,11 @@ const Patients = () => {
     const [doctorFilterTerm, setDoctorFilterTerm] = useState(''); // Campo de texto para filtrar por nombre de doctor
     const [statuses, setStatuses] = useState([]);
     const [newPatient, setNewPatient] = useState({
-        name: "",
+        firstName: "",
+        lastName: "",
         phone: "",
-        status: "unknown",
-        doctors: [],
+        status: "ACTIVE",
+        doctorIds: [],
         doctorSpecialties: []
     });
     const [showAddDoctor, setShowAddDoctor] = useState(false);
@@ -54,9 +55,11 @@ const Patients = () => {
     const [onConfirm, setOnConfirm] = useState(() => () => {});
 
     // Estados de validación de formulario
-    const [nameError, setNameError] = useState('');
+    const [firstNameError, setFirstNameError] = useState('');
+    const [lastNameError, setLastNameError] = useState('');
     const [phoneError, setPhoneError] = useState('');
-    const [nameTouched, setNameTouched] = useState(false);
+    const [firstNameTouched, setFirstNameTouched] = useState(false);
+    const [lastNameTouched, setLastNameTouched] = useState(false);
     const [phoneTouched, setPhoneTouched] = useState(false);
     const [formError, setFormError] = useState('');
 
@@ -104,6 +107,7 @@ const Patients = () => {
             }
 
             const response = await api.get(`/api/patients?${params.toString()}`);
+            console.log(response.data.content);
             const patientsData = response.data.content || [];
             setPatients(patientsData);
             setFilteredPatients(patientsData);
@@ -181,7 +185,7 @@ const Patients = () => {
                 setFilteredPatients(patients);
             } else {
                 const filtered = patients.filter(patient => 
-                    patient.name.toLowerCase().includes(term.toLowerCase())
+                    (`${patient.firstName} ${patient.lastName}`).toLowerCase().includes(term.toLowerCase())
                 );
                 setFilteredPatients(filtered);
             }
@@ -206,10 +210,11 @@ const Patients = () => {
     const handleCloseNew = () => {
         setShowNew(false);
         setNewPatient({
-            name: "",
+            firstName: "",
+            lastName: "",
             phone: "",
-            status: "unknown",
-            doctors: [],
+            status: "ACTIVE",
+            doctorIds: [],
             doctorSpecialties: []
         });
         setDoctorSearchTerm('');
@@ -222,18 +227,21 @@ const Patients = () => {
         setFormError('');
         
         // Marcar todos los campos como touched
-        setNameTouched(true);
+        setFirstNameTouched(true);
+        setLastNameTouched(true);
         setPhoneTouched(true);
         
         // Validar todos los campos
-        const nameErr = validateName(newPatient.name);
+        const firstNameErr = validateFirstName(newPatient.firstName);
+        const lastNameErr = validateLastName(newPatient.lastName);
         const phoneErr = validatePhone(newPatient.phone);
         
-        setNameError(nameErr);
+        setFirstNameError(firstNameErr);
+        setLastNameError(lastNameErr);
         setPhoneError(phoneErr);
         
         // Si hay errores de validación, no continuar
-        if (nameErr || phoneErr) {
+        if (firstNameErr || lastNameErr || phoneErr) {
             setFormError('Por favor, corrige los errores antes de continuar.');
             return;
         }
@@ -243,10 +251,11 @@ const Patients = () => {
             await fetchPatients();
             setShowNew(false);
             setNewPatient({
-                name: "",
+                firstName: "",
+                lastName: "",
                 phone: "",
-                status: "unknown",
-                doctors: [],
+                status: "ACTIVE",
+                doctorIds: [],
                 doctorSpecialties: []
             });
             clearFormErrors();
@@ -324,15 +333,28 @@ const Patients = () => {
     };
 
     // Funciones de validación
-    const validateName = (value) => {
+    const validateFirstName = (value) => {
         if (!value || value.trim().length === 0) {
             return 'El nombre es obligatorio.';
         }
         if (value.trim().length < 2) {
             return 'El nombre debe tener al menos 2 caracteres.';
         }
-        if (value.length > 100) {
-            return 'El nombre no puede exceder 100 caracteres.';
+        if (value.length > 50) {
+            return 'El nombre no puede exceder 50 caracteres.';
+        }
+        return '';
+    };
+
+    const validateLastName = (value) => {
+        if (!value || value.trim().length === 0) {
+            return 'El apellido es obligatorio.';
+        }
+        if (value.trim().length < 2) {
+            return 'El apellido debe tener al menos 2 caracteres.';
+        }
+        if (value.length > 50) {
+            return 'El apellido no puede exceder 50 caracteres.';
         }
         return '';
     };
@@ -350,11 +372,20 @@ const Patients = () => {
     };
 
     // Manejadores de cambio con validación en tiempo real
-    const handleNameChange = (e) => {
+    const handleFirstNameChange = (e) => {
         const value = e.target.value;
-        setNewPatient(prev => ({ ...prev, name: value }));
-        if (nameTouched) {
-            setNameError(validateName(value));
+        setNewPatient(prev => ({ ...prev, firstName: value }));
+        if (firstNameTouched) {
+            setFirstNameError(validateFirstName(value));
+        }
+        if (formError) setFormError('');
+    };
+
+    const handleLastNameChange = (e) => {
+        const value = e.target.value;
+        setNewPatient(prev => ({ ...prev, lastName: value }));
+        if (lastNameTouched) {
+            setLastNameError(validateLastName(value));
         }
         if (formError) setFormError('');
     };
@@ -369,9 +400,14 @@ const Patients = () => {
     };
 
     // Manejadores de blur
-    const handleNameBlur = () => {
-        setNameTouched(true);
-        setNameError(validateName(newPatient.name));
+    const handleFirstNameBlur = () => {
+        setFirstNameTouched(true);
+        setFirstNameError(validateFirstName(newPatient.firstName));
+    };
+
+    const handleLastNameBlur = () => {
+        setLastNameTouched(true);
+        setLastNameError(validateLastName(newPatient.lastName));
     };
 
     const handlePhoneBlur = () => {
@@ -381,10 +417,12 @@ const Patients = () => {
 
     // Función para limpiar errores
     const clearFormErrors = () => {
-        setNameError('');
+        setFirstNameError('');
+        setLastNameError('');
         setPhoneError('');
         setFormError('');
-        setNameTouched(false);
+        setFirstNameTouched(false);
+        setLastNameTouched(false);
         setPhoneTouched(false);
     };
 
@@ -551,7 +589,7 @@ const Patients = () => {
                             {filteredPatients.length > 0 ? (
                                 filteredPatients.map(patient => (
                                     <tr key={patient.id}>
-                                        <td>{patient.name}</td>
+                                        <td>{`${patient.firstName} ${patient.lastName}`}</td>
                                         <td>
                                             <div className="d-flex align-items-center">
                                                 <i className="bi bi-telephone me-2"></i>
@@ -689,7 +727,7 @@ const Patients = () => {
                     {selectedPatient && (
                         <div className="patient-details">
                             <div className="mb-4">
-                                <h4 className="text-primary mb-3">{selectedPatient.name}</h4>
+                                <h4 className="text-primary mb-3">{`${selectedPatient.firstName} ${selectedPatient.lastName}`}</h4>
                                 <div className="d-flex align-items-center mb-2">
                                     <i className="bi bi-telephone me-2"></i>
                                     <span>{selectedPatient.phone}</span>
@@ -847,27 +885,57 @@ const Patients = () => {
                                     <Form.Label>Nombre</Form.Label>
                                     <Form.Control
                                         type="text"
-                                        placeholder="Nombre completo del paciente"
-                                        value={newPatient.name}
-                                        maxLength={100}
-                                        onChange={handleNameChange}
-                                        onBlur={handleNameBlur}
-                                        style={nameTouched && nameError ? { 
+                                        placeholder="Nombre del paciente"
+                                        value={newPatient.firstName}
+                                        maxLength={50}
+                                        onChange={handleFirstNameChange}
+                                        onBlur={handleFirstNameBlur}
+                                        style={firstNameTouched && firstNameError ? { 
                                             border: '2px solid #d00', 
                                             background: '#fff6f6' 
                                         } : {}}
-                                        className={nameTouched && nameError ? 'error-input' : ''}
+                                        className={firstNameTouched && firstNameError ? 'error-input' : ''}
                                     />
                                     <div className="d-flex justify-content-between">
                                         <div>
-                                            {nameTouched && nameError && (
+                                            {firstNameTouched && firstNameError && (
                                                 <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
-                                                    <FaExclamationCircle className="me-1" /> {nameError}
+                                                    <FaExclamationCircle className="me-1" /> {firstNameError}
                                                 </div>
                                             )}
                                         </div>
                                         <Form.Text className="text-muted">
-                                            {newPatient.name.length}/100 caracteres
+                                            {newPatient.firstName.length}/50 caracteres
+                                        </Form.Text>
+                                    </div>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Apellido</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Apellido del paciente"
+                                        value={newPatient.lastName}
+                                        maxLength={50}
+                                        onChange={handleLastNameChange}
+                                        onBlur={handleLastNameBlur}
+                                        style={lastNameTouched && lastNameError ? { 
+                                            border: '2px solid #d00', 
+                                            background: '#fff6f6' 
+                                        } : {}}
+                                        className={lastNameTouched && lastNameError ? 'error-input' : ''}
+                                    />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {lastNameTouched && lastNameError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {lastNameError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {newPatient.lastName.length}/50 caracteres
                                         </Form.Text>
                                     </div>
                                 </Form.Group>
@@ -942,17 +1010,17 @@ const Patients = () => {
                                     <tbody>
                                         {doctors.map(doctor => (
                                             <tr key={doctor.id} 
-                                                className={newPatient.doctors.includes(doctor.id) ? 'table-primary' : ''}
+                                                className={newPatient.doctorIds.includes(doctor.id) ? 'table-primary' : ''}
                                                 onClick={() => {
-                                                    if (newPatient.doctors.includes(doctor.id)) {
+                                                    if (newPatient.doctorIds.includes(doctor.id)) {
                                                         setNewPatient(prev => ({
                                                             ...prev,
-                                                            doctors: prev.doctors.filter((id) => id !== doctor.id)
+                                                            doctorIds: prev.doctorIds.filter((id) => id !== doctor.id)
                                                         }));
                                                     } else {
                                                         setNewPatient(prev => ({
                                                             ...prev,
-                                                            doctors: [...prev.doctors, doctor.id]
+                                                            doctorIds: [...prev.doctorIds, doctor.id]
                                                         }));
                                                     }
                                                 }}
@@ -960,7 +1028,7 @@ const Patients = () => {
                                                 <td>
                                                     <Form.Check
                                                         type="checkbox"
-                                                        checked={newPatient.doctors.includes(doctor.id)}
+                                                        checked={newPatient.doctorIds.includes(doctor.id)}
                                                         onChange={() => {}}
                                                     />
                                                 </td>
@@ -989,7 +1057,7 @@ const Patients = () => {
                     <Button 
                         variant="primary" 
                         onClick={handleSave}
-                        disabled={(nameTouched && nameError) || (phoneTouched && phoneError)}
+                        disabled={(firstNameTouched && firstNameError) || (lastNameTouched && lastNameError) || (phoneTouched && phoneError)}
                     >
                         Guardar Paciente
                     </Button>

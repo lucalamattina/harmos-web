@@ -409,8 +409,9 @@ function Scheduler() {
         try {
             const patient = await getPatientById(patientId);
             if (patient) {
-                patientCache.set(patientId, patient.name);
-                return patient.name;
+                const fullName = `${patient.firstName} ${patient.lastName}`;
+                patientCache.set(patientId, fullName);
+                return fullName;
             }
         } catch (error) {
             logError(ERROR_TYPES.API, 'loadPatientIfNeeded', error);
@@ -623,7 +624,7 @@ function Scheduler() {
         try {
             const created = await createSchedule(scheduleData);
             const newCalendarEvent = {
-                title: `${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.name}`,
+                title: `${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.firstName} ${newEvent.selectedPatient.lastName}`,
                 start: newEvent.start,
                 end: newEvent.end,
                 location: newEvent.selectedLocation.name,
@@ -785,7 +786,7 @@ function Scheduler() {
     };
     const handleSelectPatient = (patient) => {
         setNewEvent(prev => ({ ...prev, selectedPatient: patient }));
-        setPatientSearchTerm(patient.name);
+        setPatientSearchTerm(`${patient.firstName} ${patient.lastName}`);
         setPatientResults([]);
     };
 
@@ -905,15 +906,15 @@ function Scheduler() {
                                         {patientFilterResults.map(pat => (
                                             <ListGroup.Item key={pat.id} action onClick={() => {
                                                 setSelectedPatientFilter(pat);
-                                                setPatientFilterTerm(pat.name);
+                                                setPatientFilterTerm(`${pat.firstName} ${pat.lastName}`);
                                                 setPatientFilterResults([]);
                                             }}>
-                                                {pat.name}
+                                                {`${pat.firstName} ${pat.lastName}`}
                                             </ListGroup.Item>
                                         ))}
                                     </ListGroup>
                                 )}
-                                {selectedPatientFilter && <small className="text-success d-block mt-1">Seleccionado: {selectedPatientFilter.name}</small>}
+                                {selectedPatientFilter && <small className="text-success d-block mt-1">Seleccionado: {`${selectedPatientFilter.firstName} ${selectedPatientFilter.lastName}`}</small>}
                             </Form.Group>
                         </Col>
                         <Col md={4}>
@@ -1106,12 +1107,12 @@ function Scheduler() {
                                 <ListGroup className="search-results-dropdown">
                                     {patientResults.map(pat => (
                                         <ListGroup.Item key={pat.id} action onClick={() => handleSelectPatient(pat)}>
-                                            {pat.name}
+                                            {`${pat.firstName} ${pat.lastName}`}
                                         </ListGroup.Item>
                                     ))}
                                 </ListGroup>
                             )}
-                            {newEvent.selectedPatient && <small className="text-success d-block mt-1">Seleccionado: {newEvent.selectedPatient.name}</small>}
+                            {newEvent.selectedPatient && <small className="text-success d-block mt-1">Seleccionado: {`${newEvent.selectedPatient.firstName} ${newEvent.selectedPatient.lastName}`}</small>}
                         </Form.Group>
 
                         <Form.Group className="mb-3">

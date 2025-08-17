@@ -202,7 +202,7 @@ const Profile = () => {
                                             {patients.map(patient => (
                                                 <tr key={patient.id}>
                                                     <td>
-                                                        <strong>{patient.name}</strong>
+                                                        <strong>{`${patient.firstName} ${patient.lastName}`}</strong>
                                                     </td>
                                                     <td>
                                                         <div className="d-flex align-items-center">
