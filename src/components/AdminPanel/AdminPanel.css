@@ -2,6 +2,16 @@
     padding: 20px;
 }
 
+.admin-panel .card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.admin-panel .card-body {
+    padding: 1.5rem;
+}
+
 .admin-panel h2 {
     margin-bottom: 30px;
     color: #333;

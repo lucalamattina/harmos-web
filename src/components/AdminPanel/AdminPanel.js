@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col } from 'react-bootstrap';
+import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col, Card } from 'react-bootstrap';
 import { FaTrash, FaEdit, FaPlus, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
 import api, { createLocation, deleteLocation, getLocations, updateLocation } from '../../api/api';
@@ -639,189 +639,191 @@ const AdminPanel = () => {
             
             <Tabs defaultActiveKey="users" className="mb-3">
                 <Tab eventKey="users" title="Usuarios">
-                    <Button 
-                        variant="primary" 
-                        className="mb-3"
-                        onClick={() => {
-                            resetForm();
-                            setShowUserModal(true);
-                        }}
-                    >
-                        <FaPlus /> Nuevo Usuario
-                    </Button>
-                    
-                    <Form className="mb-3">
-                        <Row className="align-items-end">
-                            <Col md={3}>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <i className="bi bi-search"></i>
-                                    </InputGroup.Text>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Buscar por nombre..."
-                                        value={filterName}
-                                        onChange={e => {
-                                            setFilterName(e.target.value);
-                                            fetchUsers(0, {
-                                                email: filterEmail,
-                                                name: e.target.value,
-                                                specialties: filterSpecialties
-                                            });
-                                        }}
-                                    />
-                                </InputGroup>
-                            </Col>
-                            <Col md={3}>
-                                <InputGroup>
-                                    <InputGroup.Text>
-                                        <i className="bi bi-search"></i>
-                                    </InputGroup.Text>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Buscar por email..."
-                                        value={filterEmail}
-                                        onChange={e => {
-                                            setFilterEmail(e.target.value);
-                                            fetchUsers(0, {
-                                                email: e.target.value,
-                                                name: filterName,
-                                                specialties: filterSpecialties
-                                            });
-                                        }}
-                                    />
-                                </InputGroup>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Select
-                                    value={filterSpecialties[0] || ''}
-                                    onChange={e => {
-                                        const value = e.target.value;
-                                        setFilterSpecialties(value ? [value] : []);
-                                        fetchUsers(0, {
-                                            email: filterEmail,
-                                            name: filterName,
-                                            specialties: value ? [value] : []
-                                        });
-                                    }}
-                                >
-                                    <option value="">Todas las especialidades</option>
-                                    {specialties.map(spec => (
-                                        <option key={spec.id} value={spec.name}>{spec.name}</option>
-                                    ))}
-                                </Form.Select>
-                            </Col>
-                        </Row>
-                    </Form>
-                    
-                    <Table striped bordered hover>
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Teléfono</th>
-                                <th>Especialidades</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(user => (
-                                <tr key={user.id}>
-                                    <td>{user.name}</td>
-                                    <td>{user.email}</td>
-                                    <td>{user.phone}</td>
-                                    <td>{user.specialties?.join(', ') || 'Ninguna'}</td>
-                                    <td>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Editar usuario</Tooltip>}>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm" 
-                                                className="me-2"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setFormData({
-                                                        firstName: user.firstName || '',
-                                                        lastName: user.lastName || '',
-                                                        email: user.email,
-                                                        phone: user.phone,
-                                                        specialties: user.specialties || [],
-                                                        roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
-                                                        password: ''
+                    <Card>
+                        <Card.Body>
+                            <Button 
+                                variant="primary" 
+                                className="mb-3"
+                                onClick={() => {
+                                    resetForm();
+                                    setShowUserModal(true);
+                                }}
+                            >
+                                <FaPlus /> Nuevo Usuario
+                            </Button>
+                            
+                            <Form className="mb-3">
+                                <Row className="align-items-end">
+                                    <Col md={3}>
+                                        <InputGroup>
+                                            <InputGroup.Text>
+                                                <i className="bi bi-search"></i>
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Buscar por nombre..."
+                                                value={filterName}
+                                                onChange={e => {
+                                                    setFilterName(e.target.value);
+                                                    fetchUsers(0, {
+                                                        email: filterEmail,
+                                                        name: e.target.value,
+                                                        specialties: filterSpecialties
                                                     });
-                                                    setShowUserModal(true);
                                                 }}
-                                            >
-                                                <FaEdit />
-                                            </Button>
-                                        </OverlayTrigger>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Asignar especialidad</Tooltip>}>
-                                            <Button 
-                                                variant="success" 
-                                                size="sm" 
-                                                className="me-2"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowAssignModal(true);
+                                            />
+                                        </InputGroup>
+                                    </Col>
+                                    <Col md={3}>
+                                        <InputGroup>
+                                            <InputGroup.Text>
+                                                <i className="bi bi-search"></i>
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Buscar por email..."
+                                                value={filterEmail}
+                                                onChange={e => {
+                                                    setFilterEmail(e.target.value);
+                                                    fetchUsers(0, {
+                                                        email: e.target.value,
+                                                        name: filterName,
+                                                        specialties: filterSpecialties
+                                                    });
                                                 }}
-                                            >
-                                                <FaUserPlus />
-                                            </Button>
-                                        </OverlayTrigger>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Eliminar usuario</Tooltip>}>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDeleteUser(user.id)}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </OverlayTrigger>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+                                            />
+                                        </InputGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                        <Form.Select
+                                            value={filterSpecialties[0] || ''}
+                                            onChange={e => {
+                                                const value = e.target.value;
+                                                setFilterSpecialties(value ? [value] : []);
+                                                fetchUsers(0, {
+                                                    email: filterEmail,
+                                                    name: filterName,
+                                                    specialties: value ? [value] : []
+                                                });
+                                            }}
+                                        >
+                                            <option value="">Todas las especialidades</option>
+                                            {specialties.map(spec => (
+                                                <option key={spec.id} value={spec.name}>{spec.name}</option>
+                                            ))}
+                                        </Form.Select>
+                                    </Col>
+                                </Row>
+                            </Form>
+                            
+                            <Table striped bordered hover>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Especialidades</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map(user => (
+                                        <tr key={user.id}>
+                                            <td>{user.name}</td>
+                                            <td>{user.email}</td>
+                                            <td>{user.phone}</td>
+                                            <td>{user.specialties?.join(', ') || 'Ninguna'}</td>
+                                            <td>
+                                                                                 <OverlayTrigger placement="top" overlay={<Tooltip>Editar usuario</Tooltip>}>
+                                                 <Button 
+                                                     variant="outline-warning" 
+                                                     size="sm" 
+                                                     className="me-2"
+                                                     onClick={() => {
+                                                         setSelectedUser(user);
+                                                         setFormData({
+                                                             firstName: user.firstName || '',
+                                                             lastName: user.lastName || '',
+                                                             email: user.email,
+                                                             phone: user.phone,
+                                                             specialties: user.specialties || [],
+                                                             roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
+                                                             password: ''
+                                                         });
+                                                         setShowUserModal(true);
+                                                     }}
+                                                 >
+                                                     <FaEdit />
+                                                 </Button>
+                                             </OverlayTrigger>
+                                                                                 <OverlayTrigger placement="top" overlay={<Tooltip>Asignar especialidad</Tooltip>}>
+                                                <Button 
+                                                    variant="outline-success" 
+                                                    size="sm" 
+                                                    className="me-2"
+                                                    onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setShowAssignModal(true);
+                                                    }}
+                                                >
+                                                    <FaUserPlus />
+                                                </Button>
+                                            </OverlayTrigger>
+                                            <OverlayTrigger placement="top" overlay={<Tooltip>Eliminar usuario</Tooltip>}>
+                                                <Button 
+                                                    variant="outline-danger" 
+                                                    size="sm"
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </OverlayTrigger>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
 
-                    {/* Tarjetas móviles para usuarios */}
-                    <div className="users-mobile-cards">
-                        {users.map(user => (
-                            <div key={user.id} className="user-mobile-card">
-                                <h6>{user.name}</h6>
-                                <div className="mobile-card-row">
-                                    <span className="mobile-card-label">Email:</span>
-                                    <span className="mobile-card-value">{user.email}</span>
-                                </div>
-                                <div className="mobile-card-row">
-                                    <span className="mobile-card-label">Teléfono:</span>
-                                    <span className="mobile-card-value">{user.phone}</span>
-                                </div>
-                                <div className="mobile-card-row">
-                                    <span className="mobile-card-label">Especialidades:</span>
-                                    <span className="mobile-card-value">{user.specialties?.join(', ') || 'Ninguna'}</span>
-                                </div>
-                                <div className="mobile-card-actions">
+                        {/* Tarjetas móviles para usuarios */}
+                        <div className="users-mobile-cards">
+                            {users.map(user => (
+                                <div key={user.id} className="user-mobile-card">
+                                    <h6>{user.name}</h6>
+                                    <div className="mobile-card-row">
+                                        <span className="mobile-card-label">Email:</span>
+                                        <span className="mobile-card-value">{user.email}</span>
+                                    </div>
+                                    <div className="mobile-card-row">
+                                        <span className="mobile-card-label">Teléfono:</span>
+                                        <span className="mobile-card-value">{user.phone}</span>
+                                    </div>
+                                    <div className="mobile-card-row">
+                                        <span className="mobile-card-label">Especialidades:</span>
+                                        <span className="mobile-card-value">{user.specialties?.join(', ') || 'Ninguna'}</span>
+                                    </div>
+                                                                 <div className="mobile-card-actions">
+                                     <Button 
+                                         variant="outline-warning" 
+                                         size="sm"
+                                         onClick={() => {
+                                             setSelectedUser(user);
+                                             setFormData({
+                                                 firstName: user.firstName || '',
+                                                 lastName: user.lastName || '',
+                                                 email: user.email,
+                                                 phone: user.phone,
+                                                 specialties: user.specialties || [],
+                                                 roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
+                                                 password: ''
+                                             });
+                                             setShowUserModal(true);
+                                         }}
+                                         title="Editar usuario"
+                                     >
+                                         <FaEdit />
+                                     </Button>
                                     <Button 
-                                        variant="info" 
-                                        size="sm"
-                                        onClick={() => {
-                                            setSelectedUser(user);
-                                            setFormData({
-                                                firstName: user.firstName || '',
-                                                lastName: user.lastName || '',
-                                                email: user.email,
-                                                phone: user.phone,
-                                                specialties: user.specialties || [],
-                                                roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
-                                                password: ''
-                                            });
-                                            setShowUserModal(true);
-                                        }}
-                                        title="Editar usuario"
-                                    >
-                                        <FaEdit />
-                                    </Button>
-                                    <Button 
-                                        variant="success" 
+                                        variant="outline-success" 
                                         size="sm"
                                         onClick={() => {
                                             setSelectedUser(user);
@@ -832,7 +834,7 @@ const AdminPanel = () => {
                                         <FaUserPlus />
                                     </Button>
                                     <Button 
-                                        variant="danger" 
+                                        variant="outline-danger" 
                                         size="sm"
                                         onClick={() => handleDeleteUser(user.id)}
                                         title="Eliminar usuario"
@@ -901,9 +903,13 @@ const AdminPanel = () => {
                             Siguiente
                         </Button>
                     </div>
-                </Tab>
+                </Card.Body>
+            </Card>
+        </Tab>
 
-                <Tab eventKey="specialties" title="Especialidades">
+        <Tab eventKey="specialties" title="Especialidades">
+            <Card>
+                <Card.Body>
                     <Button 
                         variant="primary" 
                         className="mb-3"
@@ -927,26 +933,26 @@ const AdminPanel = () => {
                                 <tr key={specialty.id}>
                                     <td>{specialty.name}</td>
                                     <td>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Editar especialidad</Tooltip>}>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm" 
-                                                className="me-2"
-                                                onClick={() => {
-                                                    setSelectedSpecialty(specialty);
-                                                    setSpecialtyFormData({
-                                                        name: specialty.name,
-                                                        data: specialty.data || ''
-                                                    });
-                                                    setShowSpecialtyModal(true);
-                                                }}
-                                            >
-                                                <FaEdit />
-                                            </Button>
-                                        </OverlayTrigger>
+                                                                                 <OverlayTrigger placement="top" overlay={<Tooltip>Editar especialidad</Tooltip>}>
+                                             <Button 
+                                                 variant="outline-warning" 
+                                                 size="sm" 
+                                                 className="me-2"
+                                                 onClick={() => {
+                                                     setSelectedSpecialty(specialty);
+                                                     setSpecialtyFormData({
+                                                         name: specialty.name,
+                                                         data: specialty.data || ''
+                                                     });
+                                                     setShowSpecialtyModal(true);
+                                                 }}
+                                             >
+                                                 <FaEdit />
+                                             </Button>
+                                         </OverlayTrigger>
                                         <OverlayTrigger placement="top" overlay={<Tooltip>Eliminar especialidad</Tooltip>}>
                                             <Button 
-                                                variant="danger" 
+                                                variant="outline-danger" 
                                                 size="sm"
                                                 onClick={() => handleDeleteSpecialty(specialty)}
                                             >
@@ -958,9 +964,13 @@ const AdminPanel = () => {
                             ))}
                         </tbody>
                     </Table>
-                </Tab>
+                </Card.Body>
+            </Card>
+        </Tab>
 
-                <Tab eventKey="locations" title="Ubicaciones">
+        <Tab eventKey="locations" title="Ubicaciones">
+            <Card>
+                <Card.Body>
                     <Button
                         variant="primary"
                         className="mb-3"
@@ -984,23 +994,23 @@ const AdminPanel = () => {
                                 <tr key={location.id}>
                                     <td>{location.name}</td>
                                     <td>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Editar ubicación</Tooltip>}>
-                                            <Button
-                                                variant="info"
-                                                size="sm"
-                                                className="me-2"
-                                                onClick={() => {
-                                                    setSelectedLocation(location);
-                                                    setLocationFormData({ name: location.name });
-                                                    setShowLocationModal(true);
-                                                }}
-                                            >
-                                                <FaEdit />
-                                            </Button>
-                                        </OverlayTrigger>
+                                                                                 <OverlayTrigger placement="top" overlay={<Tooltip>Editar ubicación</Tooltip>}>
+                                             <Button
+                                                 variant="outline-warning"
+                                                 size="sm"
+                                                 className="me-2"
+                                                 onClick={() => {
+                                                     setSelectedLocation(location);
+                                                     setLocationFormData({ name: location.name });
+                                                     setShowLocationModal(true);
+                                                 }}
+                                             >
+                                                 <FaEdit />
+                                             </Button>
+                                         </OverlayTrigger>
                                         <OverlayTrigger placement="top" overlay={<Tooltip>Eliminar ubicación</Tooltip>}>
                                             <Button
-                                                variant="danger"
+                                                variant="outline-danger"
                                                 size="sm"
                                                 onClick={() => handleDeleteLocation(location.id)}
                                             >
@@ -1012,8 +1022,10 @@ const AdminPanel = () => {
                             ))}
                         </tbody>
                     </Table>
-                </Tab>
-            </Tabs>
+                </Card.Body>
+            </Card>
+        </Tab>
+    </Tabs>
 
             {/* Modal para crear/editar usuario */}
             <Modal show={showUserModal} onHide={handleCloseUserModal}>
