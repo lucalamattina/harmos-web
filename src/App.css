@@ -31,7 +31,7 @@
   min-height: var(--content-min-height);
   display: flex;
   flex-direction: column;
-  margin-top: var(--navbar-height);
+  margin-top: 0;
 }
 
 /* Asegurar que el contenido sea legible sobre el fondo */
@@ -82,7 +82,7 @@
   }
   
   .main-content {
-    margin-top: var(--mobile-navbar-height);
+    margin-top: 0;
     padding: 15px 10px;
     background-attachment: scroll; /* Mejor performance en móviles */
   }

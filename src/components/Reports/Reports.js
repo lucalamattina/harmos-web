@@ -881,9 +881,6 @@ const Reports = () => {
                         <Badge bg="secondary">
                             Página {currentPage + 1} de {totalPages || 1}
                         </Badge>
-                        <Badge bg="info">
-                            {totalElements} informes en total
-                        </Badge>
                     </div>
                 </Card.Header>
                 <Card.Body style={{position: 'relative', minHeight: '200px'}}>

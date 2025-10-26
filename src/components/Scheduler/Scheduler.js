@@ -978,9 +978,6 @@ function Scheduler() {
                 <Card.Header>
                     <div className="d-flex justify-content-between align-items-center">
                         <span className="scheduler-card-title">Agenda por Días</span>
-                        <Badge bg="info">
-                            {allEvents.length} turnos encontrados
-                        </Badge>
                     </div>
 
 

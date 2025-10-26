@@ -566,14 +566,6 @@ const Patients = () => {
             <Card className="patients-table-container">
                 <Card.Header className="d-flex justify-content-between align-items-center">
                     <span>Pacientes</span>
-                    <div className="d-flex align-items-center gap-3">
-                        <Badge bg="secondary">
-                            Página {currentPage + 1} de {totalPages || 1}
-                        </Badge>
-                        <Badge bg="info">
-                            {filteredPatients.length} pacientes en total
-                        </Badge>
-                    </div>
                 </Card.Header>
                 <Card.Body style={{position: 'relative', minHeight: '200px'}}>
                     <Table responsive hover className="patients-table">
