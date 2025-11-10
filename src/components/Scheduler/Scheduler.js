@@ -9,7 +9,7 @@ import React, {useCallback, useMemo, useState, useEffect, useContext} from "reac
 import "react-datepicker/dist/react-datepicker.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {Button, Form, Modal, Spinner, Container, Alert, ListGroup, InputGroup, Card, Row, Col, Badge, Collapse } from "react-bootstrap";
-import { getSchedules, getUserById, getLocationById, getLocations, getUsers, getPatients, createSchedule, deleteSchedule, getPatientById } from "../../api/api";
+import { getSchedules, getUserById, getUsers, getPatients, createSchedule, deleteSchedule, getPatientById } from "../../api/api";
 import { es } from 'date-fns/locale';
 import { AuthContext } from "../../context/AuthContext";
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
@@ -145,14 +145,12 @@ function Scheduler() {
     
     const [loadingStates, setLoadingStates] = useState({
         schedules: false,
-        locations: false,
         calendar: false,
         initializing: true
     });
     
     const [performanceMetrics, setPerformanceMetrics] = useState({
         schedulesLoadTime: null,
-        locationsLoadTime: null,
         calendarRenderTime: null,
         lastUpdate: null
     });
@@ -225,14 +223,8 @@ function Scheduler() {
             console.log(`🔄 Reintentando operación: ${errorDetails.lastOperation}`);
             clearError();
             
-            // Trigger re-fetch based on last operation
-            if (errorDetails.lastOperation.includes('schedules')) {
-                // Trigger schedules refetch - se hará automáticamente por el useEffect
-                setSelectedLocation(prev => prev); // Force re-fetch
-            } else if (errorDetails.lastOperation.includes('locations')) {
-                // Retry locations fetch
-                fetchInitialData();
-            }
+            // Reload the page to force a re-fetch of all data
+            window.location.reload();
         }
     };
 
@@ -259,7 +251,6 @@ function Scheduler() {
 
     const [seeEvent, setSeeEvent] = useState({
         title: "",
-        location: "",
         id: null, // Para saber qué evento eliminar
         patientName: "",
         scheduleTime: ""
@@ -274,23 +265,17 @@ function Scheduler() {
         end: null,
         selectedDoctor: null,
         selectedPatient: null,
-        selectedLocation: null,
     });
     const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
     const [patientSearchTerm, setPatientSearchTerm] = useState("");
-    const [locationSearchTerm, setLocationSearchTerm] = useState("");
-
     const debouncedDoctorSearchTerm = useDebounce(doctorSearchTerm, 500);
     const debouncedPatientSearchTerm = useDebounce(patientSearchTerm, 500);
-    const debouncedLocationSearchTerm = useDebounce(locationSearchTerm, 500);
 
     const [doctorResults, setDoctorResults] = useState([]);
     const [patientResults, setPatientResults] = useState([]);
-    const [locationResults, setLocationResults] = useState([]);
 
     const [isSearchingDoctors, setIsSearchingDoctors] = useState(false);
     const [isSearchingPatients, setIsSearchingPatients] = useState(false);
-    const [isSearchingLocations, setIsSearchingLocations] = useState(false);
     const [saveError, setSaveError] = useState('');
 
     const [isDeleting, setIsDeleting] = useState(false);
@@ -304,8 +289,6 @@ function Scheduler() {
     const [allEvents, setAllEvents] = useState([]);
 
     // Filter states
-    const [locations, setLocations] = useState([]);
-    const [selectedLocation, setSelectedLocation] = useState('');
     const [doctorFilterTerm, setDoctorFilterTerm] = useState('');
     const [patientFilterTerm, setPatientFilterTerm] = useState('');
     const [selectedDoctorFilter, setSelectedDoctorFilter] = useState(null);
@@ -316,108 +299,9 @@ function Scheduler() {
     const debouncedDoctorFilterTerm = useDebounce(doctorFilterTerm, 500);
     const debouncedPatientFilterTerm = useDebounce(patientFilterTerm, 500);
 
-    // **FUNCIÓN MEJORADA PARA FETCH INITIAL DATA**
-    const fetchInitialData = async () => {
-        const startTime = performance.now();
-        setLoadingStates(prev => ({ ...prev, locations: true }));
-        
-        try {
-            console.log('📍 Iniciando carga de ubicaciones...');
-            const locs = await withTimeout(getLocations(), 8000, 'getLocations');
-            
-            if (!locs || !Array.isArray(locs)) {
-                throw new Error('Respuesta inválida de ubicaciones: no es un array');
-            }
-            
-            setLocations(locs);
-            const loadTime = performance.now() - startTime;
-            setPerformanceMetrics(prev => ({ 
-                ...prev, 
-                locationsLoadTime: loadTime,
-                lastUpdate: new Date() 
-            }));
-            
-            console.log(`✅ Ubicaciones cargadas: ${locs.length} items en ${loadTime.toFixed(2)}ms`);
-            clearError();
-            
-        } catch (err) {
-            const errorInfo = logError(ERROR_TYPES.API, 'fetchInitialData - getLocations', err, {
-                operation: 'Initial locations fetch',
-                retryable: true
-            });
-            
-            setErrorDetails({
-                hasError: true,
-                type: ERROR_TYPES.API,
-                message: 'Error al cargar las ubicaciones para los filtros.',
-                lastOperation: 'fetchInitialData - locations',
-                timestamp: new Date(),
-                retryCount: errorDetails.retryCount + 1,
-                canRetry: errorDetails.retryCount < 2
-            });
-            
-            setError('Error al cargar las ubicaciones para los filtros.');
-        } finally {
-            setLoadingStates(prev => ({ ...prev, locations: false }));
-        }
-    };
 
 
 
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    // Cache maps moved to component level for persistence between renders
-    const [doctorCache] = useState(() => new Map());
-    const [locationCache] = useState(() => new Map());
-    const [patientCache] = useState(() => new Map());
-
-    // Load a single user if not in cache
-    const loadUserIfNeeded = async (userId) => {
-        if (!userId || doctorCache.has(userId)) return doctorCache.get(userId);
-        try {
-            const user = await getUserById(userId);
-            if (user) {
-                doctorCache.set(userId, user.name || user.firstName);
-                return user.name || user.firstName;
-            }
-        } catch (error) {
-            logError(ERROR_TYPES.API, 'loadUserIfNeeded', error);
-        }
-        return `Doctor ID: ${userId}`;
-    };
-
-    // Load a single location if not in cache
-    const loadLocationIfNeeded = async (locationId) => {
-        if (!locationId || locationCache.has(locationId)) return locationCache.get(locationId);
-        try {
-            const location = await getLocationById(locationId);
-            if (location) {
-                locationCache.set(locationId, location.name);
-                return location.name;
-            }
-        } catch (error) {
-            logError(ERROR_TYPES.API, 'loadLocationIfNeeded', error);
-        }
-        return `Ubicación ID: ${locationId}`;
-    };
-
-    // Load a single patient if not in cache
-    const loadPatientIfNeeded = async (patientId) => {
-        if (!patientId || patientCache.has(patientId)) return patientCache.get(patientId);
-        try {
-            const patient = await getPatientById(patientId);
-            if (patient) {
-                const fullName = `${patient.firstName} ${patient.lastName}`;
-                patientCache.set(patientId, fullName);
-                return fullName;
-            }
-        } catch (error) {
-            logError(ERROR_TYPES.API, 'loadPatientIfNeeded', error);
-        }
-        return `Paciente ID: ${patientId}`;
-    };
 
     useEffect(() => {
         const fetchSchedules = async () => {
@@ -429,7 +313,6 @@ function Scheduler() {
                 console.log('📅 Iniciando carga de horarios...');
                 
                 const params = {};
-                if (selectedLocation) params.locationId = selectedLocation;
                 if (selectedDoctorFilter) params.doctorId = selectedDoctorFilter.id;
                 if (selectedPatientFilter) params.patientId = selectedPatientFilter.id;
 
@@ -465,12 +348,9 @@ function Scheduler() {
 
                 for (let i = 0; i < schedules.length; i += CHUNK_SIZE) {
                     const chunk = schedules.slice(i, i + CHUNK_SIZE);
-                    const processedChunk = await Promise.all(chunk.map(async (sch) => {
-                        const [doctorName, locationName, patientName] = await Promise.all([
-                            loadUserIfNeeded(sch.doctorUserId),
-                            loadLocationIfNeeded(sch.locationId),
-                            loadPatientIfNeeded(sch.patientId)
-                        ]);
+                    const processedChunk = chunk.map((sch) => {
+                        const doctorName = `${sch.doctor.firstName} ${sch.doctor.lastName}`;
+                        const patientName = `${sch.patient.firstName} ${sch.patient.lastName}`;
 
                         let dayOffset = dayMap[sch.dayOfWeek];
                         if (dayOffset === undefined) {
@@ -503,11 +383,10 @@ function Scheduler() {
                             start,
                             end,
                             id: sch.id,
-                            location: locationName,
                             patientName: patientName,
                             scheduleTime: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
                         };
-                    }));
+                    });
 
                     events.push(...processedChunk.filter(Boolean));
                 }
@@ -525,7 +404,7 @@ function Scheduler() {
                 
             } catch (err) {
                 const errorInfo = logError(ERROR_TYPES.API, 'fetchSchedules', err, {
-                    params: { selectedLocation, selectedDoctorFilter, selectedPatientFilter },
+                    params: { selectedDoctorFilter, selectedPatientFilter },
                     networkStatus: networkStatus.isOnline
                 });
                 
@@ -548,10 +427,9 @@ function Scheduler() {
         };
 
         fetchSchedules();
-    }, [selectedLocation, selectedDoctorFilter, selectedPatientFilter, currentDay]);
+    }, [selectedDoctorFilter, selectedPatientFilter, currentDay]);
 
     const handleClearFilters = () => {
-        setSelectedLocation('');
         setDoctorFilterTerm('');
         setPatientFilterTerm('');
         setSelectedDoctorFilter(null);
@@ -567,7 +445,7 @@ function Scheduler() {
         handleShowNew();
         setNewEvent({
             title: "", start, end,
-            selectedDoctor: null, selectedPatient: null, selectedLocation: null,
+            selectedDoctor: null, selectedPatient: null,
         });
         setSaveError('');
     }, [isAdmin]);
@@ -591,27 +469,24 @@ function Scheduler() {
     const resetNewEventForm = () => {
         setNewEvent({
             title: "", start: null, end: null,
-            selectedDoctor: null, selectedPatient: null, selectedLocation: null,
+            selectedDoctor: null, selectedPatient: null,
         });
         setDoctorSearchTerm("");
         setPatientSearchTerm("");
-        setLocationSearchTerm("");
         setDoctorResults([]);
         setPatientResults([]);
-        setLocationResults([]);
         setSaveError('');
     };
 
     const handleSaveNewEvent = async () => {
         setSaveError('');
-        if (!newEvent.selectedDoctor || !newEvent.selectedPatient || !newEvent.selectedLocation || !newEvent.start || !newEvent.end) {
-            setSaveError("Por favor, completa todos los campos: Terapeuta, Paciente, Ubicación y horario.");
+        if (!newEvent.selectedDoctor || !newEvent.selectedPatient || !newEvent.start || !newEvent.end) {
+            setSaveError("Por favor, completa todos los campos: Terapeuta, Paciente y horario.");
             return;
         }
 
         const dayOfWeekStrings = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
         const scheduleData = {
-            locationId: newEvent.selectedLocation.id,
             dayOfWeek: dayOfWeekStrings[newEvent.start.getDay()],
             hourFrom: newEvent.start.getHours(),
             minuteFrom: newEvent.start.getMinutes(),
@@ -627,7 +502,6 @@ function Scheduler() {
                 title: `${newEvent.selectedDoctor.name} con ${newEvent.selectedPatient.firstName} ${newEvent.selectedPatient.lastName}`,
                 start: newEvent.start,
                 end: newEvent.end,
-                location: newEvent.selectedLocation.name,
                 id: created.id
             };
             setAllEvents((prev) => [...prev, newCalendarEvent]);
@@ -759,24 +633,7 @@ function Scheduler() {
         search(debouncedPatientSearchTerm, getPatients, setPatientResults, setIsSearchingPatients);
     }, [debouncedPatientSearchTerm]);
 
-    useEffect(() => {
-        const search = async (term, searchFn, resultsSetter, searchingSetter) => {
-            if (term.length < 2) {
-                resultsSetter([]);
-                return;
-            }
-            searchingSetter(true);
-            try {
-                const results = await searchFn({ name: term });
-                resultsSetter(results);
-            } catch (error) {
-                resultsSetter([]);
-            }
-            searchingSetter(false);
-        };
 
-        search(debouncedLocationSearchTerm, getLocations, setLocationResults, setIsSearchingLocations);
-    }, [debouncedLocationSearchTerm]);
 
 
     const handleSelectDoctor = (doctor) => {
@@ -884,7 +741,7 @@ function Scheduler() {
                     <Collapse in={filtersExpanded}>
                         <div>
                             <Row>
-                        <Col md={4}>
+                        <Col md={6}>
                             <Form.Group>
                                 <Form.Label>Paciente</Form.Label>
                                 <InputGroup>
@@ -917,7 +774,7 @@ function Scheduler() {
                                 {selectedPatientFilter && <small className="text-success d-block mt-1">Seleccionado: {`${selectedPatientFilter.firstName} ${selectedPatientFilter.lastName}`}</small>}
                             </Form.Group>
                         </Col>
-                        <Col md={4}>
+                        <Col md={6}>
                             <Form.Group>
                                 <Form.Label>Terapeuta</Form.Label>
                                 <InputGroup>
@@ -948,22 +805,6 @@ function Scheduler() {
                                     </ListGroup>
                                 )}
                                 {selectedDoctorFilter && <small className="text-success d-block mt-1">Seleccionado: {selectedDoctorFilter.name}</small>}
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Ubicación</Form.Label>
-                                <Form.Select
-                                    value={selectedLocation}
-                                    onChange={e => setSelectedLocation(e.target.value)}
-                                >
-                                    <option value="">Todas las ubicaciones</option>
-                                    {locations.map(loc => (
-                                        <option key={loc.id} value={loc.id}>
-                                            {loc.name}
-                                        </option>
-                                    ))}
-                                </Form.Select>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -1039,7 +880,7 @@ function Scheduler() {
                 <Modal.Body>
                     <p><strong>Paciente:</strong> {seeEvent.patientName}</p>
                     <p><strong>Horario:</strong> {seeEvent.scheduleTime}</p>
-                    <p><strong>Ubicación:</strong> {seeEvent.location}</p>
+
                 </Modal.Body>
                 <Modal.Footer>
                     {isAdmin &&
@@ -1112,35 +953,7 @@ function Scheduler() {
                             {newEvent.selectedPatient && <small className="text-success d-block mt-1">Seleccionado: {`${newEvent.selectedPatient.firstName} ${newEvent.selectedPatient.lastName}`}</small>}
                         </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Ubicación</Form.Label>
-                            <InputGroup>
-                                <Form.Control
-                                    type="text"
-                                    placeholder="Buscar ubicación por nombre..."
-                                    value={locationSearchTerm}
-                                    onChange={e => {
-                                        setLocationSearchTerm(e.target.value);
-                                        setNewEvent(prev => ({ ...prev, selectedLocation: null }));
-                                    }}
-                                />
-                                {isSearchingLocations && <InputGroup.Text><Spinner animation="border" size="sm" /></InputGroup.Text>}
-                            </InputGroup>
-                            {locationResults.length > 0 && (
-                                <ListGroup className="search-results-dropdown">
-                                    {locationResults.map(loc => (
-                                        <ListGroup.Item key={loc.id} action onClick={() => {
-                                            setNewEvent(prev => ({ ...prev, selectedLocation: loc }));
-                                            setLocationSearchTerm(loc.name);
-                                            setLocationResults([]);
-                                        }}>
-                                            {loc.name}
-                                        </ListGroup.Item>
-                                    ))}
-                                </ListGroup>
-                            )}
-                            {newEvent.selectedLocation && <small className="text-success d-block mt-1">Seleccionado: {newEvent.selectedLocation.name}</small>}
-                        </Form.Group>
+
 
                         {newEvent.start && newEvent.end && (
                             <Alert variant="info">

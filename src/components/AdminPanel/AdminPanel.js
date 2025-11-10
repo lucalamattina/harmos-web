@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col, Card } from 'react-bootstrap';
 import { FaTrash, FaEdit, FaPlus, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
-import api, { createLocation, deleteLocation, getLocations, updateLocation } from '../../api/api';
+import api from '../../api/api';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -76,13 +76,7 @@ const AdminPanel = () => {
     });
     const [specialtyFormError, setSpecialtyFormError] = useState('');
 
-    const [locations, setLocations] = useState([]);
-    const [showLocationModal, setShowLocationModal] = useState(false);
-    const [locationFormData, setLocationFormData] = useState({ name: '' });
-    const [locationFormErrors, setLocationFormErrors] = useState({ name: '' });
-    const [locationFieldsTouched, setLocationFieldsTouched] = useState({ name: false });
-    const [locationFormError, setLocationFormError] = useState('');
-    const [selectedLocation, setSelectedLocation] = useState(null);
+
 
     const fetchUsers = useCallback(async (page = 0, filters = {}) => {
         try {
@@ -127,18 +121,10 @@ const AdminPanel = () => {
                 specialties: filterSpecialties
             });
             fetchSpecialties();
-            fetchLocations();
         }
     }, [isAdmin, fetchUsers, filterEmail, filterName, filterSpecialties]);
 
-    const fetchLocations = async () => {
-        try {
-            const response = await api.get('/api/locations');
-            setLocations(response.data);
-        } catch (err) {
-            setError('Error al cargar ubicaciones');
-        }
-    };
+
 
     const fetchSpecialties = async () => {
         try {
@@ -263,34 +249,7 @@ const AdminPanel = () => {
         }
     };
 
-    const handleLocationSubmit = async (e) => {
-        e.preventDefault();
-        setLocationFormError('');
-        setLocationFieldsTouched({ name: true });
 
-        const errors = { name: validateLocationName(locationFormData.name) };
-        setLocationFormErrors(errors);
-
-        if (errors.name) {
-            setLocationFormError('Por favor, corrige los errores antes de continuar.');
-            return;
-        }
-
-        try {
-            if (selectedLocation) {
-                await updateLocation(selectedLocation.id, { name: locationFormData.name });
-            } else {
-                await createLocation({ name: locationFormData.name });
-            }
-            setShowLocationModal(false);
-            fetchLocations();
-            resetLocationForm();
-        } catch (err) {
-            console.error('Error al guardar ubicación:', err);
-            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar ubicación';
-            setLocationFormError(errorMessage);
-        }
-    };
 
     // Nueva función para mostrar el modal de confirmación
     const showConfirmation = (message, onConfirmAction) => {
@@ -324,16 +283,7 @@ const AdminPanel = () => {
         });
     };
 
-    const handleDeleteLocation = async (locationId) => {
-        showConfirmation('¿Estás seguro de que deseas eliminar esta ubicación? Se borrarán todos los horarios asociados a esta ubicación.', async () => {
-            try {
-                await deleteLocation(locationId);
-                fetchLocations();
-            } catch (err) {
-                setError('Error al eliminar ubicación');
-            }
-        });
-    };
+
 
     const handleAssignSpecialty = async (e) => {
         e.preventDefault();
@@ -369,12 +319,7 @@ const AdminPanel = () => {
         clearSpecialtyFormErrors();
     };
 
-    const resetLocationForm = () => {
-        setLocationFormData({ name: '' });
-        setLocationFormErrors({ name: '' });
-        setLocationFieldsTouched({ name: false });
-        setLocationFormError('');
-    };
+
 
     // Funciones para cerrar modales con limpieza de errores
     const handleCloseUserModal = () => {
@@ -387,10 +332,7 @@ const AdminPanel = () => {
         resetSpecialtyForm();
     };
 
-    const handleCloseLocationModal = () => {
-        setShowLocationModal(false);
-        resetLocationForm();
-    };
+
 
     const handlePageChange = (page) => {
         fetchUsers(page - 1); // La API usa 0-based indexing
@@ -484,18 +426,7 @@ const AdminPanel = () => {
         return '';
     };
 
-    const validateLocationName = (value) => {
-        if (!value || value.trim().length === 0) {
-            return 'El nombre de la ubicación es obligatorio.';
-        }
-        if (value.trim().length < 2) {
-            return 'El nombre debe tener al menos 2 caracteres.';
-        }
-        if (value.length > 100) {
-            return 'El nombre no puede exceder 100 caracteres.';
-        }
-        return '';
-    };
+
 
     // Manejadores de cambio con validación en tiempo real para usuarios
     const handleUserFieldChange = (fieldName, value) => {
@@ -968,63 +899,7 @@ const AdminPanel = () => {
             </Card>
         </Tab>
 
-        <Tab eventKey="locations" title="Ubicaciones">
-            <Card>
-                <Card.Body>
-                    <Button
-                        variant="primary"
-                        className="mb-3"
-                        onClick={() => {
-                            resetLocationForm();
-                            setShowLocationModal(true);
-                        }}
-                    >
-                        <FaPlus /> Nueva Ubicación
-                    </Button>
 
-                    <Table striped bordered hover>
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {locations.map(location => (
-                                <tr key={location.id}>
-                                    <td>{location.name}</td>
-                                    <td>
-                                                                                 <OverlayTrigger placement="top" overlay={<Tooltip>Editar ubicación</Tooltip>}>
-                                             <Button
-                                                 variant="outline-warning"
-                                                 size="sm"
-                                                 className="me-2"
-                                                 onClick={() => {
-                                                     setSelectedLocation(location);
-                                                     setLocationFormData({ name: location.name });
-                                                     setShowLocationModal(true);
-                                                 }}
-                                             >
-                                                 <FaEdit />
-                                             </Button>
-                                         </OverlayTrigger>
-                                        <OverlayTrigger placement="top" overlay={<Tooltip>Eliminar ubicación</Tooltip>}>
-                                            <Button
-                                                variant="outline-danger"
-                                                size="sm"
-                                                onClick={() => handleDeleteLocation(location.id)}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </OverlayTrigger>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </Card.Body>
-            </Card>
-        </Tab>
     </Tabs>
 
             {/* Modal para crear/editar usuario */}
@@ -1396,50 +1271,7 @@ const AdminPanel = () => {
                 </Modal.Body>
             </Modal>
 
-            {/* Modal para crear/editar ubicación */}
-            <Modal show={showLocationModal} onHide={handleCloseLocationModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{selectedLocation ? 'Editar Ubicación' : 'Nueva Ubicación'}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={handleLocationSubmit}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Nombre</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Nombre de la ubicación"
-                                value={locationFormData.name}
-                                maxLength={100}
-                                onChange={(e) => setLocationFormData({ ...locationFormData, name: e.target.value })}
-                                onBlur={() => setLocationFieldsTouched({ ...locationFieldsTouched, name: true })}
-                                isInvalid={locationFieldsTouched.name && !!locationFormErrors.name}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {locationFormErrors.name}
-                            </Form.Control.Feedback>
-                        </Form.Group>
 
-                        {locationFormError && (
-                            <Alert variant="danger" className="d-flex align-items-center mb-3">
-                                <FaExclamationCircle className="me-2" />
-                                <div style={{ whiteSpace: 'pre-line' }}>{locationFormError}</div>
-                            </Alert>
-                        )}
-
-                        <div className="d-flex gap-2">
-                            <Button variant="secondary" onClick={handleCloseLocationModal}>
-                                Cancelar
-                            </Button>
-                            <Button
-                                variant="primary"
-                                type="submit"
-                            >
-                                Crear Ubicación
-                            </Button>
-                        </div>
-                    </Form>
-                </Modal.Body>
-            </Modal>
 
             {/* Modal de confirmación */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>

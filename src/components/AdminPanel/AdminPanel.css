@@ -251,9 +251,7 @@
     
     /* Permitir que otras tablas se vean en móviles */
     .admin-panel .tab-pane[data-rr-ui-event-key="specialties"] table,
-    .admin-panel .tab-pane[data-rr-ui-event-key="locations"] table,
-    .admin-panel .tab-pane[data-rr-ui-event-key="specialties"] .table,
-    .admin-panel .tab-pane[data-rr-ui-event-key="locations"] .table {
+    .admin-panel .tab-pane[data-rr-ui-event-key="specialties"] .table {
         display: table !important;
     }
     

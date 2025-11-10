@@ -79,18 +79,7 @@ export const getSchedules = async (params = {}) => {
   return response.data;
 };
 
-// Obtener todas las locaciones o filtrar por nombre
-export const getLocations = async (params = {}) => {
-  const response = await api.get('/api/locations', { params });
- return response.data;
-};
 
-// Obtener una locación por ID
-export const getLocationById = async (id) => {
-  if (!id) throw new Error("Location ID is required");
-  const response = await api.get(`/api/locations/${id}`);
-  return response.data;
-};
 
 // Obtener un usuario por ID
 export const getUserById = async (id) => {
@@ -139,24 +128,7 @@ export const deleteSchedule = async (id) => {
   await api.delete(`/api/schedules/${id}`);
 };
 
-// Crear una nueva locación
-export const createLocation = async (locationData) => {
-  const response = await api.post('/api/locations', locationData);
-  return response.data;
-};
 
-// Eliminar una locación por ID
-export const deleteLocation = async (id) => {
-  if (!id) throw new Error("Location ID is required");
-  await api.delete(`/api/locations/${id}`);
-};
-
-// Actualizar una locación por ID
-export const updateLocation = async (id, locationData) => {
-  if (!id) throw new Error("Location ID is required");
-  const response = await api.put(`/api/locations/${id}`, locationData);
-  return response.data;
-};
 
 
 
