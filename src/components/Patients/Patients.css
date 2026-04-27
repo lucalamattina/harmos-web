@@ -117,6 +117,50 @@
     transition: background-color 0.2s ease;
 }
 
+/* Botones de acciones con tamaño fijo (no dependen de la altura de fila) */
+.patients-table .patient-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle;
+}
+
+.patients-table .patient-action-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+    margin: 0 !important;
+    display: block;
+}
+
+.patients-table td .patient-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Alta especificidad para no ser pisado por reglas globales */
+.patients-table td .patient-actions .patient-action-btn.btn {
+    box-sizing: border-box !important;
+    border-width: 1px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 32px !important;
+}
+
+
 .table-responsive {
     border-radius: 8px;
     overflow: hidden;
@@ -190,6 +234,7 @@
         padding: 0.8rem;
         font-size: 0.95rem;
     }
+
     
     .create-button {
         padding: 0.6rem 1.2rem;
@@ -430,6 +475,25 @@
         width: auto !important;
         height: auto !important;
     }
+
+    .patients-table .patient-action-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        padding: 0 !important;
+    }
+
+    .patients-table td .patient-actions {
+        gap: 0.35rem;
+    }
+
+    .patients-table td .patient-actions .patient-action-btn.btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        flex: 0 0 28px !important;
+    }
     
     .patients-table .btn:hover,
     .patients-table .btn:focus,
@@ -453,10 +517,12 @@
     .patients-table .btn-outline-primary:active {
         color: #007A7D !important;
     }
+
     
     .patients-table .btn-outline-danger:hover,
     .patients-table .btn-outline-danger:focus,
     .patients-table .btn-outline-danger:active {
         color: #b02a37 !important;
     }
+
 }

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse } from "react-bootstrap";
-import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaTrash, FaEye, FaDownload, FaFileAlt, FaFilter, FaEdit } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
+import { formatDate } from '../../utils/dateUtils';
+import FileViewer from '../FileViewer/FileViewer';
 import './Patients.css';
+import '../Reports/Reports.css';
 import '../mobile-fix.css';
 
 const Patients = () => {
@@ -62,6 +65,40 @@ const Patients = () => {
     const [lastNameTouched, setLastNameTouched] = useState(false);
     const [phoneTouched, setPhoneTouched] = useState(false);
     const [formError, setFormError] = useState('');
+
+    // Estados para el modal de edición de paciente
+    const [showEdit, setShowEdit] = useState(false);
+    const [editPatient, setEditPatient] = useState({
+        id: null,
+        firstName: "",
+        lastName: "",
+        phone: "",
+        status: "ACTIVE"
+    });
+    const [editAssignedDoctors, setEditAssignedDoctors] = useState([]);
+    const [editOriginalDoctorIds, setEditOriginalDoctorIds] = useState([]);
+    const [editDoctorsToAdd, setEditDoctorsToAdd] = useState([]);
+    const [editDoctorSearchTerm, setEditDoctorSearchTerm] = useState('');
+    const [editDoctorSpecialty, setEditDoctorSpecialty] = useState('');
+    const [editSaving, setEditSaving] = useState(false);
+    const [editFormError, setEditFormError] = useState('');
+    const [editFirstNameError, setEditFirstNameError] = useState('');
+    const [editLastNameError, setEditLastNameError] = useState('');
+    const [editPhoneError, setEditPhoneError] = useState('');
+    const [editFirstNameTouched, setEditFirstNameTouched] = useState(false);
+    const [editLastNameTouched, setEditLastNameTouched] = useState(false);
+    const [editPhoneTouched, setEditPhoneTouched] = useState(false);
+
+    // Estados para informes del paciente (modal de detalles)
+    const [patientReports, setPatientReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reportsError, setReportsError] = useState(null);
+
+    // Estados para el visor de archivos
+    const [showFileViewer, setShowFileViewer] = useState(false);
+    const [selectedFileData, setSelectedFileData] = useState(null);
+    const [fileViewerLoading, setFileViewerLoading] = useState(false);
+    const [fileViewerError, setFileViewerError] = useState(null);
 
     const fetchStatuses = useCallback(async () => {
         try {
@@ -160,7 +197,7 @@ const Patients = () => {
 
     // Cargar doctores y especialidades cuando se abre el modal
     useEffect(() => {
-        if (showNew || showDetails) {
+        if (showNew || showDetails || showEdit) {
             // Cargar especialidades
             api.get('/api/specialties')
                 .then(res => setSpecialties(res.data))
@@ -169,14 +206,14 @@ const Patients = () => {
             // Cargar doctores iniciales
             fetchDoctors();
         }
-    }, [showNew, showDetails, fetchDoctors]);
+    }, [showNew, showDetails, showEdit, fetchDoctors]);
 
     // Actualizar doctores cuando cambie el término de búsqueda o la especialidad
     useEffect(() => {
-        if (showNew || showDetails) {
+        if (showNew || showDetails || showEdit) {
             fetchDoctors();
         }
-    }, [fetchDoctors, showNew, showDetails]);
+    }, [fetchDoctors, showNew, showDetails, showEdit]);
 
     // Función de búsqueda con debounce
     const debouncedSearch = useCallback(
@@ -275,9 +312,98 @@ const Patients = () => {
             const response = await api.get(`/api/patients/${patientId}`);
             setSelectedPatient(response.data);
             setShowDetails(true);
+            fetchPatientReports(patientId);
         } catch (err) {
             setError('Error al cargar los detalles del paciente');
         }
+    };
+
+    const fetchPatientReports = async (patientId) => {
+        setReportsLoading(true);
+        setReportsError(null);
+        try {
+            const params = new URLSearchParams();
+            params.append('page', '0');
+            params.append('size', '100');
+            params.append('sortBy', 'date');
+            params.append('sortDirection', 'desc');
+            params.append('patientId', patientId);
+
+            const response = await api.get(`/api/reports/all?${params.toString()}`);
+            const data = response.data;
+            if (data && Array.isArray(data.reports)) {
+                setPatientReports(data.reports);
+            } else if (Array.isArray(data)) {
+                setPatientReports(data);
+            } else {
+                setPatientReports([]);
+            }
+        } catch (err) {
+            console.error('Error al cargar informes del paciente:', err);
+            setReportsError('Error al cargar los informes del paciente');
+            setPatientReports([]);
+        } finally {
+            setReportsLoading(false);
+        }
+    };
+
+    const handleCloseDetails = () => {
+        setShowDetails(false);
+        setSelectedPatient(null);
+        setPatientReports([]);
+        setReportsError(null);
+    };
+
+    const handleReportPreview = (report) => {
+        try {
+            setFileViewerError(null);
+            const fileData = report.file;
+
+            if (!fileData) {
+                setFileViewerError('No se encontró archivo para este informe');
+                setShowFileViewer(true);
+                return;
+            }
+
+            const viewUrl = fileData.url ? fileData.url.replace('fl_attachment/', '') : null;
+            const ext = fileData.filename?.split('.').pop()?.toLowerCase() || 'pdf';
+
+            const adaptedFileData = {
+                filename: fileData.filename || 'Documento',
+                document_type: ext,
+                viewer_type: ext,
+                download_url: fileData.downloadUrl,
+                direct_url: viewUrl,
+                embed_url: viewUrl,
+                url: viewUrl,
+                preview_url: viewUrl,
+                thumbnail_url: viewUrl,
+                page_previews: []
+            };
+
+            setSelectedFileData(adaptedFileData);
+            setShowFileViewer(true);
+        } catch (err) {
+            console.error('Error al cargar archivo:', err);
+            setFileViewerError('Error al cargar el archivo');
+            setShowFileViewer(true);
+        } finally {
+            setFileViewerLoading(false);
+        }
+    };
+
+    const handleReportDownload = (report) => {
+        const fileData = report.file;
+        if (!fileData || !fileData.downloadUrl) {
+            setError('No se encontró archivo para descargar');
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = fileData.downloadUrl;
+        link.download = fileData.filename || 'informe';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleAddDoctors = async () => {
@@ -330,6 +456,184 @@ const Patients = () => {
                 setError('Error al eliminar el paciente');
             }
         });
+    };
+
+    // Abrir modal de edición de paciente (solo admin)
+    const handleOpenEdit = async (patient) => {
+        if (!isAdmin) {
+            setError('Solo los administradores pueden editar pacientes');
+            return;
+        }
+
+        try {
+            // Obtener detalles completos incluyendo terapeutas asignados
+            const response = await api.get(`/api/patients/${patient.id}`);
+            const patientData = response.data;
+
+            setEditPatient({
+                id: patientData.id,
+                firstName: patientData.firstName || "",
+                lastName: patientData.lastName || "",
+                phone: patientData.phone || "",
+                status: patientData.status || "ACTIVE"
+            });
+
+            const assigned = Array.isArray(patientData.doctors) ? patientData.doctors : [];
+            setEditAssignedDoctors(assigned);
+            setEditOriginalDoctorIds(assigned.map(d => d.id));
+            setEditDoctorsToAdd([]);
+            setEditDoctorSearchTerm('');
+            setEditDoctorSpecialty('');
+            clearEditFormErrors();
+            setShowEdit(true);
+        } catch (err) {
+            setError('Error al cargar los datos del paciente para editar');
+        }
+    };
+
+    const handleCloseEdit = () => {
+        setShowEdit(false);
+        setEditPatient({
+            id: null,
+            firstName: "",
+            lastName: "",
+            phone: "",
+            status: "ACTIVE"
+        });
+        setEditAssignedDoctors([]);
+        setEditOriginalDoctorIds([]);
+        setEditDoctorsToAdd([]);
+        setEditDoctorSearchTerm('');
+        setEditDoctorSpecialty('');
+        clearEditFormErrors();
+    };
+
+    // Quitar un terapeuta de la lista asignada (localmente, se confirma al guardar)
+    const handleRemoveAssignedDoctor = (doctorId) => {
+        setEditAssignedDoctors(prev => prev.filter(d => d.id !== doctorId));
+    };
+
+    const toggleDoctorToAdd = (doctorId) => {
+        setEditDoctorsToAdd(prev =>
+            prev.includes(doctorId)
+                ? prev.filter(id => id !== doctorId)
+                : [...prev, doctorId]
+        );
+    };
+
+    // Guardar cambios del paciente
+    const handleEditSave = async () => {
+        setEditFormError('');
+
+        setEditFirstNameTouched(true);
+        setEditLastNameTouched(true);
+        setEditPhoneTouched(true);
+
+        const firstNameErr = validateFirstName(editPatient.firstName);
+        const lastNameErr = validateLastName(editPatient.lastName);
+        const phoneErr = validatePhone(editPatient.phone);
+
+        setEditFirstNameError(firstNameErr);
+        setEditLastNameError(lastNameErr);
+        setEditPhoneError(phoneErr);
+
+        if (firstNameErr || lastNameErr || phoneErr) {
+            setEditFormError('Por favor, corrige los errores antes de continuar.');
+            return;
+        }
+
+        setEditSaving(true);
+        try {
+            // 1. Actualizar datos básicos del paciente
+            await api.put(`/api/patients/${editPatient.id}`, {
+                firstName: editPatient.firstName,
+                lastName: editPatient.lastName,
+                phone: editPatient.phone,
+                status: editPatient.status
+            });
+
+            // 2. Determinar terapeutas a quitar (estaban y ya no están)
+            const currentAssignedIds = editAssignedDoctors.map(d => d.id);
+            const doctorsToRemove = editOriginalDoctorIds.filter(
+                id => !currentAssignedIds.includes(id)
+            );
+
+            // 3. Quitar terapeutas
+            await Promise.all(
+                doctorsToRemove.map(doctorId =>
+                    api.delete(`/api/patients/${editPatient.id}/doctors/${doctorId}`)
+                )
+            );
+
+            // 4. Agregar nuevos terapeutas seleccionados
+            await Promise.all(
+                editDoctorsToAdd.map(doctorId =>
+                    api.post(`/api/patients/${editPatient.id}/doctors/${doctorId}`)
+                )
+            );
+
+            await fetchPatients();
+            handleCloseEdit();
+        } catch (err) {
+            console.error('Error al actualizar el paciente:', err);
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al actualizar el paciente';
+            setEditFormError(errorMessage);
+        } finally {
+            setEditSaving(false);
+        }
+    };
+
+    // Handlers de cambio con validación para el formulario de edición
+    const handleEditFirstNameChange = (e) => {
+        const value = e.target.value;
+        setEditPatient(prev => ({ ...prev, firstName: value }));
+        if (editFirstNameTouched) {
+            setEditFirstNameError(validateFirstName(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditLastNameChange = (e) => {
+        const value = e.target.value;
+        setEditPatient(prev => ({ ...prev, lastName: value }));
+        if (editLastNameTouched) {
+            setEditLastNameError(validateLastName(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditPhoneChange = (e) => {
+        const value = e.target.value;
+        setEditPatient(prev => ({ ...prev, phone: value }));
+        if (editPhoneTouched) {
+            setEditPhoneError(validatePhone(value));
+        }
+        if (editFormError) setEditFormError('');
+    };
+
+    const handleEditFirstNameBlur = () => {
+        setEditFirstNameTouched(true);
+        setEditFirstNameError(validateFirstName(editPatient.firstName));
+    };
+
+    const handleEditLastNameBlur = () => {
+        setEditLastNameTouched(true);
+        setEditLastNameError(validateLastName(editPatient.lastName));
+    };
+
+    const handleEditPhoneBlur = () => {
+        setEditPhoneTouched(true);
+        setEditPhoneError(validatePhone(editPatient.phone));
+    };
+
+    const clearEditFormErrors = () => {
+        setEditFirstNameError('');
+        setEditLastNameError('');
+        setEditPhoneError('');
+        setEditFormError('');
+        setEditFirstNameTouched(false);
+        setEditLastNameTouched(false);
+        setEditPhoneTouched(false);
     };
 
     // Funciones de validación
@@ -456,7 +760,7 @@ const Patients = () => {
                             onClick={() => setFiltersExpanded(!filtersExpanded)}
                             style={{ color: '#009A9E', fontWeight: 600 }}
                         >
-                            <i className="bi bi-funnel me-2"></i>
+                            <FaFilter className="me-2" />
                             Filtros
                             {filtersExpanded ? <FaChevronUp className="ms-2" /> : <FaChevronDown className="ms-2" />}
                         </Button>
@@ -604,27 +908,46 @@ const Patients = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <div className="d-flex gap-2">
-                                                <Button 
-                                                    variant="outline-primary" 
-                                                    size="sm"
-                                                    onClick={() => fetchPatientDetails(patient.id)}
-                                                >
-                                                    <i className="bi bi-eye me-1"></i>
-                                                    <span className="btn-text">Ver</span>
-                                                </Button>
-                                                {isAdmin && (
+                                            <div className="patient-actions">
+                                                <OverlayTrigger placement="top" overlay={<Tooltip id={`tooltip-view-patient-${patient.id}`}>Ver paciente</Tooltip>}>
                                                     <Button 
-                                                        variant="outline-danger" 
+                                                        variant="outline-primary" 
                                                         size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeletePatient(patient);
-                                                        }}
+                                                        className="patient-action-btn"
+                                                        onClick={() => fetchPatientDetails(patient.id)}
                                                     >
-                                                        <i className="bi bi-trash me-1"></i>
-                                                        <span className="btn-text">Eliminar</span>
+                                                        <FaEye />
                                                     </Button>
+                                                </OverlayTrigger>
+                                                {isAdmin && (
+                                                    <>
+                                                        <OverlayTrigger placement="top" overlay={<Tooltip id={`tooltip-edit-patient-${patient.id}`}>Editar paciente</Tooltip>}>
+                                                            <Button
+                                                                variant="outline-warning"
+                                                                size="sm"
+                                                                className="patient-action-btn"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleOpenEdit(patient);
+                                                                }}
+                                                            >
+                                                                <FaEdit />
+                                                            </Button>
+                                                        </OverlayTrigger>
+                                                        <OverlayTrigger placement="top" overlay={<Tooltip id={`tooltip-delete-patient-${patient.id}`}>Eliminar paciente</Tooltip>}>
+                                                            <Button
+                                                                variant="outline-danger"
+                                                                size="sm"
+                                                                className="patient-action-btn"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeletePatient(patient);
+                                                                }}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </OverlayTrigger>
+                                                    </>
                                                 )}
                                             </div>
                                         </td>
@@ -711,31 +1034,69 @@ const Patients = () => {
 
 
             {/* Modal de Detalles del Paciente */}
-            <Modal show={showDetails} onHide={() => setShowDetails(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Detalles del Paciente</Modal.Title>
+            <Modal
+                show={showDetails}
+                onHide={handleCloseDetails}
+                size="lg"
+                dialogClassName="modal-dialog-responsive"
+                centered
+            >
+                <Modal.Header className="border-bottom-0 sticky-top bg-white" style={{ zIndex: 1031 }} closeButton>
+                    <Modal.Title>
+                        {selectedPatient
+                            ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
+                            : 'Detalles del Paciente'}
+                    </Modal.Title>
                 </Modal.Header>
+                {selectedPatient && (
+                    <div
+                        className="patient-metadata sticky-top bg-light mb-0 p-3"
+                        style={{ top: '56px', zIndex: 1030, borderRadius: 0 }}
+                    >
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div className="d-flex flex-wrap gap-3">
+                                <small className="text-muted">
+                                    <i className="bi bi-telephone me-1"></i>
+                                    {selectedPatient.phone || '—'}
+                                </small>
+                                <small className="text-muted">
+                                    <i className="bi bi-people me-1"></i>
+                                    {selectedPatient.doctors?.length || 0} terapeuta{(selectedPatient.doctors?.length || 0) === 1 ? '' : 's'}
+                                </small>
+                                <small className="text-muted">
+                                    <i className="bi bi-file-earmark-text me-1"></i>
+                                    {patientReports.length} informe{patientReports.length === 1 ? '' : 's'}
+                                </small>
+                            </div>
+                            <span className={`badge bg-${
+                                selectedPatient.status === 'ACTIVE' ? 'success' :
+                                selectedPatient.status === 'INACTIVE' ? 'danger' :
+                                selectedPatient.status === 'DISCHARGED' ? 'info' :
+                                selectedPatient.status === 'PENDING' ? 'warning' :
+                                selectedPatient.status === 'REFERRED' ? 'primary' : 'secondary'
+                            }`}>
+                                {selectedPatient.status === 'ACTIVE' ? 'Activo' :
+                                 selectedPatient.status === 'INACTIVE' ? 'Inactivo' :
+                                 selectedPatient.status === 'DISCHARGED' ? 'Dado de alta' :
+                                 selectedPatient.status === 'PENDING' ? 'Pendiente' :
+                                 selectedPatient.status === 'REFERRED' ? 'Derivado' : selectedPatient.status}
+                            </span>
+                        </div>
+                    </div>
+                )}
                 <Modal.Body>
                     {selectedPatient && (
                         <div className="patient-details">
+                            {/* Sección: Terapeutas asignados */}
                             <div className="mb-4">
-                                <h4 className="text-primary mb-3">{`${selectedPatient.firstName} ${selectedPatient.lastName}`}</h4>
-                                <div className="d-flex align-items-center mb-2">
-                                    <i className="bi bi-telephone me-2"></i>
-                                    <span>{selectedPatient.phone}</span>
-                                </div>
-                                <div className="d-flex align-items-center mb-2">
-                                    <i className="bi bi-info-circle me-2"></i>
-                                    <span>Estado: {selectedPatient.status}</span>
-                                </div>
-                            </div>
-
-                            <div className="doctors-section">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 className="mb-0">Terapeutas Asignados</h5>
+                                    <h6 className="mb-0">
+                                        <i className="bi bi-people me-2"></i>
+                                        Terapeutas Asignados
+                                    </h6>
                                     {isAdmin && (
-                                        <Button 
-                                            variant="outline-primary" 
+                                        <Button
+                                            variant="outline-primary"
                                             size="sm"
                                             onClick={() => {
                                                 setShowAddDoctor(true);
@@ -751,8 +1112,11 @@ const Patients = () => {
                                     <div className="doctors-list">
                                         {selectedPatient.doctors.map((doctor, index) => (
                                             <div key={index} className="doctor-item p-2 mb-2 border rounded">
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <span>{doctor.name}</span>
+                                                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                    <span className="fw-medium">
+                                                        <i className="bi bi-person-circle me-2 text-muted"></i>
+                                                        {doctor.name}
+                                                    </span>
                                                     <div>
                                                         {doctor.specialties && doctor.specialties.length > 0 && (
                                                             doctor.specialties.map((specialty, specIndex) => (
@@ -767,20 +1131,115 @@ const Patients = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-muted">
+                                    <div className="text-muted fst-italic">
                                         No hay terapeutas asignados
                                     </div>
+                                )}
+                            </div>
+
+                            <hr />
+
+                            {/* Sección: Informes del paciente */}
+                            <div className="reports-section">
+                                <h6 className="mb-3">
+                                    <i className="bi bi-file-earmark-text me-2"></i>
+                                    Informes del paciente
+                                    {!reportsLoading && (
+                                        <span className="badge bg-secondary ms-2">{patientReports.length}</span>
+                                    )}
+                                </h6>
+
+                                {reportsLoading ? (
+                                    <div className="text-center py-3">
+                                        <Spinner animation="border" size="sm" variant="primary" />
+                                        <div className="text-muted mt-2" style={{ fontSize: '0.9rem' }}>
+                                            Cargando informes...
+                                        </div>
+                                    </div>
+                                ) : reportsError ? (
+                                    <Alert variant="danger" className="d-flex align-items-center mb-0">
+                                        <FaExclamationCircle className="me-2" />
+                                        <div>{reportsError}</div>
+                                    </Alert>
+                                ) : patientReports.length === 0 ? (
+                                    <div className="empty-state">
+                                        <FaFileAlt className="empty-state-icon" />
+                                        <div>Este paciente aún no tiene informes.</div>
+                                    </div>
+                                ) : (
+                                    <Table responsive hover className="reports-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Título</th>
+                                                <th>Fecha</th>
+                                                <th>Especialidad</th>
+                                                <th>Terapeuta</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {patientReports.map(report => (
+                                                <tr key={report.id}>
+                                                    <td>
+                                                        <strong className="report-title">{report.title}</strong>
+                                                    </td>
+                                                    <td className="date-text">{formatDate(report.date)}</td>
+                                                    <td>
+                                                        <Badge bg="info" className="specialty-badge">
+                                                            {report.specialty?.name || 'N/A'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td>{report.doctor?.name || 'N/A'}</td>
+                                                    <td>
+                                                        <div className={`report-actions ${isMobile ? 'mobile-actions' : ''}`}>
+                                                            <Button
+                                                                variant="outline-secondary"
+                                                                size="sm"
+                                                                onClick={() => handleReportPreview(report)}
+                                                                title="Ver archivo"
+                                                                disabled={!report.file}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline-success"
+                                                                size="sm"
+                                                                onClick={() => handleReportDownload(report)}
+                                                                title="Descargar archivo"
+                                                                disabled={!report.file?.downloadUrl}
+                                                            >
+                                                                <FaDownload />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
                                 )}
                             </div>
                         </div>
                     )}
                 </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDetails(false)}>
+                <Modal.Footer className="border-0 d-flex justify-content-center">
+                    <Button variant="primary" className="px-5" onClick={handleCloseDetails}>
                         Cerrar
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Visualizador de archivos de informes */}
+            <FileViewer
+                show={showFileViewer}
+                onHide={() => {
+                    setShowFileViewer(false);
+                    setSelectedFileData(null);
+                    setFileViewerError(null);
+                }}
+                fileData={selectedFileData}
+                isLoading={fileViewerLoading}
+                error={fileViewerError}
+            />
 
             {/* Modal para Agregar Terapeutas */}
             <Modal show={showAddDoctor} onHide={() => setShowAddDoctor(false)} size="lg">
@@ -1052,6 +1511,298 @@ const Patients = () => {
                         disabled={(firstNameTouched && firstNameError) || (lastNameTouched && lastNameError) || (phoneTouched && phoneError)}
                     >
                         Guardar Paciente
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal de Edición de Paciente (solo Admin) */}
+            <Modal show={showEdit} onHide={handleCloseEdit} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Editar Paciente</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <h6 className="mb-3">
+                            <i className="bi bi-person-badge me-2"></i>
+                            Datos del paciente
+                        </h6>
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Nombre</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Nombre del paciente"
+                                        value={editPatient.firstName}
+                                        maxLength={50}
+                                        onChange={handleEditFirstNameChange}
+                                        onBlur={handleEditFirstNameBlur}
+                                        style={editFirstNameTouched && editFirstNameError ? {
+                                            border: '2px solid #d00',
+                                            background: '#fff6f6'
+                                        } : {}}
+                                        className={editFirstNameTouched && editFirstNameError ? 'error-input' : ''}
+                                    />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {editFirstNameTouched && editFirstNameError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {editFirstNameError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {editPatient.firstName.length}/50 caracteres
+                                        </Form.Text>
+                                    </div>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Apellido</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Apellido del paciente"
+                                        value={editPatient.lastName}
+                                        maxLength={50}
+                                        onChange={handleEditLastNameChange}
+                                        onBlur={handleEditLastNameBlur}
+                                        style={editLastNameTouched && editLastNameError ? {
+                                            border: '2px solid #d00',
+                                            background: '#fff6f6'
+                                        } : {}}
+                                        className={editLastNameTouched && editLastNameError ? 'error-input' : ''}
+                                    />
+                                    <div className="d-flex justify-content-between">
+                                        <div>
+                                            {editLastNameTouched && editLastNameError && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {editLastNameError}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Form.Text className="text-muted">
+                                            {editPatient.lastName.length}/50 caracteres
+                                        </Form.Text>
+                                    </div>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6} className="mt-3">
+                                <Form.Group>
+                                    <Form.Label>Teléfono</Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        placeholder="Número de teléfono"
+                                        value={editPatient.phone}
+                                        maxLength={20}
+                                        onChange={handleEditPhoneChange}
+                                        onBlur={handleEditPhoneBlur}
+                                        style={editPhoneTouched && editPhoneError ? {
+                                            border: '2px solid #d00',
+                                            background: '#fff6f6'
+                                        } : {}}
+                                        className={editPhoneTouched && editPhoneError ? 'error-input' : ''}
+                                    />
+                                    {editPhoneTouched && editPhoneError && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {editPhoneError}
+                                        </div>
+                                    )}
+                                    <Form.Text className="text-muted">
+                                        Incluya código de área. Ej: +1234567890, (123) 456-7890
+                                    </Form.Text>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6} className="mt-3">
+                                <Form.Group>
+                                    <Form.Label>Estado</Form.Label>
+                                    <Form.Select
+                                        value={editPatient.status}
+                                        onChange={(e) => setEditPatient(prev => ({ ...prev, status: e.target.value }))}
+                                    >
+                                        {statuses.length > 0 ? (
+                                            statuses.map(status => (
+                                                <option key={status} value={status}>
+                                                    {status === 'ACTIVE' ? 'Activo' :
+                                                     status === 'INACTIVE' ? 'Inactivo' :
+                                                     status === 'DISCHARGED' ? 'Dado de alta' :
+                                                     status === 'PENDING' ? 'Pendiente' :
+                                                     status === 'REFERRED' ? 'Derivado' : status}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="ACTIVE">Activo</option>
+                                                <option value="INACTIVE">Inactivo</option>
+                                                <option value="DISCHARGED">Dado de alta</option>
+                                                <option value="PENDING">Pendiente</option>
+                                                <option value="REFERRED">Derivado</option>
+                                            </>
+                                        )}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
+                        <hr />
+
+                        <h6 className="mb-3">
+                            <i className="bi bi-people me-2"></i>
+                            Terapeutas asignados ({editAssignedDoctors.length})
+                        </h6>
+                        {editAssignedDoctors.length > 0 ? (
+                            <div className="doctors-list mb-4">
+                                {editAssignedDoctors.map(doctor => (
+                                    <div key={doctor.id} className="doctor-item p-2 mb-2 border rounded">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span className="fw-medium">{doctor.name}</span>
+                                                {doctor.specialties && doctor.specialties.length > 0 && (
+                                                    <div className="mt-1">
+                                                        {doctor.specialties.map((specialty, specIndex) => (
+                                                            <span key={specIndex} className="badge bg-info me-1">
+                                                                {specialty}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleRemoveAssignedDoctor(doctor.id)}
+                                                title="Quitar terapeuta"
+                                            >
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-muted mb-4">
+                                No hay terapeutas asignados actualmente.
+                            </div>
+                        )}
+
+                        <hr />
+
+                        <h6 className="mb-3">
+                            <i className="bi bi-plus-circle me-2"></i>
+                            Agregar nuevos terapeutas
+                        </h6>
+                        <Row className="mb-2">
+                            <Col md={6}>
+                                <InputGroup>
+                                    <InputGroup.Text>
+                                        <i className="bi bi-search"></i>
+                                    </InputGroup.Text>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Buscar terapeuta por nombre..."
+                                        value={editDoctorSearchTerm}
+                                        onChange={e => {
+                                            setEditDoctorSearchTerm(e.target.value);
+                                            setDoctorSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                </InputGroup>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Select
+                                    value={editDoctorSpecialty}
+                                    onChange={e => {
+                                        setEditDoctorSpecialty(e.target.value);
+                                        setDoctorSpecialty(e.target.value);
+                                    }}
+                                >
+                                    <option value="">Todas las especialidades</option>
+                                    {specialties.map(specialty => (
+                                        <option key={specialty.id} value={specialty.name}>
+                                            {specialty.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Col>
+                        </Row>
+                        <div className="doctors-list" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                            <Table striped bordered hover size="sm">
+                                <thead>
+                                    <tr>
+                                        <th>Seleccionar</th>
+                                        <th>Nombre</th>
+                                        <th>Especialidades</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {doctors
+                                        .filter(doctor => !editAssignedDoctors.some(d => d.id === doctor.id))
+                                        .map(doctor => (
+                                            <tr
+                                                key={doctor.id}
+                                                className={editDoctorsToAdd.includes(doctor.id) ? 'table-primary' : ''}
+                                                onClick={() => toggleDoctorToAdd(doctor.id)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <td>
+                                                    <Form.Check
+                                                        type="checkbox"
+                                                        checked={editDoctorsToAdd.includes(doctor.id)}
+                                                        onChange={() => {}}
+                                                    />
+                                                </td>
+                                                <td>{doctor.name}</td>
+                                                <td>{doctor.specialties?.join(', ')}</td>
+                                            </tr>
+                                        ))}
+                                    {doctors.filter(doctor => !editAssignedDoctors.some(d => d.id === doctor.id)).length === 0 && (
+                                        <tr>
+                                            <td colSpan="3" className="text-center text-muted">
+                                                No hay terapeutas disponibles para agregar
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </Table>
+                        </div>
+
+                        {editDoctorsToAdd.length > 0 && (
+                            <div className="mt-2">
+                                <small className="text-info">
+                                    {editDoctorsToAdd.length} terapeuta{editDoctorsToAdd.length > 1 ? 's' : ''} seleccionado{editDoctorsToAdd.length > 1 ? 's' : ''} para agregar
+                                </small>
+                            </div>
+                        )}
+
+                        {editFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center mt-3">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{editFormError}</div>
+                            </Alert>
+                        )}
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={handleCloseEdit}
+                        disabled={editSaving}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleEditSave}
+                        disabled={editSaving || (editFirstNameTouched && editFirstNameError) || (editLastNameTouched && editLastNameError) || (editPhoneTouched && editPhoneError)}
+                    >
+                        {editSaving ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Guardando...
+                            </>
+                        ) : (
+                            'Guardar Cambios'
+                        )}
                     </Button>
                 </Modal.Footer>
             </Modal>
