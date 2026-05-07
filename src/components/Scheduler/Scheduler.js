@@ -742,7 +742,7 @@ function Scheduler() {
                         <div>
                             <Row>
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group style={{ position: 'relative' }}>
                                 <Form.Label>Paciente</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -775,7 +775,7 @@ function Scheduler() {
                             </Form.Group>
                         </Col>
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group style={{ position: 'relative' }}>
                                 <Form.Label>Terapeuta</Form.Label>
                                 <InputGroup>
                                     <InputGroup.Text>
@@ -955,11 +955,45 @@ function Scheduler() {
 
 
 
-                        {newEvent.start && newEvent.end && (
-                            <Alert variant="info">
-                                {`Horario: ${format(newEvent.start, 'eeee', { locale: es }).replace(/^\w/, (c) => c.toUpperCase())} de ${format(newEvent.start, 'HH:mm')} a ${format(newEvent.end, 'HH:mm')}`}
+                        {newEvent.start && (
+                            <Alert variant="info" className="mb-3">
+                                {`Día: ${format(newEvent.start, 'eeee', { locale: es }).replace(/^\w/, (c) => c.toUpperCase())}`}
                             </Alert>
                         )}
+                        <Row>
+                            <Col>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Hora inicio</Form.Label>
+                                    <Form.Control
+                                        type="time"
+                                        value={newEvent.start ? format(newEvent.start, 'HH:mm') : ''}
+                                        onChange={e => {
+                                            if (!newEvent.start || !e.target.value) return;
+                                            const [h, m] = e.target.value.split(':').map(Number);
+                                            const updated = new Date(newEvent.start);
+                                            updated.setHours(h, m, 0, 0);
+                                            setNewEvent(prev => ({ ...prev, start: updated }));
+                                        }}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Hora fin</Form.Label>
+                                    <Form.Control
+                                        type="time"
+                                        value={newEvent.end ? format(newEvent.end, 'HH:mm') : ''}
+                                        onChange={e => {
+                                            if (!newEvent.end || !e.target.value) return;
+                                            const [h, m] = e.target.value.split(':').map(Number);
+                                            const updated = new Date(newEvent.end);
+                                            updated.setHours(h, m, 0, 0);
+                                            setNewEvent(prev => ({ ...prev, end: updated }));
+                                        }}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>

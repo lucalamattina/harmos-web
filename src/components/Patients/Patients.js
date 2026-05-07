@@ -1118,12 +1118,8 @@ const Patients = () => {
                                                         {doctor.name}
                                                     </span>
                                                     <div>
-                                                        {doctor.specialties && doctor.specialties.length > 0 && (
-                                                            doctor.specialties.map((specialty, specIndex) => (
-                                                                <span key={specIndex} className="badge bg-info me-1">
-                                                                    {specialty}
-                                                                </span>
-                                                            ))
+                                                        {doctor.specialty && (
+                                                            <span className="badge bg-info me-1">{doctor.specialty}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -1287,7 +1283,7 @@ const Patients = () => {
                                 </thead>
                                 <tbody>
                                     {doctors.map(doctor => (
-                                        <tr key={doctor.id} 
+                                        <tr key={doctor.id}
                                             className={selectedDoctors.includes(doctor.id) ? 'table-primary' : ''}
                                             onClick={() => {
                                                 if (selectedDoctors.includes(doctor.id)) {
@@ -1306,7 +1302,7 @@ const Patients = () => {
                                                 />
                                             </td>
                                             <td>{doctor.name}</td>
-                                            <td>{doctor.specialties?.join(', ')}</td>
+                                            <td>{doctor.specialty || ''}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1460,7 +1456,7 @@ const Patients = () => {
                                     </thead>
                                     <tbody>
                                         {doctors.map(doctor => (
-                                            <tr key={doctor.id} 
+                                            <tr key={doctor.id}
                                                 className={newPatient.doctorIds.includes(doctor.id) ? 'table-primary' : ''}
                                                 onClick={() => {
                                                     if (newPatient.doctorIds.includes(doctor.id)) {
@@ -1484,7 +1480,7 @@ const Patients = () => {
                                                     />
                                                 </td>
                                                 <td>{doctor.name}</td>
-                                                <td>{doctor.specialties?.join(', ')}</td>
+                                                <td>{doctor.specialty || ''}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -1657,13 +1653,9 @@ const Patients = () => {
                                         <div className="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <span className="fw-medium">{doctor.name}</span>
-                                                {doctor.specialties && doctor.specialties.length > 0 && (
+                                                {doctor.specialty && (
                                                     <div className="mt-1">
-                                                        {doctor.specialties.map((specialty, specIndex) => (
-                                                            <span key={specIndex} className="badge bg-info me-1">
-                                                                {specialty}
-                                                            </span>
-                                                        ))}
+                                                        <span className="badge bg-info me-1">{doctor.specialty}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -1752,7 +1744,7 @@ const Patients = () => {
                                                     />
                                                 </td>
                                                 <td>{doctor.name}</td>
-                                                <td>{doctor.specialties?.join(', ')}</td>
+                                                <td>{doctor.specialty || ''}</td>
                                             </tr>
                                         ))}
                                     {doctors.filter(doctor => !editAssignedDoctors.some(d => d.id === doctor.id)).length === 0 && (

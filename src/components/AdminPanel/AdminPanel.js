@@ -22,7 +22,7 @@ const AdminPanel = () => {
         email: '',
         password: '',
         phone: '',
-        specialties: [],
+        specialty: '',
         roles: ['DOCTOR']
     });
     const [specialtyFormData, setSpecialtyFormData] = useState({
@@ -36,7 +36,7 @@ const AdminPanel = () => {
         totalElements: 0,
         pageSize: 10
     });
-    // Estado para el dropdown de especialidades
+    // Estado para el dropdown de especialidades (ya no se usa, mantenido por compatibilidad)
     const [showSpecialtiesDropdown, setShowSpecialtiesDropdown] = useState(false);
     const [specialtySearchTerm, setSpecialtySearchTerm] = useState('');
     // Estados para filtros
@@ -176,7 +176,7 @@ const AdminPanel = () => {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 phone: formData.phone,
-                specialties: formData.specialties,
+                specialty: formData.specialty,
                 roles: formData.roles
             };
             
@@ -303,7 +303,7 @@ const AdminPanel = () => {
             email: '',
             password: '',
             phone: '',
-            specialties: [],
+            specialty: '',
             roles: ['DOCTOR']
         });
         setSelectedUser(null);
@@ -653,7 +653,7 @@ const AdminPanel = () => {
                                         <th>Nombre</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
-                                        <th>Especialidades</th>
+                                        <th>Especialidad</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -663,12 +663,12 @@ const AdminPanel = () => {
                                             <td>{user.name}</td>
                                             <td>{user.email}</td>
                                             <td>{user.phone}</td>
-                                            <td>{user.specialties?.join(', ') || 'Ninguna'}</td>
+                                            <td>{user.specialty || 'Ninguna'}</td>
                                             <td>
                                                                                  <OverlayTrigger placement="top" overlay={<Tooltip>Editar usuario</Tooltip>}>
-                                                 <Button 
-                                                     variant="outline-warning" 
-                                                     size="sm" 
+                                                 <Button
+                                                     variant="outline-warning"
+                                                     size="sm"
                                                      className="me-2"
                                                      onClick={() => {
                                                          setSelectedUser(user);
@@ -677,7 +677,7 @@ const AdminPanel = () => {
                                                              lastName: user.lastName || '',
                                                              email: user.email,
                                                              phone: user.phone,
-                                                             specialties: user.specialties || [],
+                                                             specialty: user.specialty || '',
                                                              roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
                                                              password: ''
                                                          });
@@ -730,11 +730,11 @@ const AdminPanel = () => {
                                     </div>
                                     <div className="mobile-card-row">
                                         <span className="mobile-card-label">Especialidades:</span>
-                                        <span className="mobile-card-value">{user.specialties?.join(', ') || 'Ninguna'}</span>
+                                        <span className="mobile-card-value">{user.specialty || 'Ninguna'}</span>
                                     </div>
                                                                  <div className="mobile-card-actions">
-                                     <Button 
-                                         variant="outline-warning" 
+                                     <Button
+                                         variant="outline-warning"
                                          size="sm"
                                          onClick={() => {
                                              setSelectedUser(user);
@@ -743,7 +743,7 @@ const AdminPanel = () => {
                                                  lastName: user.lastName || '',
                                                  email: user.email,
                                                  phone: user.phone,
-                                                 specialties: user.specialties || [],
+                                                 specialty: user.specialty || '',
                                                  roles: Array.isArray(user.roles) ? user.roles : [user.role || 'DOCTOR'],
                                                  password: ''
                                              });
@@ -909,6 +909,14 @@ const AdminPanel = () => {
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleUserSubmit}>
+                        {/* Mensaje de error general */}
+                        {userFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center mb-3">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{userFormError}</div>
+                            </Alert>
+                        )}
+
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control
@@ -1048,66 +1056,16 @@ const AdminPanel = () => {
                             </Form.Group>
                         )}
                         <Form.Group className="mb-3">
-                            <Form.Label>Especialidades</Form.Label>
-                            <div className="specialties-select-container">
-                                <div 
-                                    className="specialties-select-trigger"
-                                    onClick={() => setShowSpecialtiesDropdown(!showSpecialtiesDropdown)}
-                                >
-                                    <div className="selected-specialties">
-                                        {formData.specialties.length === 0
-                                            ? 'Todas las especialidades'
-                                            : formData.specialties.join(', ')}
-                                    </div>
-                                    <div className="specialties-arrow">
-                                        {showSpecialtiesDropdown ? '▲' : '▼'}
-                                    </div>
-                                </div>
-                                {showSpecialtiesDropdown && (
-                                    <div className="specialties-dropdown">
-                                        <InputGroup className="mb-2">
-                                            <Form.Control
-                                                type="text"
-                                                placeholder="Buscar especialidad..."
-                                                value={specialtySearchTerm}
-                                                onChange={e => setSpecialtySearchTerm(e.target.value)}
-                                                onClick={e => e.stopPropagation()}
-                                            />
-                                        </InputGroup>
-                                        <div className="specialties-list">
-                                            {specialties
-                                                .filter(spec => spec.name.toLowerCase().includes(specialtySearchTerm.toLowerCase()))
-                                                .map(spec => (
-                                                    <div
-                                                        key={spec.id}
-                                                        className={`specialty-item${formData.specialties.includes(spec.name) ? ' selected' : ''}`}
-                                                        onClick={() => {
-                                                            if (formData.specialties.includes(spec.name)) {
-                                                                setFormData({
-                                                                    ...formData,
-                                                                    specialties: formData.specialties.filter(s => s !== spec.name)
-                                                                });
-                                                            } else {
-                                                                setFormData({
-                                                                    ...formData,
-                                                                    specialties: [...formData.specialties, spec.name]
-                                                                });
-                                                            }
-                                                        }}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={formData.specialties.includes(spec.name)}
-                                                            readOnly
-                                                            style={{ marginRight: 8 }}
-                                                        />
-                                                        <span>{spec.name}</span>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <Form.Label>Especialidad</Form.Label>
+                            <Form.Select
+                                value={formData.specialty}
+                                onChange={(e) => setFormData(prev => ({ ...prev, specialty: e.target.value }))}
+                            >
+                                <option value="">Sin especialidad</option>
+                                {specialties.map(spec => (
+                                    <option key={spec.id} value={spec.name}>{spec.name}</option>
+                                ))}
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Rol</Form.Label>
@@ -1119,14 +1077,6 @@ const AdminPanel = () => {
                                 <option value="ADMINISTRATOR">Administrador</option>
                             </Form.Select>
                         </Form.Group>
-                        
-                        {/* Mensaje de error general */}
-                        {userFormError && (
-                            <Alert variant="danger" className="d-flex align-items-center mb-3">
-                                <FaExclamationCircle className="me-2" />
-                                <div style={{ whiteSpace: 'pre-line' }}>{userFormError}</div>
-                            </Alert>
-                        )}
                         
                         <div className="d-flex gap-2">
                             <Button variant="secondary" onClick={handleCloseUserModal}>
@@ -1154,6 +1104,14 @@ const AdminPanel = () => {
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSpecialtySubmit}>
+                        {/* Mensaje de error general */}
+                        {specialtyFormError && (
+                            <Alert variant="danger" className="d-flex align-items-center mb-3">
+                                <FaExclamationCircle className="me-2" />
+                                <div style={{ whiteSpace: 'pre-line' }}>{specialtyFormError}</div>
+                            </Alert>
+                        )}
+
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre</Form.Label>
                             <Form.Control
@@ -1211,14 +1169,6 @@ const AdminPanel = () => {
                                 </Form.Text>
                             </div>
                         </Form.Group>
-                        
-                        {/* Mensaje de error general */}
-                        {specialtyFormError && (
-                            <Alert variant="danger" className="d-flex align-items-center mb-3">
-                                <FaExclamationCircle className="me-2" />
-                                <div style={{ whiteSpace: 'pre-line' }}>{specialtyFormError}</div>
-                            </Alert>
-                        )}
                         
                         <div className="d-flex gap-2">
                             <Button variant="secondary" onClick={handleCloseSpecialtyModal}>

@@ -15,7 +15,7 @@ const Profile = () => {
         email: '',
         phone: '',
         institution: '',
-        specialties: []
+        specialty: ''
     });
     const [patients, setPatients] = useState([]);
 
@@ -151,18 +151,12 @@ const Profile = () => {
                                         <FaGraduationCap className="me-2" /> Especialidades
                                     </div>
                                     <div className="specialties-display">
-                                        {userData.specialties?.length > 0 ? (
-                                            userData.specialties.map((specialty) => (
-                                                <Badge 
-                                                    key={specialty} 
-                                                    bg="primary" 
-                                                    className="specialty-badge"
-                                                >
-                                                    {specialty}
-                                                </Badge>
-                                            ))
+                                        {userData.specialty ? (
+                                            <Badge bg="primary" className="specialty-badge">
+                                                {userData.specialty}
+                                            </Badge>
                                         ) : (
-                                            <p className="profile-info">No hay especialidades seleccionadas</p>
+                                            <p className="profile-info">No hay especialidad seleccionada</p>
                                         )}
                                     </div>
                                 </div>
