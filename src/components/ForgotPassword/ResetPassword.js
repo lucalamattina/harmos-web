@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Form, Button, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import api from '../../api/api';
+import { parseApiError } from '../../utils/apiErrors';
 import './ForgotPassword.css';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
 import { FaExclamationCircle, FaCheckCircle, FaRegCircle, FaTimesCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -125,11 +126,13 @@ const ResetPassword = () => {
                 navigate('/login', { state: { resetSuccess: true } });
             }, 2000);
         } catch (err) {
-            if (err.response && err.response.status === 400) {
-                setError('El enlace ha expirado o es inválido. Solicita un nuevo correo de recuperación.');
-            } else {
-                setError('Ocurrió un error al cambiar la contraseña. Intenta nuevamente.');
-            }
+            // Usa el envelope { error } del backend cuando esté presente;
+            // si no, cae al mensaje genérico en español.
+            const { message: parsedMessage } = parseApiError(
+                err,
+                'Ocurrió un error al cambiar la contraseña. Intenta nuevamente.'
+            );
+            setError(parsedMessage);
         } finally {
             setIsLoading(false);
         }

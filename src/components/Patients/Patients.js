@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaTrash, FaEye, FaDownload, FaFileAlt, FaFilter, FaEdit } from 'react-icons/fa';
 import api from '../../api/api';
+import { parseApiError } from '../../utils/apiErrors';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { formatDate } from '../../utils/dateUtils';
@@ -65,6 +66,8 @@ const Patients = () => {
     const [lastNameTouched, setLastNameTouched] = useState(false);
     const [phoneTouched, setPhoneTouched] = useState(false);
     const [formError, setFormError] = useState('');
+    // Errores devueltos por el backend (400 con { errors: { campo: msg } })
+    const [serverFieldErrors, setServerFieldErrors] = useState({});
 
     // Estados para el modal de edición de paciente
     const [showEdit, setShowEdit] = useState(false);
@@ -88,6 +91,8 @@ const Patients = () => {
     const [editFirstNameTouched, setEditFirstNameTouched] = useState(false);
     const [editLastNameTouched, setEditLastNameTouched] = useState(false);
     const [editPhoneTouched, setEditPhoneTouched] = useState(false);
+    // Errores devueltos por el backend (400 con { errors: { campo: msg } }) en edición
+    const [editServerFieldErrors, setEditServerFieldErrors] = useState({});
 
     // Estados para informes del paciente (modal de detalles)
     const [patientReports, setPatientReports] = useState([]);
@@ -260,23 +265,31 @@ const Patients = () => {
     };
 
     const handleSave = async () => {
+        // Defensa adicional: el botón ya está oculto para no-admins, pero
+        // protegemos el handler en caso de invocación directa.
+        if (!isAdmin) {
+            setFormError('Solo los administradores pueden crear pacientes');
+            return;
+        }
+
         // Limpiar errores previos
         setFormError('');
-        
+        setServerFieldErrors({});
+
         // Marcar todos los campos como touched
         setFirstNameTouched(true);
         setLastNameTouched(true);
         setPhoneTouched(true);
-        
+
         // Validar todos los campos
         const firstNameErr = validateFirstName(newPatient.firstName);
         const lastNameErr = validateLastName(newPatient.lastName);
         const phoneErr = validatePhone(newPatient.phone);
-        
+
         setFirstNameError(firstNameErr);
         setLastNameError(lastNameErr);
         setPhoneError(phoneErr);
-        
+
         // Si hay errores de validación, no continuar
         if (firstNameErr || lastNameErr || phoneErr) {
             setFormError('Por favor, corrige los errores antes de continuar.');
@@ -298,8 +311,19 @@ const Patients = () => {
             clearFormErrors();
         } catch (err) {
             console.error('Error al guardar el paciente:', err);
-            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al guardar el paciente';
-            setFormError(errorMessage);
+            const { fieldErrors, message, status } = parseApiError(err, 'Error al guardar el paciente');
+            if (status === 403) {
+                setServerFieldErrors({});
+                setFormError('Solo los administradores pueden crear pacientes');
+                return;
+            }
+            if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
+                setServerFieldErrors(fieldErrors);
+                setFormError('Por favor, corrige los errores indicados.');
+                return;
+            }
+            setServerFieldErrors({});
+            setFormError(message);
         }
     };
 
@@ -524,6 +548,7 @@ const Patients = () => {
     // Guardar cambios del paciente
     const handleEditSave = async () => {
         setEditFormError('');
+        setEditServerFieldErrors({});
 
         setEditFirstNameTouched(true);
         setEditLastNameTouched(true);
@@ -576,8 +601,26 @@ const Patients = () => {
             handleCloseEdit();
         } catch (err) {
             console.error('Error al actualizar el paciente:', err);
-            const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al actualizar el paciente';
-            setEditFormError(errorMessage);
+            const { fieldErrors, message, status } = parseApiError(err, 'Error al actualizar el paciente');
+            if (status === 404) {
+                setEditServerFieldErrors({});
+                setEditFormError('El paciente ya no existe. Actualizando lista...');
+                await fetchPatients();
+                handleCloseEdit();
+                return;
+            }
+            if (status === 403) {
+                setEditServerFieldErrors({});
+                setEditFormError('No tienes permiso para realizar esta acción');
+                return;
+            }
+            if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
+                setEditServerFieldErrors(fieldErrors);
+                setEditFormError('Por favor, corrige los errores indicados.');
+                return;
+            }
+            setEditServerFieldErrors({});
+            setEditFormError(message);
         } finally {
             setEditSaving(false);
         }
@@ -591,6 +634,9 @@ const Patients = () => {
             setEditFirstNameError(validateFirstName(value));
         }
         if (editFormError) setEditFormError('');
+        if (editServerFieldErrors.firstName) {
+            setEditServerFieldErrors(prev => { const { firstName, ...rest } = prev; return rest; });
+        }
     };
 
     const handleEditLastNameChange = (e) => {
@@ -600,6 +646,9 @@ const Patients = () => {
             setEditLastNameError(validateLastName(value));
         }
         if (editFormError) setEditFormError('');
+        if (editServerFieldErrors.lastName) {
+            setEditServerFieldErrors(prev => { const { lastName, ...rest } = prev; return rest; });
+        }
     };
 
     const handleEditPhoneChange = (e) => {
@@ -609,6 +658,9 @@ const Patients = () => {
             setEditPhoneError(validatePhone(value));
         }
         if (editFormError) setEditFormError('');
+        if (editServerFieldErrors.phone) {
+            setEditServerFieldErrors(prev => { const { phone, ...rest } = prev; return rest; });
+        }
     };
 
     const handleEditFirstNameBlur = () => {
@@ -631,6 +683,7 @@ const Patients = () => {
         setEditLastNameError('');
         setEditPhoneError('');
         setEditFormError('');
+        setEditServerFieldErrors({});
         setEditFirstNameTouched(false);
         setEditLastNameTouched(false);
         setEditPhoneTouched(false);
@@ -683,6 +736,9 @@ const Patients = () => {
             setFirstNameError(validateFirstName(value));
         }
         if (formError) setFormError('');
+        if (serverFieldErrors.firstName) {
+            setServerFieldErrors(prev => { const { firstName, ...rest } = prev; return rest; });
+        }
     };
 
     const handleLastNameChange = (e) => {
@@ -692,6 +748,9 @@ const Patients = () => {
             setLastNameError(validateLastName(value));
         }
         if (formError) setFormError('');
+        if (serverFieldErrors.lastName) {
+            setServerFieldErrors(prev => { const { lastName, ...rest } = prev; return rest; });
+        }
     };
 
     const handlePhoneChange = (e) => {
@@ -701,6 +760,9 @@ const Patients = () => {
             setPhoneError(validatePhone(value));
         }
         if (formError) setFormError('');
+        if (serverFieldErrors.phone) {
+            setServerFieldErrors(prev => { const { phone, ...rest } = prev; return rest; });
+        }
     };
 
     // Manejadores de blur
@@ -725,6 +787,7 @@ const Patients = () => {
         setLastNameError('');
         setPhoneError('');
         setFormError('');
+        setServerFieldErrors({});
         setFirstNameTouched(false);
         setLastNameTouched(false);
         setPhoneTouched(false);
@@ -1350,6 +1413,11 @@ const Patients = () => {
                                                     <FaExclamationCircle className="me-1" /> {firstNameError}
                                                 </div>
                                             )}
+                                            {serverFieldErrors.firstName && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {serverFieldErrors.firstName}
+                                                </div>
+                                            )}
                                         </div>
                                         <Form.Text className="text-muted">
                                             {newPatient.firstName.length}/50 caracteres
@@ -1380,6 +1448,11 @@ const Patients = () => {
                                                     <FaExclamationCircle className="me-1" /> {lastNameError}
                                                 </div>
                                             )}
+                                            {serverFieldErrors.lastName && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {serverFieldErrors.lastName}
+                                                </div>
+                                            )}
                                         </div>
                                         <Form.Text className="text-muted">
                                             {newPatient.lastName.length}/50 caracteres
@@ -1408,12 +1481,24 @@ const Patients = () => {
                                             <FaExclamationCircle className="me-1" /> {phoneError}
                                         </div>
                                     )}
+                                    {serverFieldErrors.phone && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {serverFieldErrors.phone}
+                                        </div>
+                                    )}
                                     <Form.Text className="text-muted">
                                         Incluya código de área. Ej: +1234567890, (123) 456-7890
                                     </Form.Text>
                                 </Form.Group>
                             </Col>
                         </Row>
+
+                        {serverFieldErrors.status && (
+                            <Alert variant="danger" className="d-flex align-items-center">
+                                <FaExclamationCircle className="me-2" />
+                                <div>{serverFieldErrors.status}</div>
+                            </Alert>
+                        )}
 
                         <Form.Group>
                             <Form.Label data-optional>Seleccionar Terapeuta</Form.Label>
@@ -1546,6 +1631,11 @@ const Patients = () => {
                                                     <FaExclamationCircle className="me-1" /> {editFirstNameError}
                                                 </div>
                                             )}
+                                            {editServerFieldErrors.firstName && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {editServerFieldErrors.firstName}
+                                                </div>
+                                            )}
                                         </div>
                                         <Form.Text className="text-muted">
                                             {editPatient.firstName.length}/50 caracteres
@@ -1576,6 +1666,11 @@ const Patients = () => {
                                                     <FaExclamationCircle className="me-1" /> {editLastNameError}
                                                 </div>
                                             )}
+                                            {editServerFieldErrors.lastName && (
+                                                <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                                    <FaExclamationCircle className="me-1" /> {editServerFieldErrors.lastName}
+                                                </div>
+                                            )}
                                         </div>
                                         <Form.Text className="text-muted">
                                             {editPatient.lastName.length}/50 caracteres
@@ -1602,6 +1697,11 @@ const Patients = () => {
                                     {editPhoneTouched && editPhoneError && (
                                         <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
                                             <FaExclamationCircle className="me-1" /> {editPhoneError}
+                                        </div>
+                                    )}
+                                    {editServerFieldErrors.phone && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {editServerFieldErrors.phone}
                                         </div>
                                     )}
                                     <Form.Text className="text-muted">
@@ -1636,6 +1736,11 @@ const Patients = () => {
                                             </>
                                         )}
                                     </Form.Select>
+                                    {editServerFieldErrors.status && (
+                                        <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.875rem' }}>
+                                            <FaExclamationCircle className="me-1" /> {editServerFieldErrors.status}
+                                        </div>
+                                    )}
                                 </Form.Group>
                             </Col>
                         </Row>
