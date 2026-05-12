@@ -27,14 +27,10 @@ Previously the reports UI only accepted `.pdf,.doc,.docx,.jpg,.jpeg,.png`. The e
   2. The 25MB max upload size is still enforced server-side for reports (frontend rejects > 25MB pre-upload; we'd like the server to remain authoritative).
   3. Images on reports (`image/jpeg`, `image/png`) pass the same extension+MIME AND check as documents — i.e. the reports controller does not call a `isValidDocument`-only validator that would reject all images.
 
-### Confirm reset-token endpoints still exist with query-param signatures
+### ~~Confirm reset-token endpoints still exist with query-param signatures~~ — RESOLVED 2026-05-12
 **Found by:** Agent-A (file: src/components/ForgotPassword/ResetPassword.js)
-**Severity:** question
-**Detail:** `ResetPassword.js` still calls:
-  - `GET  /api/users/validate-reset-token?token=<jwt>` (expects 200 valid, 404 invalid, 410 expired)
-  - `POST /api/users/reset-password?token=<jwt>&newPassword=<pwd>` (token + newPassword as **query params**, not JSON body)
-
-`FRONTEND_CHANGES.md` A.1/A.2 only mention `create-reset-token` and `forgot-password`. Please confirm these two endpoints still exist with the **exact** paths and **query-param** signatures shown above, and that the 404/410 status semantics for `validate-reset-token` are still correct. Sending a new password as a query string is also worth flagging from a security standpoint — consider moving `newPassword` to the JSON body.
+**Severity:** ~~question~~ resolved
+**Resolution:** Backend moved `POST /api/users/reset-password` to a **JSON body** signature (`{ token, newPassword }`). New validation: `400` if `token` is empty or `newPassword.length < 8`. Frontend updated to send the JSON body and rely on the existing `parseApiError` path for the 400 envelope. `GET /api/users/validate-reset-token?token=` retained its query-param signature and 404/410 semantics.
 
 ### Confirm `requestPasswordReset` callers can ignore the response body
 **Found by:** Agent-A (file: src/components/ForgotPassword/ForgotPassword.js)

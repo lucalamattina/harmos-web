@@ -120,7 +120,7 @@ const ResetPassword = () => {
         }
         setIsLoading(true);
         try {
-            await api.post(`/api/users/reset-password?token=${encodeURIComponent(token)}&newPassword=${encodeURIComponent(newPassword)}`);
+            await api.post('/api/users/reset-password', { token, newPassword });
             setSuccess('¡Contraseña cambiada exitosamente! Serás redirigido al login.');
             setTimeout(() => {
                 navigate('/login', { state: { resetSuccess: true } });
