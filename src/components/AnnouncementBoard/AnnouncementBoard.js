@@ -5,7 +5,7 @@ import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle, FaPlus } from 'react-icons/fa';
 import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
 import { parseApiError } from '../../utils/apiErrors';
@@ -1334,6 +1334,13 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
+            {isAdmin && (
+                <div className="d-flex justify-content-end mb-3">
+                    <Button variant="primary" onClick={() => setShowNew(true)}>
+                        <FaPlus className="me-1" /> Nuevo Anuncio
+                    </Button>
+                </div>
+            )}
             {announcements.map(announcement => (
                 <Announcement
                     key={announcement.id}
@@ -1435,15 +1442,7 @@ const AnnouncementBoard = () => {
                 </div>
             )}
 
-            {isAdmin && (
-                <div className="d-grid gap-2 mt-4">
-                    <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
-                        Nuevo Anuncio
-                    </Button>
-                </div>
-            )}
-
-            <Modal show={showNew} onHide={handleCloseNew}>
+            <Modal show={showNew} onHide={handleCloseNew} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>
                         {editAnnouncement ? 'Editar anuncio' : 'Crear anuncio'}

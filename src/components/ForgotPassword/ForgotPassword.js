@@ -67,23 +67,28 @@ const ForgotPassword = () => {
                 
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                        <Form.Label>Correo Electrónico</Form.Label>
+                        <Form.Label htmlFor="forgot-email">Correo Electrónico</Form.Label>
                         <Form.Control
-                            type="text"
+                            id="forgot-email"
+                            type="email"
                             autoComplete="email"
                             placeholder="tu@email.com"
                             value={email}
                             onChange={handleEmailChange}
                             isInvalid={!emailValid && email.length > 0}
+                            required
+                            aria-required="true"
+                            aria-describedby={!emailValid && email.length > 0 ? 'forgot-email-error' : undefined}
+                            aria-invalid={!emailValid && email.length > 0}
                         />
-                        <Form.Control.Feedback type="invalid">
+                        <Form.Control.Feedback id="forgot-email-error" type="invalid">
                             Ingresa un correo electrónico válido.
                         </Form.Control.Feedback>
                     </Form.Group>
 
-                    <div aria-live="polite">
-                        {message && <Alert variant="success">{message}</Alert>}
-                        {error && <Alert variant="danger">{error}</Alert>}
+                    <div aria-live="polite" aria-atomic="true">
+                        {message && <Alert variant="success" role="status">{message}</Alert>}
+                        {error && <Alert variant="danger" role="alert">{error}</Alert>}
                     </div>
 
                     <Button 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaTrash, FaEye, FaDownload, FaFileAlt, FaFilter, FaEdit } from 'react-icons/fa';
+import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaTrash, FaEye, FaDownload, FaFileAlt, FaFilter, FaEdit, FaTimes } from 'react-icons/fa';
 import api from '../../api/api';
 import { parseApiError } from '../../utils/apiErrors';
 import { AuthContext } from '../../context/AuthContext';
@@ -68,6 +68,7 @@ const Patients = () => {
     const [formError, setFormError] = useState('');
     // Errores devueltos por el backend (400 con { errors: { campo: msg } })
     const [serverFieldErrors, setServerFieldErrors] = useState({});
+    const [saving, setSaving] = useState(false);
 
     // Estados para el modal de edición de paciente
     const [showEdit, setShowEdit] = useState(false);
@@ -296,6 +297,7 @@ const Patients = () => {
             return;
         }
 
+        setSaving(true);
         try {
             await api.post('/api/patients', newPatient);
             await fetchPatients();
@@ -324,6 +326,8 @@ const Patients = () => {
             }
             setServerFieldErrors({});
             setFormError(message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -1583,15 +1587,15 @@ const Patients = () => {
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCloseNew}>
+                    <Button variant="secondary" onClick={handleCloseNew} disabled={saving}>
                         Cancelar
                     </Button>
-                    <Button 
-                        variant="primary" 
+                    <Button
+                        variant="primary"
                         onClick={handleSave}
-                        disabled={(firstNameTouched && firstNameError) || (lastNameTouched && lastNameError) || (phoneTouched && phoneError)}
+                        disabled={saving || (firstNameTouched && firstNameError) || (lastNameTouched && lastNameError) || (phoneTouched && phoneError)}
                     >
-                        Guardar Paciente
+                        {saving ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...</> : 'Guardar Paciente'}
                     </Button>
                 </Modal.Footer>
             </Modal>
@@ -1765,12 +1769,13 @@ const Patients = () => {
                                                 )}
                                             </div>
                                             <Button
-                                                variant="outline-danger"
+                                                variant="outline-secondary"
                                                 size="sm"
                                                 onClick={() => handleRemoveAssignedDoctor(doctor.id)}
                                                 title="Quitar terapeuta"
+                                                aria-label={`Quitar a ${doctor.name}`}
                                             >
-                                                <FaTrash />
+                                                <FaTimes aria-hidden="true" />
                                             </Button>
                                         </div>
                                     </div>

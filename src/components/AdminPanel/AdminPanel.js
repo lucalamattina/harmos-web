@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Container, Tabs, Tab, Table, Button, Modal, Form, Alert, OverlayTrigger, Tooltip, InputGroup, Row, Col, Card } from 'react-bootstrap';
 import { FaTrash, FaEdit, FaPlus, FaUserPlus, FaExclamationCircle } from 'react-icons/fa';
 import { AuthContext } from '../../context/AuthContext';
@@ -64,6 +64,13 @@ const AdminPanel = () => {
         password: false
     });
     const [userFormError, setUserFormError] = useState('');
+    const userFormErrorRef = useRef(null);
+
+    useEffect(() => {
+        if (userFormError && userFormErrorRef.current) {
+            userFormErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [userFormError]);
 
     // Estados de validación de formulario para especialidades
     const [specialtyFormErrors, setSpecialtyFormErrors] = useState({
@@ -903,7 +910,7 @@ const AdminPanel = () => {
     </Tabs>
 
             {/* Modal para crear/editar usuario */}
-            <Modal show={showUserModal} onHide={handleCloseUserModal}>
+            <Modal show={showUserModal} onHide={handleCloseUserModal} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>{selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}</Modal.Title>
                 </Modal.Header>
@@ -911,7 +918,7 @@ const AdminPanel = () => {
                     <Form onSubmit={handleUserSubmit}>
                         {/* Mensaje de error general */}
                         {userFormError && (
-                            <Alert variant="danger" className="d-flex align-items-center mb-3">
+                            <Alert ref={userFormErrorRef} variant="danger" className="d-flex align-items-center mb-3">
                                 <FaExclamationCircle className="me-2" />
                                 <div style={{ whiteSpace: 'pre-line' }}>{userFormError}</div>
                             </Alert>

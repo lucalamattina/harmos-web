@@ -124,6 +124,11 @@ const Reports = () => {
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
 
+    // Estados de guardado para evitar doble submit
+    const [creating, setCreating] = useState(false);
+    const [updating, setUpdating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
     // Estado para filtros colapsibles - inicializar como false y luego ajustar
     const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -502,6 +507,7 @@ const Reports = () => {
             return;
         }
 
+        setCreating(true);
         try {
             const formData = new FormData();
             formData.append('title', newReport.title);
@@ -561,10 +567,13 @@ const Reports = () => {
             }
 
             setFormError(message);
+        } finally {
+            setCreating(false);
         }
     };
 
     const handleDeleteReport = async () => {
+        setDeleting(true);
         try {
             await api.delete(`/api/reports/${selectedReport.id}`);
             setShowDeleteModal(false);
@@ -586,6 +595,8 @@ const Reports = () => {
 
             setShowDeleteModal(false);
             setSelectedReport(null);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -736,9 +747,10 @@ const Reports = () => {
             return;
         }
 
+        setUpdating(true);
         try {
             const formData = new FormData();
-            
+
             // Solo agregar campos que han cambiado
             if (editReport.title !== selectedReport.title) {
                 formData.append('title', editReport.title);
@@ -819,6 +831,8 @@ const Reports = () => {
             }
 
             setEditFormError(message);
+        } finally {
+            setUpdating(false);
         }
     };
 
@@ -1309,13 +1323,13 @@ const Reports = () => {
                         <Button variant="secondary" onClick={handleCloseCreateModal}>
                             Cancelar
                         </Button>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             type="submit"
-                            disabled={(titleTouched && titleError) || (patientTouched && patientError) || 
+                            disabled={creating || (titleTouched && titleError) || (patientTouched && patientError) ||
                                      (specialtyTouched && specialtyError) || (fileTouched && fileError)}
                         >
-                            Crear Informe
+                            {creating ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Creando...</> : 'Crear Informe'}
                         </Button>
                     </Modal.Footer>
                 </Form>
@@ -1459,13 +1473,13 @@ const Reports = () => {
                         <Button variant="secondary" onClick={handleCloseEditModal}>
                             Cancelar
                         </Button>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             type="submit"
-                            disabled={(editTitleTouched && editTitleError) || (editPatientTouched && editPatientError) || 
+                            disabled={updating || (editTitleTouched && editTitleError) || (editPatientTouched && editPatientError) ||
                                      (editSpecialtyTouched && editSpecialtyError) || (editFileTouched && editFileError)}
                         >
-                            Actualizar Informe
+                            {updating ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Actualizando...</> : 'Actualizar Informe'}
                         </Button>
                     </Modal.Footer>
                 </Form>
@@ -1525,11 +1539,11 @@ const Reports = () => {
                     </Alert>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
                         Cancelar
                     </Button>
-                    <Button variant="danger" onClick={handleDeleteReport}>
-                        Eliminar
+                    <Button variant="danger" onClick={handleDeleteReport} disabled={deleting}>
+                        {deleting ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Eliminando...</> : 'Eliminar'}
                     </Button>
                 </Modal.Footer>
             </Modal>

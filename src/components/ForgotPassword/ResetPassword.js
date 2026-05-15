@@ -181,60 +181,45 @@ const ResetPassword = () => {
                 </div>
                 <h2 className="text-center mb-3">Cambiar Contraseña</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3" style={{ position: 'relative' }}>
-                        <Form.Label>Nueva Contraseña</Form.Label>
+                    <Form.Group className="mb-1" style={{ position: 'relative' }}>
+                        <Form.Label htmlFor="new-password">Nueva Contraseña <span aria-hidden="true" style={{ color: '#DC2626' }}>*</span></Form.Label>
                         <InputGroup>
                             <Form.Control
+                                id="new-password"
                                 type={showPassword ? "text" : "password"}
                                 value={newPassword}
                                 onChange={handlePasswordChange}
                                 style={{ fontSize: '1.1rem', padding: '12px' }}
                                 autoComplete="new-password"
                                 spellCheck={false}
+                                required
+                                aria-required="true"
+                                aria-describedby="password-requirements"
                             />
-                            <Button 
+                            <Button
                                 variant="outline-secondary"
                                 onClick={() => setShowPassword(!showPassword)}
-                                style={{ padding: '0 15px' }}
+                                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                style={{ minWidth: 44, minHeight: 44 }}
+                                type="button"
                             >
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                {showPassword ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
                             </Button>
                         </InputGroup>
-                    </Form.Group>
-                    <Form.Group className="mb-3" style={{ position: 'relative' }}>
-                        <Form.Label>Confirmar Contraseña</Form.Label>
-                        <InputGroup>
-                            <Form.Control
-                                type={showConfirmPassword ? "text" : "password"}
-                                value={confirmPassword}
-                                onChange={handleConfirmChange}
-                                onBlur={handleConfirmBlur}
-                                style={{ fontSize: '1.1rem', padding: '12px' }}
-                                autoComplete="new-password"
-                                spellCheck={false}
-                            />
-                            <Button 
-                                variant="outline-secondary"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                style={{ padding: '0 15px' }}
-                            >
-                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                            </Button>
-                        </InputGroup>
-                        {submitted && confirmError && (
-                            <div className="text-danger d-flex align-items-center mt-1" style={{ fontSize: '0.97rem' }}>
-                                <FaExclamationCircle className="me-1" /> {confirmError}
-                            </div>
-                        )}
-                        <ul style={{ listStyle: 'none', paddingLeft: 0, marginBottom: 8, marginTop: 12 }}>
+                        <ul
+                            id="password-requirements"
+                            aria-label="Requisitos de contraseña"
+                            style={{ listStyle: 'none', paddingLeft: 0, marginBottom: 0, marginTop: 8 }}
+                        >
                             {passwordRequirements.map((req, idx) => {
                                 const met = req.test(newPassword);
                                 if (submitted && !met) {
                                     return (
                                         <li
                                             key={idx}
+                                            role="alert"
                                             style={{
-                                                color: '#e53935',
+                                                color: '#DC2626',
                                                 fontSize: '0.97rem',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -242,7 +227,7 @@ const ResetPassword = () => {
                                                 fontWeight: 600,
                                             }}
                                         >
-                                            <FaTimesCircle style={{ color: '#e53935', fontSize: '1.1em' }} />
+                                            <FaTimesCircle aria-hidden="true" style={{ color: '#DC2626', fontSize: '1.1em' }} />
                                             {req.label}
                                         </li>
                                     );
@@ -259,16 +244,56 @@ const ResetPassword = () => {
                                             fontWeight: met ? 600 : 400,
                                         }}
                                     >
-                                        {met ? <FaCheckCircle style={{ color: '#1db954', fontSize: '1.1em' }} /> : <FaRegCircle style={{ color: '#bdbdbd', fontSize: '1.1em' }} />}
+                                        <span aria-hidden="true">
+                                            {met ? <FaCheckCircle style={{ color: '#1db954', fontSize: '1.1em' }} /> : <FaRegCircle style={{ color: '#bdbdbd', fontSize: '1.1em' }} />}
+                                        </span>
                                         {req.label}
                                     </li>
                                 );
                             })}
                         </ul>
                     </Form.Group>
-                    <div aria-live="polite" className="mb-3">
-                        {error && <Alert variant="danger" className="animate__animated animate__fadeInDown">{error}</Alert>}
-                        {success && <Alert variant="success" className="animate__animated animate__fadeInDown">{success}</Alert>}
+                    <Form.Group className="mb-3 mt-3" style={{ position: 'relative' }}>
+                        <Form.Label htmlFor="confirm-password">Confirmar Contraseña <span aria-hidden="true" style={{ color: '#DC2626' }}>*</span></Form.Label>
+                        <InputGroup>
+                            <Form.Control
+                                id="confirm-password"
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={handleConfirmChange}
+                                onBlur={handleConfirmBlur}
+                                style={{ fontSize: '1.1rem', padding: '12px' }}
+                                autoComplete="new-password"
+                                spellCheck={false}
+                                required
+                                aria-required="true"
+                                aria-describedby={submitted && confirmError ? 'confirm-password-error' : undefined}
+                                aria-invalid={submitted && !!confirmError}
+                            />
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                aria-label={showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'}
+                                style={{ minWidth: 44, minHeight: 44 }}
+                                type="button"
+                            >
+                                {showConfirmPassword ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
+                            </Button>
+                        </InputGroup>
+                        {submitted && confirmError && (
+                            <div
+                                id="confirm-password-error"
+                                role="alert"
+                                className="text-danger d-flex align-items-center mt-1"
+                                style={{ fontSize: '0.97rem' }}
+                            >
+                                <FaExclamationCircle aria-hidden="true" className="me-1" /> {confirmError}
+                            </div>
+                        )}
+                    </Form.Group>
+                    <div aria-live="assertive" aria-atomic="true" className="mb-3">
+                        {error && <Alert variant="danger" role="alert" className="animate__animated animate__fadeInDown">{error}</Alert>}
+                        {success && <Alert variant="status" role="status" className="animate__animated animate__fadeInDown">{success}</Alert>}
                     </div>
                     <Button
                         variant="primary"

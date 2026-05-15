@@ -279,6 +279,7 @@ function Scheduler() {
     const [saveError, setSaveError] = useState('');
 
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [deleteError, setDeleteError] = useState('');
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -496,6 +497,7 @@ function Scheduler() {
             patientId: newEvent.selectedPatient.id,
         };
 
+        setIsSaving(true);
         try {
             const created = await createSchedule(scheduleData);
             const newCalendarEvent = {
@@ -509,6 +511,8 @@ function Scheduler() {
             setShowNew(false);
         } catch (err) {
             setSaveError(err.response?.data?.message || err.message || "Error al crear el horario. Verifique los datos.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -1000,8 +1004,8 @@ function Scheduler() {
                     <Button variant="secondary" onClick={handleCancelNewEvent}>
                         Cerrar
                     </Button>
-                    <Button variant="primary" onClick={handleSaveNewEvent}>
-                        Guardar
+                    <Button variant="primary" onClick={handleSaveNewEvent} disabled={isSaving}>
+                        {isSaving ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Guardando...</> : 'Guardar'}
                     </Button>
                 </Modal.Footer>
             </Modal>
