@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { requestPasswordReset } from '../../api/api';
+import { parseApiError } from '../../utils/apiErrors';
 import './ForgotPassword.css';
 import { Link } from 'react-router-dom';
 import logo from '../../resources/images/Harmos-Logo-no-letras.png';
+
+// Mensaje genérico mostrado ante cualquier respuesta 200 del backend.
+// El backend ahora siempre responde 200 OK independientemente de si el correo
+// está registrado, para evitar fugas de información (enumeración de usuarios).
+const GENERIC_SUCCESS_MESSAGE =
+    'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña en breve.';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -19,29 +26,22 @@ const ForgotPassword = () => {
         setMessage('');
 
         try {
-            const response = await requestPasswordReset(email);
-            
-            // Manejar respuesta según el nuevo formato
-            if (response.success) {
-                setMessage(response.message);
-                setEmail('');
-            } else {
-                setError(response.error || 'Error al procesar la solicitud.');
-            }
+            // El backend siempre devuelve 200 con { message: "..." }.
+            // Se ignora el cuerpo: se muestra un mensaje genérico para no
+            // filtrar si el correo está registrado o no.
+            await requestPasswordReset(email);
+            setMessage(GENERIC_SUCCESS_MESSAGE);
+            setEmail('');
         } catch (err) {
-            // Manejar errores de red o del servidor
-            if (err.response?.data) {
-                const errorData = err.response.data;
-                
-                if (errorData.success === false) {
-                    setError(errorData.error || 'Error al procesar la solicitud.');
-                } else if (err.response.status === 400) {
-                    // Error de validación - puede que errorData sea un string
-                    setError(typeof errorData === 'string' ? errorData : (errorData.error || 'Datos inválidos. Verifica el formato del email.'));
-                } else {
-                    setError('Error al enviar el correo. Por favor, verifica tu dirección de correo electrónico.');
-                }
+            if (err && err.response) {
+                // El único caso no-2xx esperado es 400 (payload malformado).
+                const { message: parsedMessage } = parseApiError(
+                    err,
+                    'Datos inválidos. Verifica el formato del email.'
+                );
+                setError(parsedMessage);
             } else {
+                // Fallo de red / sin respuesta del servidor.
                 setError('Error de conexión. Por favor, intenta nuevamente.');
             }
         } finally {
@@ -67,23 +67,28 @@ const ForgotPassword = () => {
                 
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                        <Form.Label>Correo Electrónico</Form.Label>
+                        <Form.Label htmlFor="forgot-email">Correo Electrónico</Form.Label>
                         <Form.Control
-                            type="text"
+                            id="forgot-email"
+                            type="email"
                             autoComplete="email"
                             placeholder="tu@email.com"
                             value={email}
                             onChange={handleEmailChange}
                             isInvalid={!emailValid && email.length > 0}
+                            required
+                            aria-required="true"
+                            aria-describedby={!emailValid && email.length > 0 ? 'forgot-email-error' : undefined}
+                            aria-invalid={!emailValid && email.length > 0}
                         />
-                        <Form.Control.Feedback type="invalid">
+                        <Form.Control.Feedback id="forgot-email-error" type="invalid">
                             Ingresa un correo electrónico válido.
                         </Form.Control.Feedback>
                     </Form.Group>
 
-                    <div aria-live="polite">
-                        {message && <Alert variant="success">{message}</Alert>}
-                        {error && <Alert variant="danger">{error}</Alert>}
+                    <div aria-live="polite" aria-atomic="true">
+                        {message && <Alert variant="success" role="status">{message}</Alert>}
+                        {error && <Alert variant="danger" role="alert">{error}</Alert>}
                     </div>
 
                     <Button 

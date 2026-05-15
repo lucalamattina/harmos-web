@@ -21,9 +21,22 @@ import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { usePeriodicSync } from '../../hooks/usePeriodicSync'; // Importar el hook
 import { formatDate } from '../../utils/dateUtils';
+import { parseApiError } from '../../utils/apiErrors';
+import { ALLOWED_DOCUMENT_TYPES, validateFile as validateFileAgainstAllowlist } from '../../utils/uploadValidation';
 import FileViewer from '../FileViewer/FileViewer';
 import './Reports.css';
 import '../mobile-fix.css';
+
+// Combined allowlist for reports: documents + a subset of images.
+// Backend now requires extension AND MIME to match simultaneously.
+const REPORT_FILE_ALLOWLIST = {
+    ...ALLOWED_DOCUMENT_TYPES,
+    jpg:  'image/jpeg',
+    jpeg: 'image/jpeg',
+    png:  'image/png',
+};
+const REPORT_ACCEPT_ATTR = Object.keys(REPORT_FILE_ALLOWLIST).map(e => '.' + e).join(',');
+const REPORT_MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
 const Reports = () => {
     const { isAdmin, currentUser: user } = useContext(AuthContext);
@@ -111,8 +124,17 @@ const Reports = () => {
     // Estado para evitar que se ejecuten ambos useEffect al mismo tiempo
     const [isFilterChange, setIsFilterChange] = useState(false);
 
+    // Estados de guardado para evitar doble submit
+    const [creating, setCreating] = useState(false);
+    const [updating, setUpdating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
     // Estado para filtros colapsibles - inicializar como false y luego ajustar
     const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+    // Estado para ordenamiento (default: date desc, mismo comportamiento previo)
+    const [sortBy, setSortBy] = useState('date');
+    const [sortDirection, setSortDirection] = useState('desc');
 
     const fetchReports = useCallback(async (page = 0) => {
         try {
@@ -126,8 +148,8 @@ const Reports = () => {
             const params = new URLSearchParams();
             params.append('page', page.toString());
             params.append('size', pageSize.toString());
-            params.append('sortBy', 'date');
-            params.append('sortDirection', 'desc');
+            params.append('sortBy', sortBy);
+            params.append('sortDirection', sortDirection);
             
             // Agregar filtros - todos los usuarios pueden usar estos filtros
             if (selectedPatient) params.append('patientId', selectedPatient);
@@ -166,7 +188,7 @@ const Reports = () => {
             setLoading(false);
             setTableLoading(false);
         }
-    }, [pageSize, selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, loading]);
+    }, [pageSize, selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, sortBy, sortDirection, loading]);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -187,7 +209,7 @@ const Reports = () => {
         }, searchTerm ? 500 : 0); // Debounce de 500ms para búsqueda de texto
 
         return () => clearTimeout(timeoutId);
-    }, [selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, fetchReports]); // Agregamos fetchReports como dependencia
+    }, [selectedPatient, selectedSpecialty, selectedDoctor, searchTerm, sortBy, sortDirection, fetchReports]); // Agregamos fetchReports como dependencia
 
     // Cargar reportes cuando cambie la página (pero no si es un cambio de filtro)
     useEffect(() => {
@@ -293,27 +315,18 @@ const Reports = () => {
         if (!file) {
             return 'Debe seleccionar un archivo.';
         }
-        
-        // Validar tipo de archivo
-        const allowedTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'image/jpeg',
-            'image/jpg',
-            'image/png'
-        ];
-        
-        if (!allowedTypes.includes(file.type)) {
-            return 'Formato de archivo no permitido. Use PDF, DOC, DOCX, JPG o PNG.';
+
+        // Validar extensión + MIME contra el allowlist combinado (docs + imágenes)
+        const mismatch = validateFileAgainstAllowlist(file, REPORT_FILE_ALLOWLIST);
+        if (mismatch) {
+            return mismatch;
         }
-        
-        // Validar tamaño (25MB = 25 * 1024 * 1024 bytes)
-        const maxSize = 25 * 1024 * 1024;
-        if (file.size > maxSize) {
+
+        // Validar tamaño (25MB)
+        if (file.size > REPORT_MAX_SIZE_BYTES) {
             return 'El archivo no puede exceder 25MB.';
         }
-        
+
         return '';
     };
 
@@ -494,6 +507,7 @@ const Reports = () => {
             return;
         }
 
+        setCreating(true);
         try {
             const formData = new FormData();
             formData.append('title', newReport.title);
@@ -516,12 +530,50 @@ const Reports = () => {
             setError(null);
         } catch (error) {
             console.error('Error al crear reporte:', error);
-            const errorMessage = error.response?.data?.error || 'Error al crear el reporte';
-            setFormError(errorMessage);
+            const { fieldErrors, message, status } = parseApiError(error, 'Error al crear el reporte');
+
+            if (status === 403) {
+                setFormError('No tienes permiso para realizar esta acción');
+                return;
+            }
+
+            if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
+                let mapped = false;
+                if (fieldErrors.title) {
+                    setTitleTouched(true);
+                    setTitleError(fieldErrors.title);
+                    mapped = true;
+                }
+                if (fieldErrors.patientId) {
+                    setPatientTouched(true);
+                    setPatientError(fieldErrors.patientId);
+                    mapped = true;
+                }
+                if (fieldErrors.specialtyId) {
+                    setSpecialtyTouched(true);
+                    setSpecialtyError(fieldErrors.specialtyId);
+                    mapped = true;
+                }
+                // doctorId is server-derived for POST, but surface it if present.
+                if (fieldErrors.doctorId) {
+                    mapped = true;
+                }
+                if (mapped) {
+                    setFormError('Por favor, corrige los errores antes de continuar.');
+                    return;
+                }
+                setFormError(message);
+                return;
+            }
+
+            setFormError(message);
+        } finally {
+            setCreating(false);
         }
     };
 
     const handleDeleteReport = async () => {
+        setDeleting(true);
         try {
             await api.delete(`/api/reports/${selectedReport.id}`);
             setShowDeleteModal(false);
@@ -530,7 +582,21 @@ const Reports = () => {
             setError(null);
         } catch (error) {
             console.error('Error al eliminar reporte:', error);
-            setError(error.response?.data?.error || 'Error al eliminar el reporte');
+            const { message, status } = parseApiError(error, 'Error al eliminar el reporte');
+
+            if (status === 403) {
+                setError('No tienes permiso para realizar esta acción');
+            } else if (status === 404) {
+                setError('El informe ya no existe.');
+                fetchReports(currentPage);
+            } else {
+                setError(message);
+            }
+
+            setShowDeleteModal(false);
+            setSelectedReport(null);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -681,9 +747,10 @@ const Reports = () => {
             return;
         }
 
+        setUpdating(true);
         try {
             const formData = new FormData();
-            
+
             // Solo agregar campos que han cambiado
             if (editReport.title !== selectedReport.title) {
                 formData.append('title', editReport.title);
@@ -718,8 +785,54 @@ const Reports = () => {
             setError(null);
         } catch (error) {
             console.error('Error al actualizar reporte:', error);
-            const errorMessage = error.response?.data?.error || 'Error al actualizar el reporte';
-            setEditFormError(errorMessage);
+            const { fieldErrors, message, status } = parseApiError(error, 'Error al actualizar el reporte');
+
+            if (status === 403) {
+                setEditFormError('No tienes permiso para realizar esta acción');
+                return;
+            }
+
+            if (status === 404) {
+                setEditFormError('');
+                setShowEditModal(false);
+                setEditReport({ id: null, title: '', patientId: '', specialtyId: '', file: null });
+                clearEditFormErrors();
+                setError('El informe ya no existe.');
+                fetchReports(currentPage);
+                return;
+            }
+
+            if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
+                let mapped = false;
+                if (fieldErrors.title) {
+                    setEditTitleTouched(true);
+                    setEditTitleError(fieldErrors.title);
+                    mapped = true;
+                }
+                if (fieldErrors.patientId) {
+                    setEditPatientTouched(true);
+                    setEditPatientError(fieldErrors.patientId);
+                    mapped = true;
+                }
+                if (fieldErrors.specialtyId) {
+                    setEditSpecialtyTouched(true);
+                    setEditSpecialtyError(fieldErrors.specialtyId);
+                    mapped = true;
+                }
+                if (fieldErrors.doctorId) {
+                    mapped = true;
+                }
+                if (mapped) {
+                    setEditFormError('Por favor, corrige los errores antes de continuar.');
+                    return;
+                }
+                setEditFormError(message);
+                return;
+            }
+
+            setEditFormError(message);
+        } finally {
+            setUpdating(false);
         }
     };
 
@@ -875,9 +988,34 @@ const Reports = () => {
 
             {/* Tabla de reportes */}
             <Card className="reports-table-container">
-                <Card.Header className="d-flex justify-content-between align-items-center">
+                <Card.Header className="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <span>Informes Médicos</span>
-                    <div className="d-flex align-items-center gap-3">
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                        <Form.Group className="d-flex align-items-center gap-2 mb-0">
+                            <Form.Label className="mb-0 small text-muted">Ordenar por</Form.Label>
+                            <Form.Select
+                                size="sm"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                style={{ width: 'auto' }}
+                            >
+                                <option value="date">Fecha</option>
+                                <option value="title">Título</option>
+                                <option value="id">Id</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="d-flex align-items-center gap-2 mb-0">
+                            <Form.Label className="mb-0 small text-muted">Dirección</Form.Label>
+                            <Form.Select
+                                size="sm"
+                                value={sortDirection}
+                                onChange={(e) => setSortDirection(e.target.value)}
+                                style={{ width: 'auto' }}
+                            >
+                                <option value="desc">Descendente</option>
+                                <option value="asc">Ascendente</option>
+                            </Form.Select>
+                        </Form.Group>
                         <Badge bg="secondary">
                             Página {currentPage + 1} de {totalPages || 1}
                         </Badge>
@@ -1149,10 +1287,10 @@ const Reports = () => {
                                         type="file"
                                         onChange={handleFileChange}
                                         onBlur={handleFileBlur}
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        style={fileTouched && fileError ? { 
-                                            border: '2px solid #d00', 
-                                            background: '#fff6f6' 
+                                        accept={REPORT_ACCEPT_ATTR}
+                                        style={fileTouched && fileError ? {
+                                            border: '2px solid #d00',
+                                            background: '#fff6f6'
                                         } : {}}
                                         className={fileTouched && fileError ? 'error-input' : ''}
                                     />
@@ -1163,7 +1301,7 @@ const Reports = () => {
                                             </div>
                                         )}
                                         <Form.Text className="text-muted">
-                                            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo 25MB.
+                                            Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG. Máximo 25MB.
                                             {newReport.file && (
                                                 <><br/>Archivo seleccionado: {newReport.file.name} ({(newReport.file.size / 1024 / 1024).toFixed(2)} MB)</>
                                             )}
@@ -1185,13 +1323,13 @@ const Reports = () => {
                         <Button variant="secondary" onClick={handleCloseCreateModal}>
                             Cancelar
                         </Button>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             type="submit"
-                            disabled={(titleTouched && titleError) || (patientTouched && patientError) || 
+                            disabled={creating || (titleTouched && titleError) || (patientTouched && patientError) ||
                                      (specialtyTouched && specialtyError) || (fileTouched && fileError)}
                         >
-                            Crear Informe
+                            {creating ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Creando...</> : 'Crear Informe'}
                         </Button>
                     </Modal.Footer>
                 </Form>
@@ -1296,10 +1434,10 @@ const Reports = () => {
                                         type="file"
                                         onChange={handleEditFileChange}
                                         onBlur={handleEditFileBlur}
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        style={editFileTouched && editFileError ? { 
-                                            border: '2px solid #d00', 
-                                            background: '#fff6f6' 
+                                        accept={REPORT_ACCEPT_ATTR}
+                                        style={editFileTouched && editFileError ? {
+                                            border: '2px solid #d00',
+                                            background: '#fff6f6'
                                         } : {}}
                                         className={editFileTouched && editFileError ? 'error-input' : ''}
                                     />
@@ -1310,7 +1448,7 @@ const Reports = () => {
                                             </div>
                                         )}
                                         <Form.Text className="text-muted">
-                                            Formatos permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo 25MB.
+                                            Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG. Máximo 25MB.
                                             {editReport.file && (
                                                 <><br/>Archivo seleccionado: {editReport.file.name} ({(editReport.file.size / 1024 / 1024).toFixed(2)} MB)</>
                                             )}
@@ -1335,13 +1473,13 @@ const Reports = () => {
                         <Button variant="secondary" onClick={handleCloseEditModal}>
                             Cancelar
                         </Button>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             type="submit"
-                            disabled={(editTitleTouched && editTitleError) || (editPatientTouched && editPatientError) || 
+                            disabled={updating || (editTitleTouched && editTitleError) || (editPatientTouched && editPatientError) ||
                                      (editSpecialtyTouched && editSpecialtyError) || (editFileTouched && editFileError)}
                         >
-                            Actualizar Informe
+                            {updating ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Actualizando...</> : 'Actualizar Informe'}
                         </Button>
                     </Modal.Footer>
                 </Form>
@@ -1401,11 +1539,11 @@ const Reports = () => {
                     </Alert>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
                         Cancelar
                     </Button>
-                    <Button variant="danger" onClick={handleDeleteReport}>
-                        Eliminar
+                    <Button variant="danger" onClick={handleDeleteReport} disabled={deleting}>
+                        {deleting ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Eliminando...</> : 'Eliminar'}
                     </Button>
                 </Modal.Footer>
             </Modal>

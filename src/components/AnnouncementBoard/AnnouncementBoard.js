@@ -5,9 +5,11 @@ import api from '../../api/api';
 import { getTokenUserId } from '../../utils/auth';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
-import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaDownload, FaTimes, FaChevronLeft, FaChevronRight, FaExclamationCircle, FaPlus } from 'react-icons/fa';
 import { formatDate } from '../../utils/dateUtils';
 import FileViewer from '../FileViewer/FileViewer';
+import { parseApiError } from '../../utils/apiErrors';
+import { ALLOWED_DOCUMENT_TYPES, DOC_ACCEPT_ATTR, validateFiles } from '../../utils/uploadValidation';
 import '../mobile-fix.css';
 
 // Componente para popup de imagen
@@ -142,7 +144,7 @@ const ImageModal = ({ show, onHide, image, imageIndex, totalImages, onPrevious, 
 
 
 // Componente interno para un anuncio individual
-const Announcement = ({ id, title, content, date, authorId, specialties, images, files, isAdmin, onEdit, onDelete }) => {
+const Announcement = ({ id, title, content, date, authorId, specialties, images, files, canModify, onEdit, onDelete }) => {
     const [authorName, setAuthorName] = useState('Cargando...');
     const [showFull, setShowFull] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
@@ -421,7 +423,7 @@ const Announcement = ({ id, title, content, date, authorId, specialties, images,
                     <small>{formatDate(date)}</small>
                 </div>
                 
-                {isAdmin && (
+                {canModify && (
                     <div style={{ position: 'absolute', top: 8, right: 12, zIndex: 2, display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
                         <Button variant="link" size="sm" onClick={onEdit} style={{ color: '#6c757d', padding: 0 }} title="Editar">
                             <FaEdit size={18} />
@@ -973,11 +975,26 @@ const AnnouncementBoard = () => {
     };
 
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        // Archivos seleccionados
+        const picked = Array.from(e.target.files);
+        const errors = validateFiles(picked, ALLOWED_DOCUMENT_TYPES);
+        if (errors.length > 0) {
+            setFormError(
+                `Algunos archivos no son válidos y no fueron adjuntados:\n${errors.join('\n')}`
+            );
+            const validFiles = picked.filter(
+                f => !errors.some(msg => msg.startsWith(`${f.name}: `))
+            );
+            setNewAnnouncement(prev => ({
+                ...prev,
+                files: validFiles
+            }));
+            // Resetear el input para que el usuario pueda volver a elegir
+            e.target.value = '';
+            return;
+        }
         setNewAnnouncement(prev => ({
             ...prev,
-            files: files
+            files: picked
         }));
     };
 
@@ -1062,7 +1079,15 @@ const AnnouncementBoard = () => {
                 await api.delete(`/api/announcements/${id}`);
                 await fetchAnnouncements();
             } catch (err) {
-                setError('Error al eliminar el anuncio');
+                const { message, status } = parseApiError(err, 'Error al eliminar el anuncio');
+                if (status === 403) {
+                    setError('No tienes permiso para realizar esta acción');
+                } else if (status === 404) {
+                    setError('El anuncio ya no existe.');
+                    await fetchAnnouncements();
+                } else {
+                    setError(message || 'Error al eliminar el anuncio');
+                }
             }
         });
     };
@@ -1217,15 +1242,27 @@ const AnnouncementBoard = () => {
             setTitleTouched(false);
             setContentTouched(false);
         } catch (err) {
-            let errorMessage = 'Error al guardar el anuncio';
-            if (err.response?.data?.message) {
-                errorMessage += `: ${err.response.data.message}`;
-            } else if (err.response?.data?.error) {
-                errorMessage += `: ${err.response.data.error}`;
-            } else if (err.message) {
-                errorMessage += `: ${err.message}`;
+            const { fieldErrors, message, status } = parseApiError(err, 'Error al guardar el anuncio');
+            if (status === 403) {
+                setFormError('No tienes permiso para realizar esta acción');
+            } else if (status === 404) {
+                setFormError('El anuncio ya no existe.');
+                await fetchAnnouncements();
+            } else if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
+                if (fieldErrors.title) setTitleError(fieldErrors.title);
+                if (fieldErrors.content) setContentError(fieldErrors.content);
+                // Si hay campos sin mapeo directo, también mostrarlos en el banner
+                const unmapped = Object.entries(fieldErrors)
+                    .filter(([k]) => k !== 'title' && k !== 'content')
+                    .map(([k, v]) => `${k}: ${v}`);
+                if (unmapped.length > 0) {
+                    setFormError(unmapped.join('\n'));
+                } else if (!fieldErrors.title && !fieldErrors.content) {
+                    setFormError(message);
+                }
+            } else {
+                setFormError(`Error al guardar el anuncio: ${message}`);
             }
-            setFormError(errorMessage);
             console.error('Error details:', err.response?.data);
         } finally {
             setSaving(false);
@@ -1297,6 +1334,13 @@ const AnnouncementBoard = () => {
 
     return (
         <Container>
+            {isAdmin && (
+                <div className="d-flex justify-content-end mb-3">
+                    <Button variant="primary" onClick={() => setShowNew(true)}>
+                        <FaPlus className="me-1" /> Nuevo Anuncio
+                    </Button>
+                </div>
+            )}
             {announcements.map(announcement => (
                 <Announcement
                     key={announcement.id}
@@ -1308,7 +1352,7 @@ const AnnouncementBoard = () => {
                     specialties={announcement.specialties}
                     images={announcement.images || []}
                     files={announcement.files || []}
-                    isAdmin={isAdmin}
+                    canModify={isAdmin || (currentUser?.id != null && currentUser.id === announcement.createdByUserId)}
                     onEdit={() => handleEditAnnouncement(announcement)}
                     onDelete={() => handleDeleteAnnouncement(announcement.id)}
                 />
@@ -1398,15 +1442,7 @@ const AnnouncementBoard = () => {
                 </div>
             )}
 
-            {isAdmin && (
-                <div className="d-grid gap-2 mt-4">
-                    <Button variant="primary" size="lg" onClick={() => setShowNew(true)}>
-                        Nuevo Anuncio
-                    </Button>
-                </div>
-            )}
-
-            <Modal show={showNew} onHide={handleCloseNew}>
+            <Modal show={showNew} onHide={handleCloseNew} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>
                         {editAnnouncement ? 'Editar anuncio' : 'Crear anuncio'}
@@ -1536,6 +1572,7 @@ const AnnouncementBoard = () => {
                             <Form.Label data-optional>Archivos adjuntos</Form.Label>
                             <Form.Control
                                 type="file"
+                                accept={DOC_ACCEPT_ATTR}
                                 multiple
                                 onChange={handleFileChange}
                             />

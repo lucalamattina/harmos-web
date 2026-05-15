@@ -117,50 +117,54 @@ const Profile = () => {
                         <Card.Body>
                             {error && <Alert variant="danger">{error}</Alert>}
                             
-                            <div className="profile-info-container">
-                                <div className="mb-4">
-                                    <div className="profile-label">
-                                        <FaUser className="me-2" /> Nombre
+                            <Row>
+                                <Col md={6}>
+                                    <div className="mb-4">
+                                        <div className="profile-label">
+                                            <FaUser className="me-2" /> Nombre
+                                        </div>
+                                        <p className="profile-info">{userData.name}</p>
                                     </div>
-                                    <p className="profile-info">{userData.name}</p>
-                                </div>
 
-                                <div className="mb-4">
-                                    <div className="profile-label">
-                                        <FaEnvelope className="me-2" /> Correo Electrónico
+                                    <div className="mb-4">
+                                        <div className="profile-label">
+                                            <FaEnvelope className="me-2" /> Correo Electrónico
+                                        </div>
+                                        <p className="profile-info">{userData.email}</p>
                                     </div>
-                                    <p className="profile-info">{userData.email}</p>
-                                </div>
 
-                                <div className="mb-4">
-                                    <div className="profile-label">
-                                        <FaPhone className="me-2" /> Teléfono
+                                    <div className="mb-4">
+                                        <div className="profile-label">
+                                            <FaPhone className="me-2" /> Teléfono
+                                        </div>
+                                        <p className="profile-info">{userData.phone || 'No especificado'}</p>
                                     </div>
-                                    <p className="profile-info">{userData.phone || 'No especificado'}</p>
-                                </div>
+                                </Col>
 
-                                <div className="mb-4">
-                                    <div className="profile-label">
-                                        <FaBuilding className="me-2" /> Institución
+                                <Col md={6}>
+                                    <div className="mb-4">
+                                        <div className="profile-label">
+                                            <FaBuilding className="me-2" /> Institución
+                                        </div>
+                                        <p className="profile-info">{userData.institution || 'No especificada'}</p>
                                     </div>
-                                    <p className="profile-info">{userData.institution || 'No especificada'}</p>
-                                </div>
 
-                                <div className="mb-4">
-                                    <div className="profile-label">
-                                        <FaGraduationCap className="me-2" /> Especialidades
+                                    <div className="mb-4">
+                                        <div className="profile-label">
+                                            <FaGraduationCap className="me-2" /> Especialidades
+                                        </div>
+                                        <div className="specialties-display">
+                                            {userData.specialty ? (
+                                                <Badge bg="primary" className="specialty-badge">
+                                                    {userData.specialty}
+                                                </Badge>
+                                            ) : (
+                                                <p className="profile-info">No hay especialidad seleccionada</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="specialties-display">
-                                        {userData.specialty ? (
-                                            <Badge bg="primary" className="specialty-badge">
-                                                {userData.specialty}
-                                            </Badge>
-                                        ) : (
-                                            <p className="profile-info">No hay especialidad seleccionada</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                                </Col>
+                            </Row>
                         </Card.Body>
                     </Card>
 
