@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Button, Form, Modal, Container, Table, InputGroup, Row, Col, Spinner, Card, Badge, Alert, Collapse, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { FaExclamationCircle, FaPlus, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaTrash, FaEye, FaDownload, FaFileAlt, FaFilter, FaEdit, FaTimes } from 'react-icons/fa';
 import api from '../../api/api';
-import { parseApiError } from '../../utils/apiErrors';
+import { parseApiError, isForbiddenError, PERMISSION_DENIED_MESSAGE } from '../../utils/apiErrors';
 import { AuthContext } from '../../context/AuthContext';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { formatDate } from '../../utils/dateUtils';
@@ -22,6 +22,10 @@ const Patients = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // Error de una acción puntual (p. ej. 403 al eliminar). Se muestra como
+    // banner descartable sin reemplazar el listado.
+    const [actionError, setActionError] = useState(null);
+    const [addDoctorError, setAddDoctorError] = useState('');
     const [showNew, setShowNew] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState(null);
@@ -99,6 +103,8 @@ const Patients = () => {
     const [patientReports, setPatientReports] = useState([]);
     const [reportsLoading, setReportsLoading] = useState(false);
     const [reportsError, setReportsError] = useState(null);
+    // 403 al pedir informes: el terapeuta no está asignado a este paciente.
+    const [reportsForbidden, setReportsForbidden] = useState(false);
 
     // Estados para el visor de archivos
     const [showFileViewer, setShowFileViewer] = useState(false);
@@ -314,9 +320,9 @@ const Patients = () => {
         } catch (err) {
             console.error('Error al guardar el paciente:', err);
             const { fieldErrors, message, status } = parseApiError(err, 'Error al guardar el paciente');
-            if (status === 403) {
+            if (isForbiddenError(err)) {
                 setServerFieldErrors({});
-                setFormError('Solo los administradores pueden crear pacientes');
+                setFormError(PERMISSION_DENIED_MESSAGE);
                 return;
             }
             if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
@@ -349,6 +355,7 @@ const Patients = () => {
     const fetchPatientReports = async (patientId) => {
         setReportsLoading(true);
         setReportsError(null);
+        setReportsForbidden(false);
         try {
             const params = new URLSearchParams();
             params.append('page', '0');
@@ -367,9 +374,13 @@ const Patients = () => {
                 setPatientReports([]);
             }
         } catch (err) {
+            setPatientReports([]);
+            if (isForbiddenError(err)) {
+                setReportsForbidden(true);
+                return;
+            }
             console.error('Error al cargar informes del paciente:', err);
             setReportsError('Error al cargar los informes del paciente');
-            setPatientReports([]);
         } finally {
             setReportsLoading(false);
         }
@@ -380,6 +391,7 @@ const Patients = () => {
         setSelectedPatient(null);
         setPatientReports([]);
         setReportsError(null);
+        setReportsForbidden(false);
     };
 
     const handleReportPreview = (report) => {
@@ -437,11 +449,12 @@ const Patients = () => {
     const handleAddDoctors = async () => {
         // Verificar que el usuario sea administrador
         if (!isAdmin) {
-            setError('Solo los administradores pueden agregar doctores a pacientes');
+            setAddDoctorError(PERMISSION_DENIED_MESSAGE);
             return;
         }
 
         if (selectedDoctors.length > 0 && selectedPatient) {
+            setAddDoctorError('');
             try {
                 const promises = selectedDoctors.map(doctorId => 
                     api.post(`/api/patients/${selectedPatient.id}/doctors/${doctorId}`)
@@ -456,9 +469,18 @@ const Patients = () => {
                 setShowAddDoctor(false);
                 setSelectedDoctors([]);
             } catch (err) {
+                if (isForbiddenError(err)) {
+                    setAddDoctorError(PERMISSION_DENIED_MESSAGE);
+                    return;
+                }
                 setError('Error al agregar doctores al paciente');
             }
         }
+    };
+
+    const handleCloseAddDoctor = () => {
+        setShowAddDoctor(false);
+        setAddDoctorError('');
     };
 
     // Función para mostrar el modal de confirmación
@@ -472,7 +494,7 @@ const Patients = () => {
     const handleDeletePatient = (patient) => {
         // Verificar que el usuario sea administrador
         if (!isAdmin) {
-            setError('Solo los administradores pueden eliminar pacientes');
+            setActionError(PERMISSION_DENIED_MESSAGE);
             return;
         }
 
@@ -481,6 +503,10 @@ const Patients = () => {
                 await api.delete(`/api/patients/${patient.id}`);
                 await fetchPatients();
             } catch (err) {
+                if (isForbiddenError(err)) {
+                    setActionError(PERMISSION_DENIED_MESSAGE);
+                    return;
+                }
                 setError('Error al eliminar el paciente');
             }
         });
@@ -489,7 +515,7 @@ const Patients = () => {
     // Abrir modal de edición de paciente (solo admin)
     const handleOpenEdit = async (patient) => {
         if (!isAdmin) {
-            setError('Solo los administradores pueden editar pacientes');
+            setActionError(PERMISSION_DENIED_MESSAGE);
             return;
         }
 
@@ -551,6 +577,12 @@ const Patients = () => {
 
     // Guardar cambios del paciente
     const handleEditSave = async () => {
+        // Defensa adicional: el modal sólo se abre para admins.
+        if (!isAdmin) {
+            setEditFormError(PERMISSION_DENIED_MESSAGE);
+            return;
+        }
+
         setEditFormError('');
         setEditServerFieldErrors({});
 
@@ -613,9 +645,9 @@ const Patients = () => {
                 handleCloseEdit();
                 return;
             }
-            if (status === 403) {
+            if (isForbiddenError(err)) {
                 setEditServerFieldErrors({});
-                setEditFormError('No tienes permiso para realizar esta acción');
+                setEditFormError(PERMISSION_DENIED_MESSAGE);
                 return;
             }
             if (status === 400 && fieldErrors && Object.keys(fieldErrors).length > 0) {
@@ -817,6 +849,18 @@ const Patients = () => {
 
     return (
         <Container className="patients-container">
+            {actionError && (
+                <Alert
+                    variant="danger"
+                    dismissible
+                    onClose={() => setActionError(null)}
+                    className="d-flex align-items-center"
+                >
+                    <FaExclamationCircle className="me-2" />
+                    <div>{actionError}</div>
+                </Alert>
+            )}
+
             {/* Filtros Colapsibles */}
             <Card className="mb-4">
                 <Card.Body>
@@ -981,6 +1025,7 @@ const Patients = () => {
                                                         variant="outline-primary" 
                                                         size="sm"
                                                         className="patient-action-btn"
+                                                        aria-label="Ver paciente"
                                                         onClick={() => fetchPatientDetails(patient.id)}
                                                     >
                                                         <FaEye />
@@ -993,6 +1038,7 @@ const Patients = () => {
                                                                 variant="outline-warning"
                                                                 size="sm"
                                                                 className="patient-action-btn"
+                                                                aria-label="Editar paciente"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleOpenEdit(patient);
@@ -1006,6 +1052,7 @@ const Patients = () => {
                                                                 variant="outline-danger"
                                                                 size="sm"
                                                                 className="patient-action-btn"
+                                                                aria-label="Eliminar paciente"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleDeletePatient(patient);
@@ -1130,10 +1177,12 @@ const Patients = () => {
                                     <i className="bi bi-people me-1"></i>
                                     {selectedPatient.doctors?.length || 0} terapeuta{(selectedPatient.doctors?.length || 0) === 1 ? '' : 's'}
                                 </small>
-                                <small className="text-muted">
-                                    <i className="bi bi-file-earmark-text me-1"></i>
-                                    {patientReports.length} informe{patientReports.length === 1 ? '' : 's'}
-                                </small>
+                                {!reportsForbidden && (
+                                    <small className="text-muted">
+                                        <i className="bi bi-file-earmark-text me-1"></i>
+                                        {patientReports.length} informe{patientReports.length === 1 ? '' : 's'}
+                                    </small>
+                                )}
                             </div>
                             <span className={`badge bg-${
                                 selectedPatient.status === 'ACTIVE' ? 'success' :
@@ -1166,6 +1215,7 @@ const Patients = () => {
                                             variant="outline-primary"
                                             size="sm"
                                             onClick={() => {
+                                                setAddDoctorError('');
                                                 setShowAddDoctor(true);
                                                 fetchDoctors();
                                             }}
@@ -1207,7 +1257,7 @@ const Patients = () => {
                                 <h6 className="mb-3">
                                     <i className="bi bi-file-earmark-text me-2"></i>
                                     Informes del paciente
-                                    {!reportsLoading && (
+                                    {!reportsLoading && !reportsForbidden && (
                                         <span className="badge bg-secondary ms-2">{patientReports.length}</span>
                                     )}
                                 </h6>
@@ -1219,6 +1269,11 @@ const Patients = () => {
                                             Cargando informes...
                                         </div>
                                     </div>
+                                ) : reportsForbidden ? (
+                                    <Alert variant="info" className="d-flex align-items-center mb-0">
+                                        <FaExclamationCircle className="me-2" />
+                                        <div>No estás asignado a este paciente, por lo que no puedes ver sus informes.</div>
+                                    </Alert>
                                 ) : reportsError ? (
                                     <Alert variant="danger" className="d-flex align-items-center mb-0">
                                         <FaExclamationCircle className="me-2" />
@@ -1304,8 +1359,8 @@ const Patients = () => {
                 error={fileViewerError}
             />
 
-            {/* Modal para Agregar Terapeutas */}
-            <Modal show={showAddDoctor} onHide={() => setShowAddDoctor(false)} size="lg">
+            {/* Modal para Agregar Terapeutas (solo Admin) */}
+            <Modal show={isAdmin && showAddDoctor} onHide={handleCloseAddDoctor} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Agregar Terapeutas</Modal.Title>
                 </Modal.Header>
@@ -1375,10 +1430,16 @@ const Patients = () => {
                                 </tbody>
                             </Table>
                         </div>
+                        {addDoctorError && (
+                            <Alert variant="danger" className="d-flex align-items-center mt-3 mb-0">
+                                <FaExclamationCircle className="me-2" />
+                                <div>{addDoctorError}</div>
+                            </Alert>
+                        )}
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowAddDoctor(false)}>
+                    <Button variant="secondary" onClick={handleCloseAddDoctor}>
                         Cancelar
                     </Button>
                     <Button variant="primary" onClick={handleAddDoctors}>
@@ -1387,7 +1448,8 @@ const Patients = () => {
                 </Modal.Footer>
             </Modal>
 
-            <Modal show={showNew} onHide={handleCloseNew} size="lg">
+            {/* Modal de Creación de Paciente (solo Admin) */}
+            <Modal show={isAdmin && showNew} onHide={handleCloseNew} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Crear Paciente</Modal.Title>
                 </Modal.Header>
@@ -1601,7 +1663,7 @@ const Patients = () => {
             </Modal>
 
             {/* Modal de Edición de Paciente (solo Admin) */}
-            <Modal show={showEdit} onHide={handleCloseEdit} size="lg">
+            <Modal show={isAdmin && showEdit} onHide={handleCloseEdit} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Editar Paciente</Modal.Title>
                 </Modal.Header>
