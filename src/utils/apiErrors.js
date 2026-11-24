@@ -1,4 +1,23 @@
 /**
+ * Message shown when the backend rejects an action with 403 Forbidden.
+ */
+export const PERMISSION_DENIED_MESSAGE = 'No tienes permiso para realizar esta acción';
+
+/**
+ * True when the error is an HTTP 403 Forbidden response.
+ *
+ * Only the status code is inspected: 403s for role checks come from Spring
+ * Security's default handler, whose body may be empty or not match the
+ * GlobalExceptionHandler envelope.
+ *
+ * @param {unknown} err Axios error (or other thrown error)
+ * @returns {boolean}
+ */
+export function isForbiddenError(err) {
+    return !!(err && err.response && err.response.status === 403);
+}
+
+/**
  * Parse the backend error envelope produced by GlobalExceptionHandler.
  *
  * Possible response shapes:

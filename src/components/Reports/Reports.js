@@ -18,6 +18,7 @@ import {
 import { FaEye, FaDownload, FaPlus, FaTrash, FaFile, FaFilter, FaExclamationCircle, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight, FaEdit } from 'react-icons/fa';
 import api from '../../api/api';
 import { AuthContext } from '../../context/AuthContext';
+import { getTokenUserId } from '../../utils/auth';
 import { useMobileDetection } from '../../hooks/useMobileDetection';
 import { usePeriodicSync } from '../../hooks/usePeriodicSync'; // Importar el hook
 import { formatDate } from '../../utils/dateUtils';
@@ -226,8 +227,18 @@ const Reports = () => {
 
     const fetchPatients = async () => {
         try {
-            // Usar parámetros para obtener todos los pacientes
-            const response = await api.get('/api/patients?page=0&size=1000');
+            // Los admins ven todos los pacientes. Los terapeutas sólo los propios:
+            // el backend ya no los filtra, así que se envía doctorId explícitamente.
+            const params = new URLSearchParams({ page: '0', size: '1000' });
+            if (!isAdmin) {
+                const userId = getTokenUserId();
+                if (!userId) {
+                    setPatients([]);
+                    return;
+                }
+                params.append('doctorId', userId);
+            }
+            const response = await api.get(`/api/patients?${params.toString()}`);
             const patientsData = response.data;
             if (Array.isArray(patientsData)) {
                 setPatients(patientsData);

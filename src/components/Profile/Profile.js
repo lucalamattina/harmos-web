@@ -42,7 +42,8 @@ const Profile = () => {
             setPatientsError('');
             setLoadingPatients(true);
             
-            // Primero necesitamos obtener los datos del usuario actual para usar su nombre
+            // El backend devuelve todos los pacientes a cualquier usuario, así que
+            // hay que filtrar explícitamente por el id del usuario actual (claim `sub`).
             const userId = getTokenUserId();
             if (!userId) {
                 setPatientsError('No se pudo obtener el usuario actual');
@@ -50,16 +51,8 @@ const Profile = () => {
                 return;
             }
 
-            // Obtener el nombre del doctor actual desde userData
-            if (!userData.name) {
-                // Si userData aún no se ha cargado, esperar un poco y reintentar
-                setPatientsError('Esperando información del doctor...');
-                setLoadingPatients(false);
-                return;
-            }
-            
-            // Usar el parámetro 'doctor' con el nombre del usuario actual
-            const response = await api.get(`/api/patients?doctor=${encodeURIComponent(userData.name)}&page=0&size=1000`);
+            const params = new URLSearchParams({ doctorId: userId, page: '0', size: '1000' });
+            const response = await api.get(`/api/patients?${params.toString()}`);
             const patientsData = response.data;
             
             let patients = [];
@@ -81,18 +74,12 @@ const Profile = () => {
             setPatients([]);
             setLoadingPatients(false);
         }
-    }, [userData.name]);
+    }, []);
 
     useEffect(() => {
         fetchUserData();
-    }, []);
-
-    // Ejecutar fetchMyPatients después de que userData esté disponible
-    useEffect(() => {
-        if (userData.name && !loading) {
-            fetchMyPatients();
-        }
-    }, [userData.name, loading, fetchMyPatients]);
+        fetchMyPatients();
+    }, [fetchMyPatients]);
 
     if (loading) {
         return (
